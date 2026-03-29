@@ -89,7 +89,7 @@ export class ElementifyClient {
     }
 
     const { status, data } = err.response;
-    const code = data?.code;
+    const code = data?.code as string | undefined;
 
     // Critical distinction: scope errors must NOT surface as "invalid key"
     if (code === 'elementify_insufficient_scope' || code === 'auth_insufficient_scope') {

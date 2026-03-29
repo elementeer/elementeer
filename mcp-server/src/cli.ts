@@ -88,9 +88,8 @@ switch (command) {
 
   case undefined:
   case 'start': {
-    // Default: start MCP server
-    const { default: startServer } = await import('./index.js');
-    void startServer;
+    // Default: start MCP server (index.ts runs main() on import)
+    await import('./index.js');
     break;
   }
 
