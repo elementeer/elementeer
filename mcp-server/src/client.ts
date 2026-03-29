@@ -79,7 +79,8 @@ export class ElementifyClient {
     );
   }
 
-  private handleError(err: AxiosError<ElementifyError>): ElementifyApiError {
+  /** @internal — public for unit testing only */
+  handleError(err: AxiosError<ElementifyError>): ElementifyApiError {
     if (!err.response) {
       return new ElementifyApiError(
         'not_found',

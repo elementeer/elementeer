@@ -1,0 +1,41 @@
+name: repo-safety
+on: [push, pull_request]
+
+jobs:
+  forbid-artifacts:
+    name: Forbid sensitive artifacts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check tracked files for forbidden patterns
+        run: |
+          FORBIDDEN=('.env$' '\.pem$' '\.key$' '\.p12$' '\.pfx$' '\.sqlite$' '\.db$' '\.log$' '\.ssh/' 'id_rsa' 'id_ecdsa' 'credentials\.json$')
+          FOUND=0
+          for pattern in "${FORBIDDEN[@]}"; do
+            matches=$(git ls-files | grep -E "$pattern" || true)
+            if [ -n "$matches" ]; then
+              echo "❌ Forbidden file pattern '$pattern' found in tracked files:"
+              echo "$matches"
+              FOUND=1
+            fi
+          done
+          if [ $FOUND -eq 1 ]; then exit 1; fi
+          echo "✅ No forbidden files in working tree."
+
+      - name: Scan git history for secrets
+        run: |
+          FORBIDDEN=('\.env$' '\.pem$' '\.key$' 'id_rsa' 'credentials\.json$' '\.sqlite$')
+          FOUND=0
+          for pattern in "${FORBIDDEN[@]}"; do
+            matches=$(git log --all --full-history --name-only --pretty=format: | grep -E "$pattern" || true)
+            if [ -n "$matches" ]; then
+              echo "❌ Forbidden pattern '$pattern' found in git history:"
+              echo "$matches"
+              FOUND=1
+            fi
+          done
+          if [ $FOUND -eq 1 ]; then exit 1; fi
+          echo "✅ Git history clean."

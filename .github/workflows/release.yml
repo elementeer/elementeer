@@ -1,0 +1,64 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  npm-publish:
+    name: Publish @elementify/mcp to npm
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npm publish --workspace=mcp-server --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+  plugin-zip:
+    name: Build WordPress Plugin ZIP
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          tools: composer
+      - name: Install Composer deps (no dev)
+        working-directory: plugin
+        run: composer install --no-dev --no-progress --prefer-dist --optimize-autoloader
+      - name: Build plugin ZIP
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          zip -r elementify-mcp-${VERSION}.zip plugin/ \
+            --exclude "plugin/vendor/*/test*" \
+            --exclude "plugin/tests/*"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-zip
+          path: elementify-mcp-*.zip
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: elementify-mcp-*.zip
+          generate_release_notes: true
+
+  publish-dry-run:
+    name: Publish Dry Run (non-tag)
+    runs-on: ubuntu-latest
+    if: github.ref_type != 'tag'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build
+      - run: npm publish --workspace=mcp-server --dry-run
