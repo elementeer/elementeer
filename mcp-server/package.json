@@ -1,0 +1,31 @@
+{
+  "name": "@elementify/mcp",
+  "version": "0.1.0",
+  "description": "AI-native MCP server for Elementor — standalone and embedded in Vamerli Studio",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "elementify-mcp": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest",
+    "lint": "eslint src/"
+  },
+  "dependencies": {
+    "@elementify/shared": "*",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "axios": "^1.7.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.4.0",
+    "vitest": "^1.0.0"
+  },
+  "keywords": ["mcp", "elementor", "wordpress", "ai", "vamerli"],
+  "license": "MIT"
+}

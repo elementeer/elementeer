@@ -1,0 +1,11 @@
+{
+  "name": "elementify-mcp",
+  "private": true,
+  "workspaces": ["mcp-server", "shared"],
+  "scripts": {
+    "dev": "npm run dev --workspace=mcp-server",
+    "build": "npm run build --workspace=shared && npm run build --workspace=mcp-server",
+    "test": "npm test --workspaces",
+    "lint": "npm run lint --workspaces"
+  }
+}
