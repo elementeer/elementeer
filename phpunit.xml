@@ -4,6 +4,9 @@
          bootstrap="tests/bootstrap.php"
          colors="true"
          verbose="true">
+  <php>
+    <ini name="auto_prepend_file" value="vendor/antecedent/patchwork/Patchwork.php"/>
+  </php>
   <testsuites>
     <testsuite name="Unit">
       <directory>tests/Unit</directory>
