@@ -50,6 +50,7 @@ class TemplatesTest extends TestCase
 
     protected function tearDown(): void
     {
+        WP_Query::reset();
         Monkey\tearDown();
         Mockery::close();
         parent::tearDown();
@@ -99,7 +100,10 @@ class TemplatesTest extends TestCase
         $request = $this->makeRequest( [ 'page' => 1, 'per_page' => 20, 'status' => 'publish' ] );
         $this->mockAuthSuccess( $request );
 
-        $queryArgs = null;
+        WP_Query::$mock_posts         = [];
+        WP_Query::$mock_found_posts   = 0;
+        WP_Query::$mock_max_num_pages = 1;
+
         Functions\when( 'get_option' )->justReturn( [] );
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'wp_get_object_terms' )->justReturn( [] );
@@ -108,18 +112,10 @@ class TemplatesTest extends TestCase
         Functions\when( 'get_the_modified_date' )->justReturn( '2025-06-01T00:00:00' );
         Functions\when( 'get_post_meta' )->justReturn( 'page' );
 
-        $queryMock = Mockery::mock( 'overload:WP_Query' );
-        $queryMock->posts         = [];
-        $queryMock->found_posts   = 0;
-        $queryMock->max_num_pages = 1;
-        $queryMock->shouldReceive( '__construct' )->andReturnUsing( function ( $args ) use ( &$queryArgs, $queryMock ) {
-            $queryArgs = $args;
-        } );
-
         $controller = new Templates();
         $controller->list_templates( $request );
 
-        $this->assertSame( 'elementor_library', $queryArgs['post_type'] );
+        $this->assertSame( 'elementor_library', WP_Query::$captured_args['post_type'] );
     }
 
     public function test_list_templates_maps_wp_post_to_elementify_template_structure(): void
@@ -128,6 +124,10 @@ class TemplatesTest extends TestCase
         $request = $this->makeRequest( [ 'page' => 1, 'per_page' => 20, 'status' => 'publish' ] );
         $this->mockAuthSuccess( $request );
 
+        WP_Query::$mock_posts         = [ $post ];
+        WP_Query::$mock_found_posts   = 1;
+        WP_Query::$mock_max_num_pages = 1;
+
         Functions\when( 'sanitize_text_field' )->returnArg();
         Functions\when( 'wp_get_object_terms' )->justReturn( [] );
         Functions\when( 'is_wp_error' )->justReturn( false );
@@ -135,12 +135,6 @@ class TemplatesTest extends TestCase
         Functions\when( 'get_the_modified_date' )->justReturn( '2025-06-01T00:00:00' );
         Functions\when( 'get_post_meta' )->justReturn( 'section' );
         Functions\when( 'get_option' )->justReturn( [] );
-
-        $queryMock = Mockery::mock( 'overload:WP_Query' );
-        $queryMock->posts         = [ $post ];
-        $queryMock->found_posts   = 1;
-        $queryMock->max_num_pages = 1;
-        $queryMock->shouldReceive( '__construct' )->andReturn();
 
         $controller = new Templates();
         $response   = $controller->list_templates( $request );
