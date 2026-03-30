@@ -9,6 +9,11 @@ declare(strict_types=1);
  * the full WordPress stack. This enables fast, isolated unit tests.
  */
 
+// Patchwork MUST be loaded before any WP function stubs are defined so it can
+// intercept them later via Brain\Monkey. Loading it explicitly here (before the
+// autoloader) guarantees correct ordering regardless of composer files order.
+require_once dirname(__DIR__) . '/vendor/antecedent/patchwork/Patchwork.php';
+
 require_once dirname(__DIR__) . '/vendor/autoload.php';
 
 // Load WordPress class/function stubs so tests run without a real WP install

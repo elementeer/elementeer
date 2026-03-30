@@ -34,9 +34,6 @@ if ( ! class_exists( 'WP_Error' ) ) {
     }
 }
 
-if ( ! function_exists( 'is_wp_error' ) ) {
-    function is_wp_error( mixed $thing ): bool
-    {
-        return $thing instanceof WP_Error;
-    }
-}
+// is_wp_error() is intentionally NOT defined here.
+// Brain\Monkey/Patchwork intercepts it at test time via Functions\when().
+// Defining it here before Patchwork loads would cause DefinedTooEarly errors.
