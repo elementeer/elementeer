@@ -2,7 +2,7 @@
 [![CI](https://github.com/Vamerli/elementify-mcp/actions/workflows/ci.yml/badge.svg)](https://github.com/Vamerli/elementify-mcp/actions/workflows/ci.yml)
 [![CodeQL](https://github.com/Vamerli/elementify-mcp/actions/workflows/codeql.yml/badge.svg)](https://github.com/Vamerli/elementify-mcp/actions/workflows/codeql.yml)
 [![npm](https://img.shields.io/npm/v/@elementify/mcp?label=npm)](https://www.npmjs.com/package/@elementify/mcp)
-[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](./LICENSE)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-green.svg)](./LICENSE)
 [![WordPress tested](https://img.shields.io/badge/WordPress-6.0%2B-21759b.svg?logo=wordpress)](./plugin/readme.txt)
 [![Elementor tested](https://img.shields.io/badge/Elementor-3.x-92003b.svg)](./plugin/readme.txt)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933.svg?logo=node.js)](./mcp-server/package.json)
@@ -253,4 +253,4 @@ Never commit API keys or `.env` files. Use governance settings to restrict destr
 
 ## License
 
-MIT — see [LICENSE](./LICENSE).
+GPL-3.0-or-later — see [LICENSE](./LICENSE).

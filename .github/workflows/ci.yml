@@ -54,9 +54,9 @@ jobs:
       - name: Install Composer deps
         working-directory: plugin
         run: composer install --no-progress --prefer-dist
-      - name: Run PHPUnit
+      - name: Run PHPUnit (Unit tests)
         working-directory: plugin
-        run: vendor/bin/phpunit
+        run: vendor/bin/phpunit --testsuite Unit
 
   lint:
     name: Lint

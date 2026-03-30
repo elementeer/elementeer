@@ -1,7 +1,7 @@
 /**
  * Smoke tests: MCP server initializes and registers all expected tools.
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerAllTools } from '../../tools/index.js';
 import type { ElementifyClient } from '../../client.js';
@@ -29,6 +29,40 @@ const EXPECTED_TOOLS = [
   'get_site_info',
   'list_sites',
   'switch_site',
+  // Assessment
+  'assess_site',
+  // Recommendations + Context
+  'set_site_context',
+  'get_site_context',
+  'get_recommendations',
+  // Global Styles
+  'get_global_styles',
+  'set_global_colors',
+  'set_global_typography',
+  // Wizard
+  'set_site_logo',
+  'wizard_brand_setup',
+  'creator_mode',
+  // Pages
+  'list_elementor_pages',
+  'get_page_data',
+  'update_page_data',
+  'compose_page_from_templates',
+  'save_page_section_as_template',
+  'save_full_page_as_template',
+  // Stock Images + AI Generation
+  'search_stock_images',
+  'sideload_stock_image',
+  'generate_ai_image',
+  // Theme Builder Wizard
+  'wizard_theme_builder',
+  // Explain
+  'explain_recommendation',
+  // Change Review Queue
+  'queue_change',
+  'list_change_queue',
+  'review_change',
+  'apply_change',
 ] as const;
 
 describe('MCP server smoke tests', () => {
@@ -41,10 +75,10 @@ describe('MCP server smoke tests', () => {
 
     // Spy on tool() to capture all registrations
     const originalTool = server.tool.bind(server);
-    // @ts-ignore — we're intentionally intercepting the call
+    // @ts-expect-error — intentionally replacing with a spy
     server.tool = (name: string, ...rest: unknown[]) => {
       registeredTools.push(name);
-      return (originalTool as Function)(name, ...rest);
+      return (originalTool as (...args: unknown[]) => unknown)(name, ...rest);
     };
 
     const mockGetClient = (): ElementifyClient => {
@@ -58,6 +92,32 @@ describe('MCP server smoke tests', () => {
         getTemplateData: async () => ({ id: 1, elementor_data: [] }),
         updateTemplateData: async () => ({ id: 1, updated: true }),
         getSiteInfo: async () => ({ name: '', url: '', wp_version: '', elementor_version: null, elementor_pro: false, activation_mode: 'standalone-free', template_count: 0, capabilities: [] }),
+        getLogo: async () => ({ logo_id: null, logo_url: null, set: false }),
+        setLogo: async () => ({ logo_id: 1, logo_url: null, updated: true as const }),
+        getGlobalStyles: async () => ({ kit_id: 1, system_colors: [], custom_colors: [], system_typography: [], custom_typography: [] }),
+        setGlobalColors: async () => ({ kit_id: 1, slot: 'system_colors', colors: [], updated: true as const }),
+        setGlobalTypography: async () => ({ kit_id: 1, slot: 'system_typography', typography: [], updated: true as const }),
+        getSiteContext: async () => ({ user_role: null, site_purpose: null, brand_notes: null, target_audience: null, primary_language: null, set_at: null }),
+        setSiteContext: async (ctx: object) => ({ ...ctx, set_at: '' }),
+        assessSite: async () => ({
+          assessed_at: '', wordpress: { version: '', language: '', timezone: '', is_multisite: false, site_name: '', site_tagline: '', admin_url: '' },
+          elementor: { version: null, pro: false, pro_version: null, active_kit_id: null },
+          brand: { logo_set: false, logo_id: null, global_colors_count: 0, global_typography_count: 0 },
+          theme_builder: {}, template_library: { total: 0, by_type: {}, uncategorized: 0, published: 0, draft: 0 },
+          pages: { elementor_total: 0, by_post_type: {} }, performance: { css_print_method: 'internal', optimized_dom: false, load_fa4_shim: false },
+          plugins: { active_count: 0, classified: {}, woocommerce: false, multilingual: false },
+          custom_post_types: [], user_roles: [], issues: [], issues_count: { critical: 0, warning: 0, info: 0 },
+        }),
+        listElementorPages: async () => ({ posts: [], total: 0, total_pages: 1 }),
+        getPageData: async () => ({ post_id: 1, post_title: '', post_type: 'page', element_count: 0, elementor_data: [] }),
+        updatePageData: async () => ({ id: 1, updated: true as const }),
+        sideloadImage: async () => ({ id: 1, url: 'https://example.com/img.jpg', mime_type: 'image/jpeg', title: 'Test' }),
+        createThemeBuilderTemplate: async () => ({ id: 1, title: '', type: 'header', status: 'publish', conditions: ['include/general'] }),
+        listChanges: async () => ({ changes: [], total: 0 }),
+        createChange: async () => ({ id: 'chg_1', created_at: '', status: 'pending' as const, operation: 'set_global_colors', params: {}, note: null, before_state: null, reviewed_at: null, review_note: null, applied_at: null }),
+        getChange: async () => ({ id: 'chg_1', created_at: '', status: 'approved' as const, operation: 'set_global_colors', params: {}, note: null, before_state: null, reviewed_at: null, review_note: null, applied_at: null }),
+        updateChangeStatus: async () => ({ id: 'chg_1', created_at: '', status: 'approved' as const, operation: 'set_global_colors', params: {}, note: null, before_state: null, reviewed_at: null, review_note: null, applied_at: null }),
+        deleteChange: async () => ({ deleted: true as const, id: 'chg_1' }),
       } as unknown as ElementifyClient;
     };
 

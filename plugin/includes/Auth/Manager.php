@@ -85,7 +85,7 @@ final class Manager {
      * @param array  $key_data  Result from authenticate().
      * @param string $capability  e.g. 'templates:write'
      */
-    public function check_capability( array $key_data, string $capability ): true|WP_Error {
+    public function check_capability( array $key_data, string $capability ): bool|WP_Error {
         $key_capabilities = $key_data['capabilities'] ?? [];
 
         if ( ! in_array( $capability, $key_capabilities, true ) ) {
@@ -110,7 +110,7 @@ final class Manager {
      *
      * @param string $capability  e.g. 'templates:delete'
      */
-    public function governance_allows( string $capability ): true|WP_Error {
+    public function governance_allows( string $capability ): bool|WP_Error {
         $settings = Settings::get_instance()->get();
 
         if ( ! in_array( $capability, $settings['allowed_capabilities'] ?? [], true ) ) {

@@ -3,15 +3,6 @@ import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ElementifyClient } from '../client.js';
 import type { ElementifyTemplate } from '@elementify/shared';
 
-const TemplateTypeSchema = z.enum([
-  'page',
-  'section',
-  'container',
-  'widget',
-  'popup',
-  'kit',
-  'global-widget',
-]);
 
 export function registerOrganizationTools(
   server: McpServer,
