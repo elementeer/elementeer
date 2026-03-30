@@ -16,7 +16,7 @@ use Elementify\MCP\Governance\Settings;
  *          NOTE: This is intentionally a DIFFERENT error than invalid_key. Callers must distinguish these.
  * Layer 3: Governance check → WP_Error 'elementify_governance_blocked' if the site disallows the capability.
  */
-final class Manager {
+class Manager {
 
     private static ?self $instance = null;
 
