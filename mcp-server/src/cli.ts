@@ -14,7 +14,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-const VERSION = '0.1.0';
+const VERSION = '0.4.0';
 
 const args = process.argv.slice(2);
 const command = args[0];

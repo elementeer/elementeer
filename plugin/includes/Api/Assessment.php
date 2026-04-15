@@ -27,7 +27,7 @@ final class Assessment {
     }
 
     public function get_assessment( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:read' );
+        $auth = $this->auth->authorize( $request, 'site-audit:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $issues = [];
@@ -278,7 +278,23 @@ final class Assessment {
         ];
 
         // ------------------------------------------------------------------ //
-        // 9. Custom Post Types
+        // 9. Capabilities (Elementify plugin)
+        // ------------------------------------------------------------------ //
+        $seo_plugin = null;
+        if ( ! empty( $plugins_classified['seo'] ) ) {
+            $seo_plugin = $plugins_classified['seo'][0];
+        }
+
+        $capabilities = [
+            'seo_management'       => true,
+            'settings_management'  => true,
+            'performance_cache'    => true,
+            'asset_optimization'   => true,
+            'seo_plugin'           => $seo_plugin,
+        ];
+
+        // ------------------------------------------------------------------ //
+        // 10. Custom Post Types
         // ------------------------------------------------------------------ //
         $cpt_objects = get_post_types( [ 'public' => true, '_builtin' => false ], 'objects' );
         $custom_post_types = array_values( array_map( function ( $cpt ) {
@@ -307,6 +323,7 @@ final class Assessment {
             'pages'            => $pages,
             'performance'      => $performance,
             'plugins'          => $plugins,
+            'capabilities'     => $capabilities,
             'custom_post_types' => $custom_post_types,
             'user_roles'       => $roles,
             'issues'           => $issues,

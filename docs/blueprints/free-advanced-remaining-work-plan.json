@@ -1,0 +1,177 @@
+{
+  "projectName": "Elementify Free + Advanced Remaining Work",
+  "version": "1.0",
+  "status": "draft",
+  "execution_recommendation": {
+    "sequence_type": "build",
+    "mode": "ralph_attended",
+    "reason": "The remaining work is release hardening, workflow productization, and build hygiene across multiple repo surfaces with clear binary gates and limited safe parallel lanes.",
+    "estimated_iterations": 7,
+    "parallel_opportunities": 2
+  },
+  "tasks": [
+    {
+      "id": "FREE-003",
+      "title": "Public mirror dry-run hardening",
+      "description": "Validate the publishable Free export path end to end using the current mirror scripts, staging output, manifest, and release docs.",
+      "acceptanceCriteria": [
+        "A reproducible dry-run path exists from private primary state to Free export staging output.",
+        "The dry run proves that only Free docs, Free tool surfaces, and allowed public assets are included.",
+        "The dry run is documented as an operational checklist or script sequence.",
+        "Dry-run failures are surfaced as binary gate failures."
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [],
+      "type": "release",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "automation",
+        "review",
+        "validation"
+      ]
+    },
+    {
+      "id": "FREE-004",
+      "title": "Free public QA and messaging lock",
+      "description": "Run a final consistency pass over Free-facing docs, scripts, tool surface, and release framing so the public story matches the actual Free export.",
+      "acceptanceCriteria": [
+        "Free-facing docs do not promise Advanced or Studio behavior.",
+        "Public quickstart, root README, mirror docs, and release checklist are mutually consistent.",
+        "The Free tool list matches the actual Free registration path.",
+        "A short public artifact explains what Free includes and excludes."
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "FREE-003"
+      ],
+      "type": "productization",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "review",
+        "validation"
+      ]
+    },
+    {
+      "id": "BUILD-001",
+      "title": "TypeScript build exit anomaly resolution",
+      "description": "Diagnose and resolve the recurring build hang so the normal mcp-server and root build paths terminate cleanly again.",
+      "acceptanceCriteria": [
+        "The cause is identified and documented.",
+        "The build exits cleanly on the normal path.",
+        "Release and verification steps no longer rely on silent tolerance of hanging builds.",
+        "The outcome is captured in developer or release documentation."
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [],
+      "type": "infrastructure",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "research",
+        "code_generation",
+        "testing"
+      ]
+    },
+    {
+      "id": "ADV-007",
+      "title": "Premium catalog enrichment",
+      "description": "Expand the Advanced premium library into a more convincing paid catalog with stronger curation signals and richer usable inventory.",
+      "acceptanceCriteria": [
+        "The premium library supports broader useful asset categories or metadata.",
+        "The catalog can express stronger curation signals instead of only raw entries.",
+        "Advanced docs and planner outputs reflect the richer premium layer.",
+        "Free remains unaffected and mirror-safe."
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [],
+      "type": "feature",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "code_generation",
+        "testing"
+      ]
+    },
+    {
+      "id": "ADV-008",
+      "title": "Advanced workflow depth hardening",
+      "description": "Deepen the end-to-end value of the Advanced orchestration layer, especially around creator flows and critique/repair loops.",
+      "acceptanceCriteria": [
+        "At least one Advanced workflow becomes measurably more end-to-end than the current orchestration.",
+        "Critique and repair guidance become more operational and less purely advisory.",
+        "Advanced workflow outputs are documented and tested as distinct from Free.",
+        "No Free path becomes dependent on Advanced orchestration."
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [
+        "ADV-007"
+      ],
+      "type": "feature",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "code_generation",
+        "testing",
+        "review"
+      ]
+    },
+    {
+      "id": "REL-FA-004",
+      "title": "Mirror publication automation handoff",
+      "description": "Package the current Free mirror verification and preparation flow into a clear operational handoff for the Forgejo migration and public GitHub mirror process.",
+      "acceptanceCriteria": [
+        "The runbook explicitly covers the Forgejo-primary to GitHub-mirror lifecycle.",
+        "Preconditions, commands, outputs, and failure gates are explicit.",
+        "The release gate command is treated as the canonical pre-publication check.",
+        "Another operator can execute the process without hidden context."
+      ],
+      "priority": "medium",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "FREE-003"
+      ],
+      "type": "release",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "automation",
+        "documentation"
+      ]
+    },
+    {
+      "id": "STUDIO-SEAM-001",
+      "title": "Final Studio deferment note",
+      "description": "Lock a concise architecture note that explicitly defines what remains deferred to Studio and what must not leak into current Free or Advanced positioning.",
+      "acceptanceCriteria": [
+        "Cloud library, cross-site storage, delivery orchestration, and team flows are explicitly marked deferred.",
+        "No current Free or Advanced document overclaims Studio behavior.",
+        "The deferment note references current entitlement and provider boundaries.",
+        "The note is short, clear, and aligned with the launch blueprint."
+      ],
+      "priority": "medium",
+      "estimatedEffort": "1",
+      "dependsOn": [
+        "FREE-004",
+        "ADV-008",
+        "REL-FA-004"
+      ],
+      "type": "architecture",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "review"
+      ]
+    }
+  ]
+}

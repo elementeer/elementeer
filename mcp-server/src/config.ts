@@ -92,10 +92,22 @@ export function setDefaultSite(siteId: string): void {
   saveConfig(config);
 }
 
-export function getIntegrations(): { pexels_api_key?: string; unsplash_access_key?: string; openai_api_key?: string } {
+export function getIntegrations(): {
+  pexels_api_key?: string;
+  unsplash_access_key?: string;
+  openai_api_key?: string;
+  ai_planning_enabled?: boolean;
+} {
   try {
     const config = loadConfig();
-    return (config as { integrations?: { pexels_api_key?: string; unsplash_access_key?: string; openai_api_key?: string } }).integrations ?? {};
+    return (config as {
+      integrations?: {
+        pexels_api_key?: string;
+        unsplash_access_key?: string;
+        openai_api_key?: string;
+        ai_planning_enabled?: boolean;
+      };
+    }).integrations ?? {};
   } catch {
     return {};
   }

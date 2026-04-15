@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Elementify\MCP\Admin;
 
+use Elementify\MCP\Auth\Capabilities;
 use Elementify\MCP\Auth\Manager as Auth;
 use Elementify\MCP\Governance\Settings;
 
@@ -83,6 +84,7 @@ final class Page {
                 <?php foreach ( $keys as $key ) :
                     $raw_key    = $key['key'] ?? '';
                     $is_new_key = $just_generated_key && hash_equals( $raw_key, $just_generated_key );
+                    $capability_labels = Capabilities::display_labels( (array) ( $key['capabilities'] ?? [] ) );
                 ?>
                     <tr>
                         <td><?php echo esc_html( $key['label'] ?? '—' ); ?></td>
@@ -93,11 +95,11 @@ final class Page {
                                 <code><?php echo esc_html( substr( $raw_key, 0, 16 ) . '…' ); ?></code>
                             <?php endif; ?>
                         </td>
-                        <td><?php echo esc_html( implode( ', ', $key['capabilities'] ?? [] ) ); ?></td>
-                        <td><?php echo $key['is_active'] ? '<span style="color:green">Active</span>' : '<span style="color:red">Inactive</span>'; ?></td>
+                        <td><?php echo esc_html( implode( ', ', $capability_labels ) ); ?></td>
+                        <td><?php echo $key['is_active'] ? '<span style="color:green">Active</span>' : '<span style="color:red">Revoked</span>'; ?></td>
                         <td><?php echo esc_html( $key['last_used'] ?? 'Never' ); ?></td>
                         <td>
-                            <?php if ( $is_new_key ) : ?>
+                            <?php if ( ! empty( $key['is_active'] ) ) : ?>
                                 <button type="button" class="button button-small"
                                     onclick="(function(btn){navigator.clipboard.writeText('<?php echo esc_js( $raw_key ); ?>').then(function(){var t=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=t;},2000);});})(this)">
                                     <?php esc_html_e( 'Copy', 'elementify-mcp' ); ?>
@@ -133,33 +135,9 @@ final class Page {
                         <th><?php esc_html_e( 'Capabilities', 'elementify-mcp' ); ?></th>
                         <td>
                             <?php
-                            $all_capabilities = [
-                                'templates:read'    => 'Templates — Read (list &amp; get)',
-                                'templates:write'   => 'Templates — Write (create &amp; update)',
-                                'templates:delete'  => 'Templates — Delete',
-                                'pages:write'          => 'Pages — Write Elementor data to live pages',
-                                'global-styles:write'  => 'Global Styles — Write Kit colors &amp; typography',
-                                'theme-builder:read'   => 'Theme Builder — Read',
-                                'theme-builder:write' => 'Theme Builder — Write',
-                                'global-widgets:read'  => 'Global Widgets — Read',
-                                'global-widgets:write' => 'Global Widgets — Write',
-                                'library:export'    => 'Library — Export',
-                                'library:import'    => 'Library — Import',
-                                'site:read'         => 'Site Info — Read',
-                                'governance:read'   => 'Governance — Read settings',
-                                'governance:write'  => 'Governance — Write settings',
-                            ];
-                            $cap_groups = [
-                                'Templates'       => [ 'templates:read', 'templates:write', 'templates:delete' ],
-                                'Pages'           => [ 'pages:write' ],
-                                'Global Styles'   => [ 'global-styles:write' ],
-                                'Theme Builder'   => [ 'theme-builder:read', 'theme-builder:write' ],
-                                'Global Widgets'  => [ 'global-widgets:read', 'global-widgets:write' ],
-                                'Library'         => [ 'library:export', 'library:import' ],
-                                'Site'            => [ 'site:read' ],
-                                'Governance'      => [ 'governance:read', 'governance:write' ],
-                            ];
-                            $default_caps = [ 'templates:read', 'templates:write' ];
+                            $all_capabilities = Capabilities::labels();
+                            $cap_groups       = Capabilities::groups();
+                            $default_caps     = Capabilities::default_key_capabilities();
                             ?>
                             <button type="button" class="button button-small" style="margin-bottom:10px"
                                 onclick="(function(){
@@ -170,6 +148,9 @@ final class Page {
                                 }).call(this)">
                                 <?php esc_html_e( 'Select All', 'elementify-mcp' ); ?>
                             </button>
+                            <p class="description" style="margin-top:0">
+                                <?php esc_html_e( 'Capabilities are grouped by operating domain. Existing legacy keys continue to work, but newly generated keys use the new domain-based capability model.', 'elementify-mcp' ); ?>
+                            </p>
                             <div id="elementify-caps-wrap" style="display:flex;flex-wrap:wrap;gap:12px">
                             <?php foreach ( $cap_groups as $group_label => $group_caps ) : ?>
                                 <fieldset style="border:1px solid #ddd;padding:8px 12px;min-width:180px">
@@ -198,11 +179,51 @@ final class Page {
             <form method="post">
                 <?php wp_nonce_field( 'elementify_mcp_admin' ); ?>
                 <input type="hidden" name="elementify_action" value="save_governance">
+                <input type="hidden" name="governance_capabilities_present" value="1">
                 <table class="form-table">
                     <tr>
                         <th><label for="max_keys"><?php esc_html_e( 'Max API Keys', 'elementify-mcp' ); ?></label></th>
                         <td><input type="number" id="max_keys" name="max_keys" min="1" max="100"
                             value="<?php echo esc_attr( $governance['max_keys'] ?? 10 ); ?>"></td>
+                    </tr>
+                    <tr>
+                        <th><?php esc_html_e( 'Allowed Capabilities', 'elementify-mcp' ); ?></th>
+                        <td>
+                            <?php
+                            $all_capabilities     = Capabilities::labels();
+                            $cap_groups           = Capabilities::groups();
+                            $allowed_capabilities = array_values( array_unique( (array) ( $governance['allowed_capabilities'] ?? [] ) ) );
+                            ?>
+                            <button type="button" class="button button-small" style="margin-bottom:10px"
+                                onclick="(function(){
+                                    var boxes=document.querySelectorAll('#elementify-governance-caps-wrap input[type=checkbox]');
+                                    var allChecked=Array.from(boxes).every(function(b){return b.checked;});
+                                    boxes.forEach(function(b){b.checked=!allChecked;});
+                                    this.textContent=allChecked?'Select All':'Deselect All';
+                                }).call(this)">
+                                <?php esc_html_e( 'Select All', 'elementify-mcp' ); ?>
+                            </button>
+                            <p class="description" style="margin-top:0">
+                                <?php esc_html_e( 'Governance can allow or deny whole operating domains regardless of what an individual key grants. Existing legacy settings are normalized to the domain model automatically.', 'elementify-mcp' ); ?>
+                            </p>
+                            <div id="elementify-governance-caps-wrap" style="display:flex;flex-wrap:wrap;gap:12px">
+                            <?php foreach ( $cap_groups as $group_label => $group_caps ) : ?>
+                                <fieldset style="border:1px solid #ddd;padding:8px 12px;min-width:180px">
+                                    <legend style="font-weight:600;padding:0 4px"><?php echo esc_html( $group_label ); ?></legend>
+                                    <?php foreach ( $group_caps as $cap ) :
+                                        $label = $all_capabilities[ $cap ] ?? $cap;
+                                    ?>
+                                        <label style="display:block;margin:4px 0">
+                                            <input type="checkbox" name="allowed_capabilities[]" value="<?php echo esc_attr( $cap ); ?>"
+                                                <?php checked( in_array( $cap, $allowed_capabilities, true ) ); ?>>
+                                            <?php echo esc_html( $label ); ?><br>
+                                            <code style="font-size:0.85em;color:#666"><?php echo esc_html( $cap ); ?></code>
+                                        </label>
+                                    <?php endforeach; ?>
+                                </fieldset>
+                            <?php endforeach; ?>
+                            </div>
+                        </td>
                     </tr>
                     <tr>
                         <th><?php esc_html_e( 'Audit Log', 'elementify-mcp' ); ?></th>
@@ -236,7 +257,7 @@ final class Page {
             case 'generate_key':
                 $label        = sanitize_text_field( $_POST['key_label'] ?? '' );
                 $capabilities = isset( $_POST['capabilities'] ) && is_array( $_POST['capabilities'] )
-                    ? array_map( 'sanitize_text_field', $_POST['capabilities'] )
+                    ? Capabilities::filter( array_map( 'sanitize_text_field', $_POST['capabilities'] ) )
                     : [];
 
                 if ( empty( $label ) ) {
@@ -262,7 +283,15 @@ final class Page {
                 exit;
 
             case 'save_governance':
+                $allowed_capabilities = [];
+                if ( isset( $_POST['governance_capabilities_present'] ) ) {
+                    $allowed_capabilities = isset( $_POST['allowed_capabilities'] ) && is_array( $_POST['allowed_capabilities'] )
+                        ? Capabilities::filter( array_map( 'sanitize_text_field', $_POST['allowed_capabilities'] ) )
+                        : [];
+                }
+
                 Settings::get_instance()->update( [
+                    'allowed_capabilities' => $allowed_capabilities,
                     'max_keys'          => max( 1, (int) ( $_POST['max_keys'] ?? 10 ) ),
                     'audit_log_enabled' => ! empty( $_POST['audit_log_enabled'] ),
                     'require_approval'  => ! empty( $_POST['require_approval'] ),

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ElementifyClient, SiteAssessment, AssessmentIssue } from '../client.js';
+import type { ThemeBuilderTemplateSummary } from '@elementify/shared';
 
 export function registerAssessmentTools(
   server: McpServer,
@@ -47,7 +48,7 @@ export function registerAssessmentTools(
       lines.push('## Theme Builder');
       const tbOrder = ['header', 'footer', 'single', 'single-post', 'single-page', 'archive', 'search', 'error-404', 'popup'];
       for (const type of tbOrder) {
-        const templates = a.theme_builder[type] ?? [];
+        const templates: ThemeBuilderTemplateSummary[] = a.theme_builder[type] ?? [];
         if (templates.length > 0) {
           lines.push(`  ${type}: ${templates.map((t) => `"${t.title}" [${t.id}] (${t.status})`).join(', ')}`);
         } else {
@@ -60,7 +61,7 @@ export function registerAssessmentTools(
       lines.push('## Template Library');
       lines.push(`  Total: ${a.template_library.total} (${a.template_library.published} published, ${a.template_library.draft} draft)`);
       lines.push(`  Uncategorized: ${a.template_library.uncategorized}`);
-      const byType = Object.entries(a.template_library.by_type)
+      const byType = Object.entries(a.template_library.by_type as Record<string, number>)
         .filter(([, n]) => n > 0)
         .map(([t, n]) => `${t}: ${n}`)
         .join(' · ');
@@ -112,7 +113,7 @@ export function registerAssessmentTools(
       } else {
         const order: AssessmentIssue['severity'][] = ['critical', 'warning', 'info'];
         for (const sev of order) {
-          const sevIssues = a.issues.filter((i) => i.severity === sev);
+          const sevIssues = a.issues.filter((i: AssessmentIssue) => i.severity === sev);
           for (const issue of sevIssues) {
             const prefix = sev === 'critical' ? '🔴' : sev === 'warning' ? '⚠' : 'ℹ';
             lines.push(`  ${prefix} [${issue.code}] ${issue.message}`);

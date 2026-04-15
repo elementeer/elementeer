@@ -119,6 +119,24 @@ class RestApiTest extends TestCase
         $this->assertArrayHasKey( '/templates/(?P<id>\d+)/data', $routes );
     }
 
+    public function test_library_import_route_is_registered(): void
+    {
+        $routes = [];
+
+        Functions\when( 'register_rest_route' )->alias(
+            function ( $namespace, $route, $args ) use ( &$routes ) {
+                $routes[ $route ] = $args;
+            }
+        );
+
+        Router::register();
+
+        $this->assertArrayHasKey( '/library/import', $routes );
+
+        $methods = array_column( $routes['/library/import'], 'methods' );
+        $this->assertContains( 'POST', $methods );
+    }
+
     public function test_site_info_route_is_registered(): void
     {
         $routes = [];

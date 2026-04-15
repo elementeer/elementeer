@@ -1,0 +1,198 @@
+{
+  "projectName": "Elementify Free + Advanced Scenario/Wizard Realignment v2",
+  "version": "2.0",
+  "status": "draft",
+  "sequence_type": "mixed",
+  "execution_recommendation": {
+    "mode": "standard",
+    "reason": "This iteration adds bootstrap and stack-guidance design across product, wizard, and capability layers, which requires attended Ralph Loop execution with explicit review checkpoints.",
+    "suggested_workflow": "ralph-loop-attended",
+    "estimated_iterations": 10,
+    "parallel_opportunities": 2
+  },
+  "tasks": [
+    {
+      "id": "USP-FOUNDATION-001",
+      "title": "Lock user-first ecosystem-honest positioning and Vamerli bridge",
+      "description": "Define Elementify's explicit USP as a user-first, intent-led, ecosystem-honest 360-degree guidance layer for the Elementor stack, and document the future bridge to Vamerli.",
+      "acceptanceCriteria": [
+        "The blueprint explicitly states that recommendations follow user interest and scenario fit before vendor or upsell logic",
+        "The positioning distinguishes Elementify from plugin-first or commercially-captured guidance layers",
+        "The relationship between Elementify and a future Vamerli brand presence and intelligence platform is documented clearly but without overclaiming present scope",
+        "This positioning becomes a source of truth for later scenario, wizard, and upgrade-guidance work"
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [],
+      "type": "positioning",
+      "required_capabilities": [
+        "planning",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "BOOTSTRAP-SCENARIO-001",
+      "title": "Define bootstrap scenarios and non-Elementor entry states",
+      "description": "Extend the scenario map so Elementify supports users with only an idea, an existing non-Elementor WordPress site, or a partial stack that needs guided completion.",
+      "acceptanceCriteria": [
+        "The scenario system includes entry states without Elementor installed",
+        "Bootstrap-from-idea, bootstrap-from-existing-WordPress, and stack-completion scenarios are documented",
+        "Each bootstrap scenario defines the desired Free baseline and deeper Advanced path",
+        "The scenario map remains consistent with the Free public value promise"
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [
+        "USP-FOUNDATION-001"
+      ],
+      "type": "product-definition",
+      "required_capabilities": [
+        "planning",
+        "research",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "INTENT-WIZARD-001",
+      "title": "Define intent-routing wizard contract",
+      "description": "Model the front-door wizard that captures origin, intention, scope depth, constraints, and user posture and routes users into the correct Free or Advanced flow.",
+      "acceptanceCriteria": [
+        "The intent wizard captures origin, intent, depth, and user posture",
+        "The routing model covers bootstrap, clean-up, refresh, optimization, extension, reduction, relaunch, and migration",
+        "The contract is understandable for both no-code-near and technical users",
+        "The output can be used as a source of truth for future wizard implementation"
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [
+        "BOOTSTRAP-SCENARIO-001"
+      ],
+      "type": "product-definition",
+      "required_capabilities": [
+        "planning",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "STACK-PROFILE-001",
+      "title": "Define supported baseline stack profiles",
+      "description": "Describe the supported Free and Advanced starting stacks, including Elementor Free, Hello Theme, and curated supported addon profiles.",
+      "acceptanceCriteria": [
+        "A baseline Free stack profile is defined around WordPress, Elementor Free, Hello Theme, and supported addon profiles where appropriate",
+        "Advanced stack profiles define richer recommended combinations without collapsing into plugin inflation",
+        "The blueprint distinguishes recommendation, guided install, and automated execution honestly",
+        "Theme and addon recommendations remain curated and scenario-aware"
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [
+        "BOOTSTRAP-SCENARIO-001"
+      ],
+      "type": "product-definition",
+      "required_capabilities": [
+        "planning",
+        "research",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "SKILL-ADDON-ARCH-001",
+      "title": "Define modular skill and addon extension architecture",
+      "description": "Describe how curated skill profiles and addon profiles extend the baseline stack without collapsing the product into unchecked extension sprawl.",
+      "acceptanceCriteria": [
+        "The blueprint distinguishes baseline stack profiles from optional addon profiles and optional skill profiles",
+        "Skill profiles are described as scenario- and posture-aware operating layers",
+        "Addon profiles are described as curated, support-aware extensions rather than default plugin inflation",
+        "The resulting model remains consistent with the user-first, ecosystem-honest USP"
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "STACK-PROFILE-001",
+        "INTENT-WIZARD-001"
+      ],
+      "type": "product-definition",
+      "required_capabilities": [
+        "planning",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "UPGRADE-GUIDANCE-001",
+      "title": "Define scenario-based upgrade guidance",
+      "description": "Model when and how Elementify should recommend Elementor Pro, Elementify Advanced, or selected supported pro plugins as a meaningful next step.",
+      "acceptanceCriteria": [
+        "Upgrade guidance is tied to scenarios, not generic upsell prompts",
+        "The blueprint explains when Free is enough and when deeper stack upgrades make sense",
+        "Advanced is positioned as a workflow/productivity upgrade rather than a feature bundle",
+        "The design leaves room for supported pro plugin profiles without overcommitting vendor breadth"
+      ],
+      "priority": "medium",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "STACK-PROFILE-001",
+        "INTENT-WIZARD-001",
+        "SKILL-ADDON-ARCH-001"
+      ],
+      "type": "product-definition",
+      "required_capabilities": [
+        "planning",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CAP-RESET-001",
+      "title": "Rebuild the capability layer under the scenario/wizard model",
+      "description": "Reset the capability model so it serves as a technical safety layer beneath the new bootstrap, scenario, and wizard design.",
+      "acceptanceCriteria": [
+        "Capabilities are documented as technical boundaries instead of primary product concepts",
+        "The model supports stack-bootstrap, Elementor data, design system, theme structure, library, media, site context, plugin context, and governance domains",
+        "The model avoids permission inflation where no real boundary exists",
+        "A migration plan from the current mixed capability state is documented"
+      ],
+      "priority": "high",
+      "estimatedEffort": "4",
+      "dependsOn": [
+        "INTENT-WIZARD-001",
+        "STACK-PROFILE-001"
+      ],
+      "type": "architecture",
+      "required_capabilities": [
+        "planning",
+        "code_generation",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "SURFACE-REALIGN-002",
+      "title": "Realign product surfaces to bootstrap-aware scenario model",
+      "description": "Update Free and Advanced surfaces, docs, and future tool-routing assumptions so the repo matches the v2 scenario and wizard blueprint.",
+      "acceptanceCriteria": [
+        "Existing product-surface docs are updated to reflect bootstrap-aware scenarios",
+        "Free is described as a 360-degree starting point where appropriate",
+        "Advanced is described as a deeper workflow and stack-shaping layer on the same scenario families",
+        "Public Free mirror constraints remain intact after the realignment"
+      ],
+      "priority": "high",
+      "estimatedEffort": "4",
+      "dependsOn": [
+        "CAP-RESET-001",
+        "UPGRADE-GUIDANCE-001"
+      ],
+      "type": "realignment",
+      "required_capabilities": [
+        "planning",
+        "code_generation",
+        "review"
+      ],
+      "passes": false
+    }
+  ]
+}

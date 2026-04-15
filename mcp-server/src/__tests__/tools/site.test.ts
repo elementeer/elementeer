@@ -18,7 +18,7 @@ function makeSiteInfo(overrides: Partial<SiteInfo> = {}): SiteInfo {
     elementor_pro: false,
     activation_mode: 'standalone-free',
     template_count: 12,
-    capabilities: ['templates:read', 'templates:write'],
+    capabilities: ['site-audit:read', 'library-operations:read'],
     ...overrides,
   };
 }

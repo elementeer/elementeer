@@ -22,7 +22,6 @@ class ModeTest extends TestCase
 
         // Reset singleton
         $ref = new \ReflectionProperty( Mode::class, 'instance' );
-        $ref->setAccessible( true );
         $ref->setValue( null, null );
     }
 

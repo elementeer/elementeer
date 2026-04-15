@@ -6,6 +6,11 @@
     "dev": "npm run dev --workspace=mcp-server",
     "build": "npm run build --workspace=shared && npm run build --workspace=mcp-server",
     "test": "npm test --workspaces",
-    "lint": "npm run lint --workspaces"
+    "lint": "npm run lint --workspaces",
+    "test:free-contracts": "npm run test --workspace=mcp-server -- product-entitlements product-tiers product-surfaces tools/index premium-library",
+    "verify:free-mirror": "node scripts/verify-free-mirror.mjs",
+    "prepare:free-mirror": "node scripts/prepare-free-mirror.mjs",
+    "verify:free-release": "node scripts/verify-free-release.mjs",
+    "release:free-mirror:gate": "npm run build && npm run test:free-contracts && npm run verify:free-mirror && npm run prepare:free-mirror && npm run verify:free-release"
   }
 }

@@ -139,6 +139,39 @@ describe('ElementifyClient integration — happy paths', () => {
     expect((requestBody as Record<string, unknown>).title).toBe('My Copy');
   });
 
+  it('importLibraryAsset hits POST /library/import', async () => {
+    let requestBody: unknown;
+    mswServer.use(
+      http.post(`${BASE}/library/import`, async ({ request }) => {
+        requestBody = await request.json();
+        return HttpResponse.json(
+          {
+            imported: true,
+            import_mode: 'manual-import',
+            source: {
+              kind: 'elementify-premium',
+              asset_id: 'premium-hero-01',
+            },
+            template: templateFixture({ id: 101, title: 'Imported Hero' }),
+          },
+          { status: 201 },
+        );
+      }),
+    );
+
+    const client = makeClient();
+    await client.importLibraryAsset({
+      title: 'Imported Hero',
+      type: 'section',
+      elementor_data: [{ id: 'hero', elType: 'section', elements: [] }],
+      source: { kind: 'elementify-premium', asset_id: 'premium-hero-01' },
+    });
+
+    const body = requestBody as Record<string, unknown>;
+    expect(body.title).toBe('Imported Hero');
+    expect(body.source && typeof body.source === 'object').toBe(true);
+  });
+
   it('getTemplateData hits GET /templates/:id/data', async () => {
     mswServer.use(
       http.get(`${BASE}/templates/8/data`, () => {
@@ -179,7 +212,7 @@ describe('ElementifyClient integration — happy paths', () => {
           elementor_pro: false,
           activation_mode: 'standalone-free',
           template_count: 5,
-          capabilities: ['templates:read'],
+          capabilities: ['site-audit:read'],
         });
       }),
     );
@@ -197,7 +230,7 @@ describe('ElementifyClient integration — error mapping', () => {
     mswServer.use(
       http.get(`${BASE}/templates`, () => {
         return HttpResponse.json(
-          { code: 'elementify_insufficient_scope', message: 'Key lacks templates:read capability.', status: 401 },
+          { code: 'elementify_insufficient_scope', message: 'Key lacks library-operations:read capability.', status: 401 },
           { status: 401 },
         );
       }),

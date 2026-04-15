@@ -11,31 +11,29 @@
 
 # Elementify MCP
 
-Elementor-native MCP bridge for AI-assisted template management. Exposes the full `elementor_library` post type over a typed REST API — no 401 surprises, no empty responses. Ships as a WordPress plugin + Node.js MCP server with fine-grained, governance-controlled API key permissions.
+Elementor-native MCP bridge for the public Free surface. Exposes the full `elementor_library` post type over a typed REST API — no 401 surprises, no empty responses. Ships as a WordPress plugin + Node.js MCP server with fine-grained, governance-controlled API key permissions.
 
 ---
 
-## What it is
+## Product Surfaces
 
-Elementify MCP is a dual-distribution product connecting AI assistants to Elementor's template library. The WordPress plugin registers a REST API under `/wp-json/elementify/v1/` that queries `elementor_library` directly, bypassing the limitations in Elementor's own REST modifications. The MCP server bridges Claude, Cursor, or any MCP-compatible client to any WordPress site running the plugin, with support for multiple sites, capability-scoped API keys, and a site-level governance layer.
+- `Free`: public and mirror-safe.
+- `Advanced`: private in the Forgejo primary repository.
+- `Studio`: future seam for cloud, cross-site, and delivery orchestration.
 
----
-
-## Dual Distribution
-
-### Standalone
-
-Install the plugin on your WordPress site and run the MCP server locally. Works with any Elementor installation — free or Pro.
-
-### Embedded in Vamerli Studio
-
-When running inside [Vamerli Studio](https://vamerli.com), Elementify MCP activates automatically in `vamerli-embedded` or `vamerli-agency` mode. The Bundle Importer deploys the plugin; no separate configuration is needed.
+The WordPress plugin registers a REST API under `/wp-json/elementify/v1/` that queries `elementor_library` directly, bypassing the limitations in Elementor's own REST modifications. The MCP server bridges Claude, Cursor, or any MCP-compatible client to any WordPress site running the plugin, with support for multiple sites, capability-scoped API keys, and a site-level governance layer.
 
 ---
 
-## Quick Start — Standalone
+## Quick Start — Free
 
-**Step 1: Install the plugin**
+This is the canonical public quickstart for the mirror-safe Free surface:
+
+- [Public Free quickstart](docs/quickstart/free.md)
+- [Install guide](INSTALL.md)
+- [Public Free release checklist](docs/release/free-public-release-checklist.md)
+
+### 1. Install the plugin
 
 1. Download or clone this repo
 2. Zip the `/plugin` directory
@@ -43,7 +41,7 @@ When running inside [Vamerli Studio](https://vamerli.com), Elementify MCP activa
 4. Activate **Elementify MCP Plugin**
 5. Go to Settings → Elementify MCP → generate your first API key
 
-**Step 2: Install and configure the MCP server**
+### 2. Install and configure the MCP server
 
 ```bash
 npm install -g @elementify/mcp
@@ -66,7 +64,7 @@ Edit `~/.elementify/config.json`:
 }
 ```
 
-**Step 3: Add to your MCP client**
+### 3. Add to your MCP client
 
 ```json
 {
@@ -80,9 +78,29 @@ Edit `~/.elementify/config.json`:
 
 ---
 
-## Quick Start — Vamerli Studio
+## Free Workflow
 
-Vamerli Studio deploys and configures the Elementify plugin automatically via the Bundle Importer. The MCP server activates in `vamerli-embedded` mode with your Vamerli license. No additional setup required.
+The public Free surface focuses on:
+
+- scenario-first front door and intent routing
+- runtime wizard families for:
+  - `new-site-lite`
+  - `stack-bootstrap`
+  - `optimization-lite`
+  - `relaunch-lite`
+  - `extension-lite`
+- limited guided transitions for the first safe bootstrap and optimization paths
+- site assessment and context capture
+- prioritized recommendations
+- brand setup
+- Creator Light and simple assembly
+- local Elementor Library operations
+- honest write validation
+
+This public mirror does not include Advanced-only premium library flows, Studio orchestration, or cloud library semantics.
+It is still meant to function as a 360-degree starting point for both new-site and existing-site Elementor journeys.
+
+For a compact public summary of what Free includes and excludes, see [docs/public/free-includes-excludes.md](docs/public/free-includes-excludes.md).
 
 ---
 
@@ -90,24 +108,26 @@ Vamerli Studio deploys and configures the Elementify plugin automatically via th
 
 | Tool | Description | Capability required |
 |------|-------------|---------------------|
-| `list_templates` | List templates with filtering by type, status, keyword | `templates:read` |
-| `get_template` | Get a single template by ID | `templates:read` |
-| `create_template` | Create a new template | `templates:write` |
-| `update_template` | Update title, status, categories, tags | `templates:write` |
-| `delete_template` | Permanently delete a template | `templates:delete` |
-| `rename_template` | Rename a single template | `templates:write` |
-| `duplicate_template` | Duplicate a template with optional new title | `templates:write` |
-| `bulk_rename` | Rename multiple templates in one call | `templates:write` |
-| `get_template_data` | Get raw `_elementor_data` JSON | `templates:read` |
-| `update_template_data` | Replace `_elementor_data` entirely | `templates:write` |
-| `extract_sections` | Get top-level section/container summary | `templates:read` |
-| `list_by_type` | List all templates grouped by type | `templates:read` |
-| `set_category` | Assign categories to a template | `templates:write` |
-| `set_tags` | Assign tags to a template | `templates:write` |
-| `audit_library` | Full library audit: counts, drafts, stale, uncategorized | `templates:read` |
-| `get_site_info` | WP version, Elementor version, activation mode, capabilities | `templates:read` |
+| `list_templates` | List templates with filtering by type, status, keyword | `library-operations:read` |
+| `get_template` | Get a single template by ID | `library-operations:read` |
+| `create_template` | Create a new template | `library-operations:write` |
+| `update_template` | Update title, status, categories, tags | `library-operations:write` |
+| `delete_template` | Permanently delete a template | `library-operations:write` |
+| `rename_template` | Rename a single template | `library-operations:write` |
+| `duplicate_template` | Duplicate a template with optional new title | `library-operations:write` |
+| `bulk_rename` | Rename multiple templates in one call | `library-operations:write` |
+| `get_template_data` | Get raw `_elementor_data` JSON | `library-operations:read` |
+| `update_template_data` | Replace `_elementor_data` entirely | `library-operations:write` |
+| `extract_sections` | Get top-level section/container summary | `library-operations:read` |
+| `list_by_type` | List all templates grouped by type | `library-operations:read` |
+| `set_category` | Assign categories to a template | `library-operations:write` |
+| `set_tags` | Assign tags to a template | `library-operations:write` |
+| `audit_library` | Full library audit: counts, drafts, stale, uncategorized | `library-operations:read` |
+| `get_site_info` | WP version, Elementor version, activation mode, capabilities | `site-audit:read` |
 | `list_sites` | List all configured sites in `~/.elementify/config.json` | — |
 | `switch_site` | Change the default site | — |
+
+The public mirror keeps this surface aligned with the Free tier only. Advanced-only and Studio-future tools remain private in the Forgejo primary repository.
 
 ---
 
@@ -115,9 +135,9 @@ Vamerli Studio deploys and configures the Elementify plugin automatically via th
 
 Elementify uses a two-layer permission model.
 
-**Layer 1 — Key capabilities.** Each API key is created with an explicit list of capabilities (e.g., `templates:read`, `templates:write`, `templates:delete`). A key with only `templates:read` cannot write. When a write endpoint is called with a read-only key, the plugin returns `elementify_insufficient_scope` — not `elementify_invalid_key`. This distinction is intentional and must be preserved by any client that consumes the API.
+**Layer 1 — Key capabilities.** Each API key is created with an explicit list of domain capabilities (e.g., `site-audit:read`, `library-operations:read`, `library-operations:write`). A key with only `library-operations:read` cannot write. When a write endpoint is called with a read-only key, the plugin returns `elementify_insufficient_scope` — not `elementify_invalid_key`. This distinction is intentional and must be preserved by any client that consumes the API. Legacy resource-first scopes remain accepted as transitional aliases for older keys.
 
-**Layer 2 — Governance settings.** Site administrators define an `allowed_capabilities` list in Settings → Elementify MCP. Even if a key has a capability, if governance disables it at the site level, the request returns `elementify_governance_blocked`. This enables a site owner to lock down destructive operations (e.g., `templates:delete`) without revoking keys.
+**Layer 2 — Governance settings.** Site administrators define an `allowed_capabilities` list in Settings → Elementify MCP. Even if a key has a capability, if governance disables it at the site level, the request returns `elementify_governance_blocked`. This enables a site owner to lock down operating domains such as `library-operations:write` or `governance:apply` without revoking keys.
 
 The MCP server maps these server-side error codes to typed `ElementifyErrorCode` values so AI clients receive actionable, precise error information.
 

@@ -1,0 +1,141 @@
+{
+  "title": "Elementify Free + Advanced Final Completion Plan",
+  "sequence_type": "build",
+  "execution_mode": "ralph_attended",
+  "current_runtime_completion": {
+    "free": "78-82%",
+    "advanced": "72-76%"
+  },
+  "batches": [
+    {
+      "id": "batch-a",
+      "items": [
+        "FREE-COMP-001",
+        "FREE-COMP-002"
+      ]
+    },
+    {
+      "id": "batch-b",
+      "items": [
+        "FREE-COMP-003",
+        "FREE-COMP-004"
+      ]
+    },
+    {
+      "id": "batch-c",
+      "items": [
+        "ADV-COMP-001",
+        "ADV-COMP-002"
+      ]
+    },
+    {
+      "id": "batch-d",
+      "items": [
+        "ADV-COMP-003",
+        "ADV-COMP-004"
+      ]
+    },
+    {
+      "id": "batch-e",
+      "items": [
+        "REL-COMP-001"
+      ]
+    }
+  ],
+  "slices": [
+    {
+      "id": "FREE-COMP-001",
+      "title": "Guided transition chaining",
+      "tier": "free",
+      "goal": "Chain safe presets into short guided transitions for the most important early Free paths.",
+      "acceptance": [
+        "A Free tool can run a short guided transition instead of only one preset at a time.",
+        "Safe steps execute and preview-only steps remain preview-only.",
+        "Transition output explains what happened and what remains manual."
+      ]
+    },
+    {
+      "id": "FREE-COMP-002",
+      "title": "Scenario family completion",
+      "tier": "free",
+      "goal": "Complete the missing Free runtime scenario families.",
+      "acceptance": [
+        "New-site-lite and extension-lite exist as runtime wizard families.",
+        "Cleanup and refresh map cleanly into the runtime family model.",
+        "Front-door routing no longer falls back loosely for major Free intents."
+      ]
+    },
+    {
+      "id": "FREE-COMP-003",
+      "title": "Profile-aware runtime shaping",
+      "tier": "free",
+      "goal": "Make stack, skill, and addon profiles change runtime defaults more meaningfully.",
+      "acceptance": [
+        "Profile routing changes runtime outputs and preset defaults in observable ways.",
+        "Behavior remains deterministic and tested."
+      ]
+    },
+    {
+      "id": "FREE-COMP-004",
+      "title": "Public Free runtime lock",
+      "tier": "free",
+      "goal": "Lock the public Free runtime story after the scenario-first shift.",
+      "acceptance": [
+        "Docs, runtime grouping, and mirror rules remain consistent.",
+        "Public Free guidance does not overpromise Advanced or Studio behavior."
+      ]
+    },
+    {
+      "id": "ADV-COMP-001",
+      "title": "Advanced scenario front door",
+      "tier": "advanced",
+      "goal": "Add a true scenario-first front door for Advanced above advanced_creator_mode.",
+      "acceptance": [
+        "Advanced scenario entry is explicit and distinct from Free.",
+        "Deep relaunch, migration, critique-repair, and premium rollout are routable."
+      ]
+    },
+    {
+      "id": "ADV-COMP-002",
+      "title": "Deep scenario workflows",
+      "tier": "advanced",
+      "goal": "Strengthen the main Advanced scenario families as runtime workflows.",
+      "acceptance": [
+        "Deep relaunch, migration, critique-repair, and premium rollout have stronger multi-step plans.",
+        "Workflow outputs are measurably deeper than current orchestration."
+      ]
+    },
+    {
+      "id": "ADV-COMP-003",
+      "title": "Upgrade and stack-shaping runtime",
+      "tier": "advanced",
+      "goal": "Operationalize Advanced upgrade guidance and stack shaping.",
+      "acceptance": [
+        "Upgrade-path behavior is scenario-driven at runtime.",
+        "Elementor Pro, Elementify Advanced, and pro-addon guidance is explicit and honest."
+      ]
+    },
+    {
+      "id": "ADV-COMP-004",
+      "title": "Productivity finish",
+      "tier": "advanced",
+      "goal": "Make Advanced feel like a true productivity layer rather than only deeper tools.",
+      "acceptance": [
+        "At least one Advanced path materially reduces workflow effort beyond the current state.",
+        "Governance-aware follow-up and reuse-light behavior are stronger."
+      ]
+    },
+    {
+      "id": "REL-COMP-001",
+      "title": "Final surface and release lock",
+      "tier": "cross-cutting",
+      "goal": "Run the final product lock after Free and Advanced runtime completion.",
+      "acceptance": [
+        "Free mirror and release verification pass.",
+        "Advanced surface verification passes.",
+        "Studio deferment remains explicit and credible."
+      ]
+    }
+  ],
+  "next_slice": "FREE-COMP-001"
+}

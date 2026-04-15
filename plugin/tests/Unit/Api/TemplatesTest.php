@@ -44,7 +44,6 @@ class TemplatesTest extends TestCase
 
         // Reset Auth singleton
         $ref = new \ReflectionProperty( Auth::class, 'instance' );
-        $ref->setAccessible( true );
         $ref->setValue( null, null );
     }
 
@@ -61,12 +60,11 @@ class TemplatesTest extends TestCase
         $authMock = Mockery::mock( Auth::class );
         $authMock->shouldReceive( 'authorize' )->andReturn( [
             'key'          => 'ek_test',
-            'capabilities' => [ 'templates:read', 'templates:write', 'templates:delete' ],
+            'capabilities' => [ 'templates:read', 'templates:write', 'templates:delete', 'library:import' ],
             'is_active'    => true,
         ] );
 
         $ref = new \ReflectionProperty( Auth::class, 'instance' );
-        $ref->setAccessible( true );
         $ref->setValue( null, $authMock );
     }
 
@@ -249,6 +247,103 @@ class TemplatesTest extends TestCase
         $this->assertSame( 'elementor_library', $insertedArgs['post_type'] );
         $this->assertSame( 'New Template', $insertedArgs['post_title'] );
         $this->assertSame( 'draft', $insertedArgs['post_status'] );
+    }
+
+    public function test_import_library_asset_creates_local_library_post_with_source_metadata(): void
+    {
+        $insertedArgs = null;
+        $savedMeta    = [];
+        $request      = $this->makeRequest( [
+            'title'         => 'Premium Hero',
+            'type'          => 'section',
+            'status'        => 'draft',
+            'elementor_data' => [
+                [ 'id' => 'hero', 'elType' => 'section', 'elements' => [] ],
+            ],
+            'source'        => [
+                'kind'        => 'elementify-premium',
+                'asset_id'    => 'premium-hero-01',
+                'asset_title' => 'Premium Hero Starter',
+                'reference'   => 'catalog:hero-starters',
+            ],
+            'categories'    => [ 'premium', 'hero' ],
+            'tags'          => [ 'starter' ],
+        ], 'POST' );
+        $this->mockAuthSuccess( $request );
+
+        $newPost = $this->makePost( [ 'ID' => 123, 'post_title' => 'Premium Hero', 'post_status' => 'draft' ] );
+
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( 'wp_insert_post' )->alias( function ( $args ) use ( &$insertedArgs ) {
+            $insertedArgs = $args;
+            return 123;
+        } );
+        Functions\when( 'update_post_meta' )->alias( function ( $id, $key, $value ) use ( &$savedMeta ) {
+            $savedMeta[ $key ] = $value;
+            return true;
+        } );
+        Functions\when( 'wp_set_object_terms' )->justReturn( [] );
+        Functions\when( 'get_post' )->justReturn( $newPost );
+        Functions\when( 'get_post_meta' )->alias( function ( $id, $key ) {
+            if ( '_elementor_template_type' === $key ) {
+                return 'section';
+            }
+
+            return '';
+        } );
+        Functions\when( 'wp_get_object_terms' )->justReturn( [] );
+        Functions\when( 'is_wp_error' )->justReturn( false );
+        Functions\when( 'get_the_date' )->justReturn( '2025-01-01T00:00:00' );
+        Functions\when( 'get_the_modified_date' )->justReturn( '2025-06-01T00:00:00' );
+        Functions\when( 'wp_json_encode' )->alias( fn( $value ) => json_encode( $value ) );
+        Functions\when( 'wp_slash' )->returnArg();
+        Functions\when( 'get_option' )->justReturn( [] );
+        Functions\when( '__' )->returnArg();
+
+        $controller = new Templates();
+        $response   = $controller->import_library_asset( $request );
+
+        $this->assertSame( 'elementor_library', $insertedArgs['post_type'] );
+        $this->assertSame( 'draft', $insertedArgs['post_status'] );
+        $this->assertSame( 'elementify-premium', $savedMeta['_elementify_library_source_kind'] );
+        $this->assertSame( 'manual-import', $savedMeta['_elementify_library_import_mode'] );
+
+        $elementorData = json_decode( $savedMeta['_elementor_data'], true );
+        $this->assertSame( 'hero', $elementorData[0]['id'] );
+
+        $sourceMeta = json_decode( $savedMeta['_elementify_library_source'], true );
+        $this->assertSame( 'premium-hero-01', $sourceMeta['asset_id'] );
+
+        $data = $response->get_data();
+        $this->assertTrue( $data['imported'] );
+        $this->assertSame( 'manual-import', $data['import_mode'] );
+        $this->assertSame( 123, $data['template']['id'] );
+        $this->assertSame( 'premium-hero-01', $data['source']['asset_id'] );
+    }
+
+    public function test_import_library_asset_rejects_cloud_source_kind(): void
+    {
+        $request = $this->makeRequest( [
+            'title'          => 'Cloud Hero',
+            'type'           => 'section',
+            'status'         => 'draft',
+            'elementor_data' => [ [ 'id' => 'hero', 'elType' => 'section', 'elements' => [] ] ],
+            'source'         => [
+                'kind'      => 'elementify-cloud',
+                'asset_id'  => 'cloud-hero-01',
+                'reference' => 'cloud:hero-starters',
+            ],
+        ], 'POST' );
+        $this->mockAuthSuccess( $request );
+
+        Functions\when( 'sanitize_text_field' )->returnArg();
+        Functions\when( '__' )->returnArg();
+
+        $controller = new Templates();
+        $result     = $controller->import_library_asset( $request );
+
+        $this->assertInstanceOf( WP_Error::class, $result );
+        $this->assertSame( 'library_source_unsupported', $result->get_error_code() );
     }
 
     // ------------------------------------------------------------------ //

@@ -2,7 +2,25 @@
   "permissions": {
     "allow": [
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(gh api:*)",
+      "Bash(brew list:*)",
+      "Bash(git push:*)",
+      "Bash(xargs -I{} gh api \"repos/Vamerli/elementify-mcp/actions/jobs/{}/logs\")",
+      "Bash(composer self-update:*)",
+      "Bash(php --version)",
+      "Bash(/opt/homebrew/bin/composer install:*)",
+      "Bash(vendor/bin/phpunit --testsuite Unit)",
+      "Bash(grep -v -E '\\\\.\\(png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot|mp3|mp4|pdf|zip|tar|gz|map|d\\\\.ts|min\\\\.js|min\\\\.css|lock\\)$')",
+      "Bash(grep -v -E '\\\\.\\(md|txt|yml|yaml|toml|json|xml|cfg|ini|log|env\\)$')",
+      "Bash(node:*)",
+      "Bash(echo \"Exit: $?\")",
+      "Bash(python3:*)",
+      "Bash(wc -c /Users/andrelange/Documents/repositories/github/elementify-mcp/.understand-anything/intermediate/assembled-graph.json)",
+      "Read(//Users/andrelange/.antigravity/understand-anything/understand-anything-plugin/**)",
+      "Bash(pnpm --filter @understand-anything/core build)",
+      "Bash(lsof -iTCP -sTCP:LISTEN)",
+      "Bash(lsof -iTCP -sTCP:LISTEN -P)"
     ]
   }
 }

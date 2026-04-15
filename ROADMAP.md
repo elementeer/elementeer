@@ -1,8 +1,18 @@
 # Elementify MCP — Roadmap
 
-> **Leitsatz**: Elementify ist kein Respira-Klon. Respira ist ein Schweizer Taschenmesser für WordPress — mächtig, aber generisch. Elementify ist ein **Elementor-nativer AI-Agent-Layer** mit einem klaren Differenzierungsprinzip: *Intelligenz zuerst, Kontrolle danach*.
+---
+
+## Release v0.5.0 (2026-04-15)
+
+- **WordPress Core Settings**: `get_site_settings` / `update_site_settings` — read and modify blog name, tagline, homepage, posts page, permalink structure, timezone, date/time formats.
+- **SEO Management**: `get_seo_meta` / `update_seo_meta` — auto‑detects Yoast SEO, Rank Math, SEOPress, All‑In‑One SEO; reads and writes SEO title, description, focus keyword.
+- **Performance & Cache**: `flush_elementor_cache`, `get_performance_report`, `optimize_elementor_assets` — Elementor CSS cache flushing, performance analysis, and asset optimization (Advanced tier).
+- **Assessment enhancements**: Added `capabilities` section reporting SEO plugin presence and Elementify plugin capabilities.
+
+Plugin version bumped to 0.5.0, MCP Server version bumped to 0.5.0.
 
 ---
+
 
 ## Produkt-Positionierung & Freemium-Strategie
 
@@ -60,6 +70,9 @@ Einzelne Elementify-Module (Stock Images, AI Generation, Governance Pro, Multi-S
 | Recommendation Engine | ✅ get_recommendations — 20 Regeln, context-aware |
 | Global Styles (Colors + Typography) | ✅ get/set_global_styles, set_global_colors, set_global_typography |
 | Logo Setter | ✅ set_site_logo |
+| WordPress Core Settings | ✅ get_site_settings / update_site_settings |
+| SEO Management | ✅ get_seo_meta / update_seo_meta |
+| Performance & Cache | ✅ flush_elementor_cache / get_performance_report / optimize_elementor_assets |
 | Brand Setup Wizard | ✅ wizard_brand_setup (dry-run + execute) |
 | Creator Mode | ✅ creator_mode (keyword matching + composition) |
 | Theme Builder Wizard | ✅ wizard_theme_builder (conditions, sections, source template, dry-run) |

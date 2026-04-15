@@ -124,7 +124,7 @@ describe('ElementifyClient', () => {
     it('maps elementify_insufficient_scope → auth_insufficient_scope (NOT auth_invalid_key)', () => {
       const err = client.handleError(makeAxiosError(401, {
         code: 'elementify_insufficient_scope',
-        message: 'Key lacks templates:delete capability.',
+        message: 'Key lacks library-operations:write capability.',
       }));
       expect(err).toBeInstanceOf(ElementifyApiError);
       expect(err.code).toBe('auth_insufficient_scope');
@@ -273,6 +273,33 @@ describe('ElementifyClient', () => {
     });
   });
 
+  describe('importLibraryAsset', () => {
+    it('calls POST /library/import with import payload', async () => {
+      mockHttp.post.mockResolvedValueOnce({
+        data: {
+          imported: true,
+          import_mode: 'manual-import',
+          source: { kind: 'elementify-premium', asset_id: 'premium-hero-01' },
+          template: { id: 101, title: 'Imported Hero' },
+        },
+      });
+
+      await client.importLibraryAsset({
+        title: 'Imported Hero',
+        type: 'section',
+        elementor_data: [{ id: 'hero', elType: 'section', elements: [] }],
+        source: { kind: 'elementify-premium', asset_id: 'premium-hero-01' },
+      });
+
+      expect(mockHttp.post).toHaveBeenCalledWith('/library/import', {
+        title: 'Imported Hero',
+        type: 'section',
+        elementor_data: [{ id: 'hero', elType: 'section', elements: [] }],
+        source: { kind: 'elementify-premium', asset_id: 'premium-hero-01' },
+      });
+    });
+  });
+
   describe('getTemplateData', () => {
     it('calls GET /templates/:id/data', async () => {
       mockHttp.get.mockResolvedValueOnce({ data: { id: 7, elementor_data: [] } });
@@ -303,7 +330,7 @@ describe('ElementifyClient', () => {
           elementor_pro: false,
           activation_mode: 'standalone-free',
           template_count: 10,
-          capabilities: ['templates:read'],
+          capabilities: ['site-audit:read'],
         },
       });
       const info = await client.getSiteInfo();

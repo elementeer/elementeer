@@ -70,3 +70,19 @@ jobs:
       - run: npm ci
       - run: npm run lint --workspace=mcp-server
       - run: npm run lint --workspace=shared
+
+  verify-free-mirror:
+    name: Verify Free Mirror
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run release:free-mirror:gate
+      - uses: actions/upload-artifact@v4
+        with:
+          name: free-public-mirror-staging
+          path: mirror/generated/free-public

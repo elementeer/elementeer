@@ -2,348 +2,37 @@ import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type {
   ElementifyClient,
-  SiteAssessment,
-  SiteContext,
+  ProjectProfile,
 } from '../client.js';
+import type {
+  Recommendation,
+  RecommendationCategory,
+} from '@elementify/shared';
+import { buildCapabilityMatrix } from '../destination.js';
+import { buildSiteFingerprint } from '../fingerprint.js';
+import {
+  buildRecommendationReport,
+  buildRecommendations,
+} from '../recommendations.js';
 
-// ------------------------------------------------------------------ //
-// Types
-// ------------------------------------------------------------------ //
+export type { Recommendation, RecommendationCategory } from '@elementify/shared';
+export { buildRecommendationReport, buildRecommendations } from '../recommendations.js';
 
-export type RecommendationCategory =
-  | 'brand'
-  | 'structure'
-  | 'library'
-  | 'performance'
-  | 'content'
-  | 'seo'
-  | 'woocommerce';
+function normalizeProjectProfileInput(
+  profile?: Partial<ProjectProfile> | null,
+): ProjectProfile | undefined {
+  if (!profile) {
+    return undefined;
+  }
 
-export interface Recommendation {
-  id: string;
-  priority: 1 | 2 | 3 | 4 | 5;           // 1 = highest
-  category: RecommendationCategory;
-  title: string;
-  description: string;
-  impact: 'high' | 'medium' | 'low';
-  effort: 'low' | 'medium' | 'high';
-  automated: boolean;                      // can AI do this without human input?
-  tools: string[];                         // MCP tools to invoke
-  blocked_by: string[];                    // recommendation IDs that must run first
-}
-
-// ------------------------------------------------------------------ //
-// Rule engine
-// ------------------------------------------------------------------ //
-
-export function buildRecommendations(
-  assessment: SiteAssessment,
-  context: SiteContext,
-): Recommendation[] {
-  const recs: Recommendation[] = [];
-  const role = context.user_role;
-
-  // Helper — only include if condition is true
-  const add = (rec: Recommendation, condition: boolean) => {
-    if (condition) recs.push(rec);
+  return {
+    editing_mode: profile.editing_mode ?? 'draft-first',
+    copy_density: profile.copy_density ?? 'balanced',
+    layout_priority: profile.layout_priority ?? 'balanced',
+    change_style: profile.change_style ?? 'adaptive',
+    question_policy: profile.question_policy ?? 'ask-on-ambiguity',
+    notes: profile.notes ?? null,
   };
-
-  const hasThemeBuilder = (type: string) =>
-    (assessment.theme_builder[type] ?? []).some((t) => t.status === 'publish');
-
-  const hasAnyPosts = (assessment.pages.by_post_type['post'] ?? 0) > 0;
-
-  // ---------------------------------------------------------------- //
-  // BRAND
-  // ---------------------------------------------------------------- //
-
-  add(
-    {
-      id: 'set_logo',
-      priority: 1,
-      category: 'brand',
-      title: 'Set site logo',
-      description: 'No logo is set. Upload the logo to the media library, then provide the media_id to set_site_logo or wizard_brand_setup. This affects the header template and all pages.',
-      impact: 'high',
-      effort: 'low',
-      automated: true,
-      tools: ['set_site_logo'],
-      blocked_by: [],
-    },
-    !assessment.brand.logo_set,
-  );
-
-  add(
-    {
-      id: 'define_global_colors',
-      priority: 1,
-      category: 'brand',
-      title: 'Define global color palette',
-      description: 'No global colors are defined in the Elementor Kit. A palette ensures design consistency across all pages and templates. Provide brand colors (hex values + names) and the AI can write them directly with set_global_colors.',
-      impact: 'high',
-      effort: 'medium',
-      automated: true,
-      tools: ['get_global_styles', 'set_global_colors'],
-      blocked_by: [],
-    },
-    assessment.brand.global_colors_count === 0,
-  );
-
-  add(
-    {
-      id: 'define_global_typography',
-      priority: 2,
-      category: 'brand',
-      title: 'Define global typography',
-      description: 'No global typography is set in the Elementor Kit. Provide font names (Google Fonts or system fonts), sizes, and weights — the AI can write them directly with set_global_typography.',
-      impact: 'high',
-      effort: 'medium',
-      automated: true,
-      tools: ['get_global_styles', 'set_global_typography'],
-      blocked_by: ['define_global_colors'],
-    },
-    assessment.brand.global_typography_count === 0,
-  );
-
-  // ---------------------------------------------------------------- //
-  // STRUCTURE — Theme Builder
-  // ---------------------------------------------------------------- //
-
-  add(
-    {
-      id: 'create_header_template',
-      priority: 1,
-      category: 'structure',
-      title: 'Create a Theme Builder header',
-      description: 'No published header template exists. Without it, the site falls back to the active theme\'s default header. Create a header template in Elementor → Theme Builder → Header.',
-      impact: 'high',
-      effort: 'medium',
-      automated: false,
-      tools: [],
-      blocked_by: ['set_logo', 'define_global_colors'],
-    },
-    !hasThemeBuilder('header'),
-  );
-
-  add(
-    {
-      id: 'create_footer_template',
-      priority: 1,
-      category: 'structure',
-      title: 'Create a Theme Builder footer',
-      description: 'No published footer template exists. Create a footer template in Elementor → Theme Builder → Footer.',
-      impact: 'high',
-      effort: 'medium',
-      automated: false,
-      tools: [],
-      blocked_by: ['set_logo', 'define_global_colors'],
-    },
-    !hasThemeBuilder('footer'),
-  );
-
-  add(
-    {
-      id: 'create_single_post_template',
-      priority: 3,
-      category: 'structure',
-      title: 'Create a single post template',
-      description: `The site has ${assessment.pages.by_post_type['post']} post(s) but no single post Theme Builder template. Blog content is being rendered by the default theme layout.`,
-      impact: 'medium',
-      effort: 'medium',
-      automated: false,
-      tools: [],
-      blocked_by: ['create_header_template', 'create_footer_template'],
-    },
-    hasAnyPosts && !hasThemeBuilder('single') && !hasThemeBuilder('single-post'),
-  );
-
-  add(
-    {
-      id: 'create_archive_template',
-      priority: 4,
-      category: 'structure',
-      title: 'Create an archive template',
-      description: 'No archive template is defined. Category, tag, and date archive pages fall back to the theme default.',
-      impact: 'medium',
-      effort: 'medium',
-      automated: false,
-      tools: [],
-      blocked_by: ['create_header_template', 'create_footer_template'],
-    },
-    hasAnyPosts && !hasThemeBuilder('archive'),
-  );
-
-  add(
-    {
-      id: 'create_404_template',
-      priority: 4,
-      category: 'structure',
-      title: 'Create a 404 template',
-      description: 'No 404 error page template is set. A branded 404 page improves user experience and keeps visitors on the site.',
-      impact: 'low',
-      effort: 'low',
-      automated: false,
-      tools: [],
-      blocked_by: ['create_header_template', 'create_footer_template'],
-    },
-    !hasThemeBuilder('error-404'),
-  );
-
-  // ---------------------------------------------------------------- //
-  // LIBRARY — Template organization
-  // ---------------------------------------------------------------- //
-
-  const uncategorized = assessment.template_library.uncategorized;
-  add(
-    {
-      id: 'categorize_templates',
-      priority: 2,
-      category: 'library',
-      title: `Categorize ${uncategorized} uncategorized templates`,
-      description: `${uncategorized} templates have no category. Run audit_library to get a proposed categorization, then apply it with set_category or bulk_rename. Well-organized libraries enable reliable composition workflows.`,
-      impact: 'medium',
-      effort: 'low',
-      automated: true,
-      tools: ['audit_library', 'set_category', 'set_tags'],
-      blocked_by: [],
-    },
-    uncategorized > 5,
-  );
-
-  add(
-    {
-      id: 'tag_templates_by_type',
-      priority: 3,
-      category: 'library',
-      title: 'Tag templates by purpose (SECTION_, COMP_, PAGE_)',
-      description: 'Templates without naming conventions are hard for AI agents to reason about. Use bulk_rename to apply SECTION_, COMP_, or PAGE_ prefixes. This makes compose_page_from_templates much more reliable.',
-      impact: 'medium',
-      effort: 'medium',
-      automated: true,
-      tools: ['list_templates', 'audit_library', 'bulk_rename', 'set_tags'],
-      blocked_by: ['categorize_templates'],
-    },
-    assessment.template_library.total > 10,
-  );
-
-  // ---------------------------------------------------------------- //
-  // PERFORMANCE
-  // ---------------------------------------------------------------- //
-
-  add(
-    {
-      id: 'switch_css_to_external',
-      priority: 3,
-      category: 'performance',
-      title: 'Switch CSS to external files',
-      description: 'Elementor CSS is currently embedded inline ("internal"). External CSS files are cached by browsers and CDNs, improving load time on repeat visits. Change in Elementor → Settings → Advanced → CSS Print Method.',
-      impact: 'medium',
-      effort: 'low',
-      automated: false,
-      tools: [],
-      blocked_by: [],
-    },
-    assessment.performance.css_print_method === 'internal',
-  );
-
-  add(
-    {
-      id: 'disable_fa4_shim',
-      priority: 5,
-      category: 'performance',
-      title: 'Disable Font Awesome 4 compatibility shim',
-      description: 'The FA4 shim loads an extra compatibility layer. If no widgets rely on FA4 icon names (fa-*), disable it in Elementor → Settings → Advanced.',
-      impact: 'low',
-      effort: 'low',
-      automated: false,
-      tools: [],
-      blocked_by: [],
-    },
-    assessment.performance.load_fa4_shim,
-  );
-
-  // ---------------------------------------------------------------- //
-  // CONTENT — Page coverage
-  // ---------------------------------------------------------------- //
-
-  add(
-    {
-      id: 'build_first_elementor_page',
-      priority: 1,
-      category: 'content',
-      title: 'No Elementor pages found — build the first page',
-      description: 'No pages are built with Elementor yet. Start by selecting a target page and using compose_page_from_templates or save_full_page_as_template to create the initial layout.',
-      impact: 'high',
-      effort: 'medium',
-      automated: true,
-      tools: ['list_elementor_pages', 'compose_page_from_templates', 'update_page_data'],
-      blocked_by: ['define_global_colors', 'define_global_typography'],
-    },
-    assessment.pages.elementor_total === 0,
-  );
-
-  // ---------------------------------------------------------------- //
-  // SEO
-  // ---------------------------------------------------------------- //
-
-  add(
-    {
-      id: 'install_seo_plugin',
-      priority: 2,
-      category: 'seo',
-      title: 'No SEO plugin detected',
-      description: 'No recognized SEO plugin (Rank Math, Yoast, AIOSEO) is active. An SEO plugin is essential for meta titles, descriptions, sitemaps, and structured data.',
-      impact: 'high',
-      effort: 'low',
-      automated: false,
-      tools: [],
-      blocked_by: [],
-    },
-    !assessment.plugins.classified['seo'],
-  );
-
-  // ---------------------------------------------------------------- //
-  // WOOCOMMERCE — only if active
-  // ---------------------------------------------------------------- //
-
-  const hasShopTemplate = (assessment.theme_builder['product'] ?? []).some((t) => t.status === 'publish')
-    || (assessment.theme_builder['archive'] ?? []).some((t) => t.status === 'publish');
-
-  add(
-    {
-      id: 'create_woocommerce_templates',
-      priority: 2,
-      category: 'woocommerce',
-      title: 'Create WooCommerce Theme Builder templates',
-      description: 'WooCommerce is active but no product or shop archive template is set in Theme Builder. Product pages will render with the default WooCommerce layout.',
-      impact: 'high',
-      effort: 'high',
-      automated: false,
-      tools: [],
-      blocked_by: ['create_header_template', 'create_footer_template'],
-    },
-    assessment.plugins.woocommerce && !hasShopTemplate,
-  );
-
-  // ---------------------------------------------------------------- //
-  // Context-specific filtering
-  // ---------------------------------------------------------------- //
-
-  // AI-agent mode: surface only automatable recommendations
-  if (role === 'ai-agent') {
-    return recs
-      .filter((r) => r.automated)
-      .sort((a, b) => a.priority - b.priority);
-  }
-
-  // Site-owner: hide deeply technical items
-  if (role === 'site-owner') {
-    return recs
-      .filter((r) => r.category !== 'library' || r.priority <= 2)
-      .sort((a, b) => a.priority - b.priority);
-  }
-
-  return recs.sort((a, b) => a.priority - b.priority);
 }
 
 // ------------------------------------------------------------------ //
@@ -373,10 +62,21 @@ export function registerRecommendationTools(
                          .describe('Who the site is for (e.g. "B2B enterprise", "creative professionals")'),
       primary_language: z.string().optional()
                          .describe('Primary content language, e.g. "en", "de"'),
+      project_profile: z.object({
+        editing_mode: z.enum(['direct-edit', 'draft-first', 'approval-first']).optional(),
+        copy_density: z.enum(['compact', 'balanced', 'complete']).optional(),
+        layout_priority: z.enum(['preserve-existing-layout', 'preserve-copy-completeness', 'balanced']).optional(),
+        change_style: z.enum(['minimal', 'adaptive', 'transformative']).optional(),
+        question_policy: z.enum(['ask-on-ambiguity', 'choose-conservative-default', 'prefer-complete-content']).optional(),
+        notes: z.string().nullable().optional(),
+      }).optional().describe('Optional Elementify project profile that shapes editing posture, copy density, and approval behavior.'),
     },
-    async ({ site_id, ...ctx }) => {
+    async ({ site_id, project_profile, ...ctx }) => {
       const client = getClient(site_id);
-      const saved = await client.setSiteContext(ctx);
+      const saved = await client.setSiteContext({
+        ...ctx,
+        ...(project_profile ? { project_profile: normalizeProjectProfileInput(project_profile) } : {}),
+      });
       const lines = [
         '✅ Site context saved.',
         '',
@@ -385,6 +85,7 @@ export function registerRecommendationTools(
         `  Target audience: ${saved.target_audience ?? '—'}`,
         `  Language:        ${saved.primary_language ?? '—'}`,
         `  Brand notes:     ${saved.brand_notes ? saved.brand_notes.slice(0, 80) + (saved.brand_notes.length > 80 ? '…' : '') : '—'}`,
+        `  Project profile: ${saved.project_profile ? `${saved.project_profile.editing_mode}, ${saved.project_profile.copy_density}, ${saved.project_profile.layout_priority}` : '—'}`,
       ];
       return { content: [{ type: 'text', text: lines.join('\n') }] };
     },
@@ -412,6 +113,7 @@ export function registerRecommendationTools(
         `  Target audience: ${ctx.target_audience ?? '—'}`,
         `  Language:        ${ctx.primary_language ?? '—'}`,
         `  Brand notes:     ${ctx.brand_notes ?? '—'}`,
+        `  Project profile: ${ctx.project_profile ? `${ctx.project_profile.editing_mode}, ${ctx.project_profile.copy_density}, ${ctx.project_profile.layout_priority}` : '—'}`,
       ];
       return { content: [{ type: 'text', text: lines.join('\n') }] };
     },
@@ -439,14 +141,22 @@ export function registerRecommendationTools(
         client.assessSite(),
         client.getSiteContext(),
       ]);
+      const fingerprint = buildSiteFingerprint(assessment);
+      const capabilityMatrix = buildCapabilityMatrix(assessment, fingerprint);
+      const report = buildRecommendationReport({
+        assessment,
+        context,
+        fingerprint,
+        capabilityMatrix,
+      });
 
-      let recs = buildRecommendations(assessment, context);
+      let recs = report.recommendations;
 
       if (category) {
-        recs = recs.filter((r) => r.category === category);
+        recs = recs.filter((r: Recommendation) => r.category === category);
       }
       if (automated_only) {
-        recs = recs.filter((r) => r.automated);
+        recs = recs.filter((r: Recommendation) => r.automated);
       }
       recs = recs.slice(0, max_results ?? 10);
 
@@ -459,9 +169,19 @@ export function registerRecommendationTools(
       const lines: string[] = [
         `Recommendations for ${assessment.wordpress.site_name}`,
         `Context: role=${context.user_role ?? 'unknown'} · purpose=${context.site_purpose ?? 'unknown'}`,
+        `Destination: ${report.destination.label}`,
+        `Compatibility: ${report.compatibilitySummary}`,
         `${recs.length} recommendation(s):`,
         '',
       ];
+
+      if (report.capabilityWarnings.length > 0) {
+        lines.push('Warnings:');
+        lines.push(
+          ...report.capabilityWarnings.map((warning: string) => `  - ${warning}`),
+        );
+        lines.push('');
+      }
 
       for (const rec of recs) {
         const autoFlag = rec.automated ? ' [auto]' : ' [needs input]';
@@ -499,10 +219,17 @@ export function registerRecommendationTools(
         client.assessSite(),
         client.getSiteContext(),
       ]);
+      const fingerprint = buildSiteFingerprint(assessment);
+      const capabilityMatrix = buildCapabilityMatrix(assessment, fingerprint);
 
       // Build all recommendations to check if this one currently applies
-      const allRecs = buildRecommendations(assessment, context);
-      const rec = allRecs.find((r) => r.id === recommendation_id);
+      const allRecs = buildRecommendationReport({
+        assessment,
+        context,
+        fingerprint,
+        capabilityMatrix,
+      }).recommendations;
+      const rec = allRecs.find((r: Recommendation) => r.id === recommendation_id);
 
       const guides: Record<string, string> = {
         set_logo: `## Set Site Logo
@@ -770,6 +497,20 @@ wizard_theme_builder({
 
 **Note**: Requires Elementor Pro for full WooCommerce widget support.
 **Validation**: Run \`assess_site\` — theme_builder should show single and archive entries.`,
+
+        unlock_theme_builder_capability: `## Unlock Theme Builder Workflows
+
+**Problem**: The current destination profile does not reliably support Theme Builder workflows yet.
+
+**Impact**: High — without Theme Builder capability, header, footer, archive, single, and WooCommerce templates cannot be rolled out confidently.
+
+**Steps**:
+1. Run \`get_destination_capabilities\` to confirm the current destination profile and limitations
+2. If Elementor Free is active, upgrade to Elementor Pro or install the required assisted workflow plugins
+3. Re-run \`assess_site\` and \`get_recommendations\`
+4. Only then create header, footer, archive, single, or WooCommerce templates
+
+**Validation**: \`get_destination_capabilities\` should report Theme Builder capability as available, and the compatibility summary should improve.`,
       };
 
       const guide = guides[recommendation_id];

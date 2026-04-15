@@ -159,4 +159,29 @@ describe('assess_site tool', () => {
     expect(text).toContain('NOT SET');
     expect(text).toContain('Global colors: ⚠ none');
   });
+
+  it('keeps core output sections in a stable order for regression safety', async () => {
+    const result = await callTool({});
+    const text = result.content[0]!.text;
+
+    const stackIndex = text.indexOf('## Stack');
+    const brandIndex = text.indexOf('## Brand');
+    const themeBuilderIndex = text.indexOf('## Theme Builder');
+    const templateLibraryIndex = text.indexOf('## Template Library');
+    const pagesIndex = text.indexOf('## Elementor Pages');
+    const performanceIndex = text.indexOf('## Performance');
+    const pluginsIndex = text.indexOf('## Plugins (classified)');
+    const customPostTypesIndex = text.indexOf('## Custom Post Types');
+    const issuesIndex = text.indexOf('## Issues');
+
+    expect(stackIndex).toBeGreaterThan(-1);
+    expect(brandIndex).toBeGreaterThan(stackIndex);
+    expect(themeBuilderIndex).toBeGreaterThan(brandIndex);
+    expect(templateLibraryIndex).toBeGreaterThan(themeBuilderIndex);
+    expect(pagesIndex).toBeGreaterThan(templateLibraryIndex);
+    expect(performanceIndex).toBeGreaterThan(pagesIndex);
+    expect(pluginsIndex).toBeGreaterThan(performanceIndex);
+    expect(customPostTypesIndex).toBeGreaterThan(pluginsIndex);
+    expect(issuesIndex).toBeGreaterThan(customPostTypesIndex);
+  });
 });

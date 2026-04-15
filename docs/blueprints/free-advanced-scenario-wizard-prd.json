@@ -1,0 +1,128 @@
+{
+  "projectName": "Elementify Free + Advanced Scenario/Wizard Realignment",
+  "version": "1.0",
+  "status": "draft",
+  "sequence_type": "mixed",
+  "execution_recommendation": {
+    "mode": "standard",
+    "reason": "Scenario redesign, wizard modeling, product-surface realignment, and capability reset require attended Ralph Loop execution with review gates.",
+    "suggested_workflow": "ralph-loop-attended",
+    "estimated_iterations": 8,
+    "parallel_opportunities": 2
+  },
+  "tasks": [
+    {
+      "id": "FREE-ADV-SCENARIO-001",
+      "title": "Define canonical scenario map for Free and Advanced",
+      "description": "Turn the product promise into a scenario-first source of truth covering relaunch, greenfield, stack-aware optimization, and deeper Advanced productivity scenarios.",
+      "acceptanceCriteria": [
+        "Free scenarios are documented explicitly and include relaunch and greenfield paths",
+        "Advanced scenarios are documented as deeper versions of the same scenario families, not as disconnected extras",
+        "Each scenario includes target user types and desired outcomes",
+        "The scenario map is usable as a source of truth for docs and tool alignment"
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [],
+      "type": "product-definition",
+      "required_capabilities": [
+        "planning",
+        "research",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "FREE-ADV-WIZARD-001",
+      "title": "Define wizard families and user-level mapping",
+      "description": "Model Free and Advanced primarily through wizard families and user-level support modes instead of flat tool lists.",
+      "acceptanceCriteria": [
+        "Free wizard families are defined for guided, assisted, and technical users",
+        "Advanced wizard families are defined as deeper workflow/productivity layers",
+        "Each wizard family maps to one or more canonical scenarios",
+        "Wizard docs explain why Advanced feels like a productivity upgrade rather than a feature bundle"
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [
+        "FREE-ADV-SCENARIO-001"
+      ],
+      "type": "product-definition",
+      "required_capabilities": [
+        "planning",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "CAP-RESET-001",
+      "title": "Reset capability model to a lower-layer technical substrate",
+      "description": "Redesign the capability model so it protects real operational boundaries while remaining subordinate to scenario and wizard design.",
+      "acceptanceCriteria": [
+        "The capability model is documented as a technical safety layer rather than the primary product abstraction",
+        "Capability groups reflect substrate domains such as elementor-data, design-system, library, theme-builder, media, site-context, plugin-context, and governance",
+        "The design explicitly rejects checkbox inflation where no real boundary exists",
+        "A migration path from the current mixed capability state is documented"
+      ],
+      "priority": "high",
+      "estimatedEffort": "4",
+      "dependsOn": [
+        "FREE-ADV-SCENARIO-001",
+        "FREE-ADV-WIZARD-001"
+      ],
+      "type": "architecture",
+      "required_capabilities": [
+        "planning",
+        "code_generation",
+        "review"
+      ],
+      "passes": false
+    },
+    {
+      "id": "THEME-STACK-001",
+      "title": "Clarify Hello Theme and future Elementify Theme role",
+      "description": "Define how Hello Theme, WordPress, Elementor, and a future Elementify Theme or theme-system fit into Free and Advanced workflows.",
+      "acceptanceCriteria": [
+        "Hello Theme is positioned explicitly as the current stable baseline for Free",
+        "The role of a future Elementify Theme or theme-system is documented without overcommitting implementation",
+        "The stack model includes WordPress, Elementor, theme, and plugin context",
+        "Theme decisions are tied to user scenarios rather than isolated technical preference"
+      ],
+      "priority": "medium",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "FREE-ADV-SCENARIO-001"
+      ],
+      "type": "product-definition",
+      "required_capabilities": [
+        "planning",
+        "research"
+      ],
+      "passes": false
+    },
+    {
+      "id": "SURFACE-REALIGN-001",
+      "title": "Realign existing tools, docs, and workflows to the new blueprint",
+      "description": "Map the current repo surface back onto the scenario-first and wizard-first blueprint so the codebase and docs tell the same product story.",
+      "acceptanceCriteria": [
+        "Existing Free and Advanced product-surface docs are updated to reflect the scenario and wizard model",
+        "Current tools are mapped to scenarios and wizard families rather than only to capability slices",
+        "Public Free docs remain mirror-safe after the realignment",
+        "A clear list of follow-on execution slices is produced from the realigned surface"
+      ],
+      "priority": "high",
+      "estimatedEffort": "4",
+      "dependsOn": [
+        "CAP-RESET-001",
+        "THEME-STACK-001"
+      ],
+      "type": "realignment",
+      "required_capabilities": [
+        "planning",
+        "code_generation",
+        "review"
+      ],
+      "passes": false
+    }
+  ]
+}

@@ -1,0 +1,252 @@
+{
+  "projectName": "Elementify Free + Advanced Launch Packaging",
+  "version": "1.0",
+  "status": "draft",
+  "execution_recommendation": {
+    "mode": "complex",
+    "reason": "Packaging, architecture, mirror export, and tier boundary work span multiple modules with non-trivial dependencies and release implications.",
+    "suggested_workflow": "ralph-loop-attended",
+    "estimated_iterations": 10,
+    "parallel_opportunities": 2
+  },
+  "tasks": [
+    {
+      "id": "ARCH-FA-001",
+      "title": "Create tier capability map",
+      "description": "Classify every current tool, workflow, and product-relevant contract into free, advanced, or studio_future so the product boundary becomes explicit and enforceable.",
+      "acceptanceCriteria": [
+        "A documented capability matrix exists for all user-facing MCP tools and major workflow surfaces.",
+        "Every classified item is labeled as free, advanced, or studio_future.",
+        "The matrix identifies ambiguous boundary cases and proposed resolution rules.",
+        "No current public-facing tool remains unclassified."
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [],
+      "type": "planning",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "research"
+      ]
+    },
+    {
+      "id": "ARCH-FA-002",
+      "title": "Introduce tier and entitlement contracts",
+      "description": "Add shared product-tier and entitlement contracts that can classify tools, modules, and future providers without hard-coding Studio into current Free or Advanced paths.",
+      "acceptanceCriteria": [
+        "Shared contracts define product tiers including free, advanced, and studio_future.",
+        "The contracts are exported through the shared package and build successfully.",
+        "Type-level tests cover the new contracts.",
+        "The contract design allows future Studio introduction without renaming current Free or Advanced tiers."
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "ARCH-FA-001"
+      ],
+      "type": "architecture",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "code_generation",
+        "testing"
+      ]
+    },
+    {
+      "id": "ARCH-FA-003",
+      "title": "Carve public core and private module seams",
+      "description": "Create a module strategy where Free-safe code can build independently while private Advanced modules remain additive and separable.",
+      "acceptanceCriteria": [
+        "A documented module boundary exists for public core, private advanced modules, and studio seams.",
+        "No Free-safe module imports an Advanced-only implementation directly.",
+        "A baseline import rule or verification mechanism is defined for public versus private boundaries.",
+        "The proposed structure preserves current runtime behavior before product gating is applied."
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [
+        "ARCH-FA-002"
+      ],
+      "type": "architecture",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "code_generation",
+        "review"
+      ]
+    },
+    {
+      "id": "FREE-001",
+      "title": "Define and document the Free product surface",
+      "description": "Translate the current repo capability surface into a coherent public Free offer covering assessment, recommendations, creator light, simple assembly, local library usage, and validation-safe workflows.",
+      "acceptanceCriteria": [
+        "A Free product surface document exists and matches the agreed launch strategy.",
+        "The Free surface includes local Elementor Library as the primary target system.",
+        "The Free surface excludes premium library and cloud-library promises.",
+        "The Free surface maps to currently existing or intentionally planned repo capabilities."
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "ARCH-FA-001"
+      ],
+      "type": "planning",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "research"
+      ]
+    },
+    {
+      "id": "ADV-001",
+      "title": "Define and document the Advanced product surface",
+      "description": "Package the deeper workflow layer as a private Advanced surface including deeper wizard flows, stronger recommendations, brand adaptation, output critique, and premium library access.",
+      "acceptanceCriteria": [
+        "An Advanced product surface document exists and is distinct from Free.",
+        "Advanced is described as a productivity and workflow upgrade rather than Free plus minor extras.",
+        "The Elementify Library is clearly described as a curated premium library, not a cloud library.",
+        "No Advanced requirement introduces a mandatory Studio dependency."
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "ARCH-FA-001"
+      ],
+      "type": "planning",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "research"
+      ]
+    },
+    {
+      "id": "ARCH-FA-004",
+      "title": "Create library provider boundaries",
+      "description": "Separate local Elementor Library behavior, curated premium library behavior, and future cloud library behavior behind explicit provider-ready boundaries.",
+      "acceptanceCriteria": [
+        "The architecture distinguishes local, premium, and cloud library roles.",
+        "Advanced premium library logic remains local-site operational and does not imply cloud sync.",
+        "A future cloud library seam exists without introducing a runtime dependency today.",
+        "The distinction is documented in architecture notes and reflected in contracts or provider interfaces."
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [
+        "ARCH-FA-002",
+        "ADV-001"
+      ],
+      "type": "architecture",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "code_generation",
+        "testing"
+      ]
+    },
+    {
+      "id": "FREE-002",
+      "title": "Implement Free-safe tool registration and gating",
+      "description": "Ensure the public Free build can register and expose only Free-safe tools while remaining fully functional on current local-site workflows.",
+      "acceptanceCriteria": [
+        "Tool registration can be limited to Free-safe surfaces without runtime errors.",
+        "Assessment, recommendations, creator-light, local-library flows, and validation remain available in the Free path.",
+        "No Advanced-only tool is required for Free startup or execution.",
+        "Tests confirm the Free registration surface is self-consistent."
+      ],
+      "priority": "high",
+      "estimatedEffort": "4",
+      "dependsOn": [
+        "ARCH-FA-003",
+        "FREE-001"
+      ],
+      "type": "feature",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "code_generation",
+        "testing",
+        "review"
+      ]
+    },
+    {
+      "id": "ADV-002",
+      "title": "Wire Advanced-only workflow modules",
+      "description": "Attach private Advanced workflows to the tier model so deeper flows can build on the shared core without leaking into the public mirror.",
+      "acceptanceCriteria": [
+        "Brand adaptation and output critique are wired as Advanced-only product surfaces.",
+        "Advanced-only recommendation or creator depth is clearly gated behind the tier model.",
+        "Free builds remain green when Advanced modules are excluded.",
+        "Private module boundaries are documented and testable."
+      ],
+      "priority": "high",
+      "estimatedEffort": "4",
+      "dependsOn": [
+        "ARCH-FA-003",
+        "ADV-001"
+      ],
+      "type": "feature",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "code_generation",
+        "testing",
+        "review"
+      ]
+    },
+    {
+      "id": "REL-FA-001",
+      "title": "Define Forgejo primary and GitHub mirror export rules",
+      "description": "Document and implement the release rules by which the private Forgejo primary remains complete while the GitHub mirror exports only the Free product surface.",
+      "acceptanceCriteria": [
+        "A documented mirror export process exists for Forgejo primary to GitHub mirror.",
+        "The export process excludes private Advanced modules and premium assets.",
+        "A verification step detects forbidden imports or references before mirror publication.",
+        "The release rules do not rely on manual file-by-file cleanup."
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [
+        "FREE-002",
+        "ADV-002"
+      ],
+      "type": "automation",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "automation",
+        "review"
+      ]
+    },
+    {
+      "id": "ARCH-FA-005",
+      "title": "Validate Studio seams without shipping Studio",
+      "description": "Confirm that future Studio concepts can be introduced through providers and entitlements later, without turning current Free or Advanced code into pseudo-cloud implementations.",
+      "acceptanceCriteria": [
+        "Studio future seams are documented for cloud library, cross-site reuse, and delivery orchestration.",
+        "No current Free or Advanced feature claims Studio cloud behavior prematurely.",
+        "The entitlement model can introduce Studio without breaking existing tier names or packaging.",
+        "A short architecture note explains what remains intentionally deferred."
+      ],
+      "priority": "medium",
+      "estimatedEffort": "2",
+      "dependsOn": [
+        "ARCH-FA-004",
+        "REL-FA-001"
+      ],
+      "type": "architecture",
+      "passes": false,
+      "target_agent": "any",
+      "required_capabilities": [
+        "planning",
+        "review"
+      ]
+    }
+  ]
+}

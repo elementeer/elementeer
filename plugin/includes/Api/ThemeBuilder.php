@@ -26,7 +26,7 @@ final class ThemeBuilder {
     public function __construct() { $this->auth = Auth::get_instance(); }
 
     public function create_template(WP_REST_Request $request): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize($request, 'templates:write');
+        $auth = $this->auth->authorize($request, 'theme-structure:write');
         if (is_wp_error($auth)) return $auth;
 
         $body  = $request->get_json_params() ?: [];

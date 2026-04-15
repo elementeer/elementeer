@@ -1,0 +1,40 @@
+{
+  "name": "elementify-free-public-mirror",
+  "description": "Rule-based public GitHub mirror containing only the Elementify Free surface.",
+  "publicToolEntrypoint": "registerFreeTools",
+  "privateToolEntrypoints": [
+    "registerAdvancedTools",
+    "registerStudioFutureTools"
+  ],
+  "forbiddenPublicTiers": [
+    "advanced",
+    "studio_future"
+  ],
+  "publicDocumentation": [
+    "README.md",
+    "docs/phase-2-scope.md",
+    "docs/quickstart/free.md",
+    "docs/public/free-includes-excludes.md",
+    "docs/release/free-public-release-checklist.md",
+    "docs/blueprints/free-product-surface.md"
+  ],
+  "privateDocumentation": [
+    "docs/blueprints/advanced-product-surface.md",
+    "docs/blueprints/free-advanced-launch-prd.md",
+    "docs/blueprints/free-advanced-launch-prd.json",
+    "docs/blueprints/tier-capability-map.md",
+    "docs/architecture/free-mirror-export.md",
+    "docs/architecture/library-provider-boundary.md",
+    "docs/architecture/research-track-integration-decision.md",
+    "docs/architecture/phase-2-foundation.md",
+    "docs/phase-2-baseline-alignment.md",
+    "docs/architecture/research-track-registry.md",
+    "docs/release/forgejo-github-free-mirror-runbook.md"
+  ],
+  "notes": [
+    "Free remains public and mirror-safe.",
+    "Advanced remains private in the Forgejo primary.",
+    "Studio future seams do not appear in the public mirror.",
+    "Mirror staging must be deterministic, clean, and free of time-based metadata."
+  ]
+}

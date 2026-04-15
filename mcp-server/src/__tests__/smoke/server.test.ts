@@ -5,65 +5,9 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { registerAllTools } from '../../tools/index.js';
 import type { ElementifyClient } from '../../client.js';
+import { REGISTERED_TOOL_NAMES } from '../../product-tiers.js';
 
-const EXPECTED_TOOLS = [
-  // Library
-  'list_templates',
-  'get_template',
-  'create_template',
-  'update_template',
-  'delete_template',
-  'rename_template',
-  'duplicate_template',
-  'bulk_rename',
-  // Content
-  'get_template_data',
-  'update_template_data',
-  'extract_sections',
-  // Organization
-  'list_by_type',
-  'set_category',
-  'set_tags',
-  'audit_library',
-  // Site
-  'get_site_info',
-  'list_sites',
-  'switch_site',
-  // Assessment
-  'assess_site',
-  // Recommendations + Context
-  'set_site_context',
-  'get_site_context',
-  'get_recommendations',
-  // Global Styles
-  'get_global_styles',
-  'set_global_colors',
-  'set_global_typography',
-  // Wizard
-  'set_site_logo',
-  'wizard_brand_setup',
-  'creator_mode',
-  // Pages
-  'list_elementor_pages',
-  'get_page_data',
-  'update_page_data',
-  'compose_page_from_templates',
-  'save_page_section_as_template',
-  'save_full_page_as_template',
-  // Stock Images + AI Generation
-  'search_stock_images',
-  'sideload_stock_image',
-  'generate_ai_image',
-  // Theme Builder Wizard
-  'wizard_theme_builder',
-  // Explain
-  'explain_recommendation',
-  // Change Review Queue
-  'queue_change',
-  'list_change_queue',
-  'review_change',
-  'apply_change',
-] as const;
+const EXPECTED_TOOLS = [...REGISTERED_TOOL_NAMES] as const;
 
 describe('MCP server smoke tests', () => {
   let server: McpServer;
@@ -99,6 +43,12 @@ describe('MCP server smoke tests', () => {
         setGlobalTypography: async () => ({ kit_id: 1, slot: 'system_typography', typography: [], updated: true as const }),
         getSiteContext: async () => ({ user_role: null, site_purpose: null, brand_notes: null, target_audience: null, primary_language: null, set_at: null }),
         setSiteContext: async (ctx: object) => ({ ...ctx, set_at: '' }),
+        importLibraryAsset: async () => ({
+          imported: true as const,
+          import_mode: 'manual-import' as const,
+          source: { kind: 'elementify-premium' as const, asset_id: 'premium-service-section-stack' },
+          template: { id: 41, title: 'Premium Import', type: 'section', status: 'draft', author: 1, date: '', modified: '', categories: [], tags: [] },
+        }),
         assessSite: async () => ({
           assessed_at: '', wordpress: { version: '', language: '', timezone: '', is_multisite: false, site_name: '', site_tagline: '', admin_url: '' },
           elementor: { version: null, pro: false, pro_version: null, active_kit_id: null },

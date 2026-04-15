@@ -55,7 +55,9 @@ function makeContext(overrides: Partial<SiteContext> = {}): SiteContext {
 describe('buildRecommendations — rule engine', () => {
   it('returns empty list for a fully configured site', () => {
     const recs = buildRecommendations(makeAssessment(), makeContext());
-    expect(recs).toHaveLength(0);
+    // With an SEO plugin active, we recommend optimizing SEO meta
+    expect(recs).toHaveLength(1);
+    expect(recs[0]!.id).toBe('optimize_seo_meta');
   });
 
   it('generates set_logo recommendation when logo is missing', () => {
@@ -139,6 +141,24 @@ describe('buildRecommendations — rule engine', () => {
     expect(recs.some((r) => r.id === 'create_woocommerce_templates')).toBe(true);
   });
 
+  it('recommends unlocking Theme Builder capability before structure work on Elementor Free', () => {
+    const emptyTB = {
+      header: [], footer: [], single: [], 'single-post': [], 'single-page': [],
+      archive: [], search: [], 'error-404': [], popup: [],
+    };
+    const recs = buildRecommendations(
+      makeAssessment({
+        elementor: { version: '3.20', pro: false, pro_version: null, active_kit_id: 1 },
+        theme_builder: emptyTB,
+      }),
+      makeContext(),
+    );
+
+    expect(recs.some((r) => r.id === 'unlock_theme_builder_capability')).toBe(true);
+    expect(recs.some((r) => r.id === 'create_header_template')).toBe(false);
+    expect(recs.some((r) => r.id === 'create_footer_template')).toBe(false);
+  });
+
   it('returns only automated recs for ai-agent role', () => {
     const recs = buildRecommendations(
       makeAssessment({
@@ -165,6 +185,49 @@ describe('buildRecommendations — rule engine', () => {
     );
     const priorities = recs.map((r) => r.priority);
     expect(priorities).toEqual([...priorities].sort((a, b) => a - b));
+  });
+
+  it('keeps a stable recommendation ID order for a representative underconfigured site', () => {
+    const recs = buildRecommendations(
+      makeAssessment({
+        brand: { logo_set: false, logo_id: null, global_colors_count: 0, global_typography_count: 0 },
+        theme_builder: {
+          header: [],
+          footer: [],
+          single: [],
+          'single-post': [],
+          'single-page': [],
+          archive: [],
+          search: [],
+          'error-404': [],
+          popup: [],
+          product: [],
+        },
+        template_library: { total: 30, by_type: { container: 30 }, uncategorized: 12, published: 25, draft: 5 },
+        pages: { elementor_total: 6, by_post_type: { page: 5, post: 1 } },
+        performance: { css_print_method: 'internal', optimized_dom: false, load_fa4_shim: true },
+        plugins: { active_count: 10, classified: { woocommerce: ['woocommerce'] }, woocommerce: true, multilingual: false },
+      }),
+      makeContext(),
+    );
+
+    expect(recs.map((r) => r.id)).toEqual([
+      'set_logo',
+      'define_global_colors',
+      'create_header_template',
+      'create_footer_template',
+      'define_global_typography',
+      'categorize_templates',
+      'install_seo_plugin',
+      'create_woocommerce_templates',
+      'create_single_post_template',
+      'tag_templates_by_type',
+      'switch_css_to_external',
+      'create_archive_template',
+      'create_404_template',
+      'clear_elementor_cache',
+      'disable_fa4_shim',
+    ]);
   });
 });
 
@@ -259,10 +322,11 @@ describe('recommendation MCP tools', () => {
       expect(client.getSiteContext).toHaveBeenCalled();
     });
 
-    it('returns "no recommendations" for a clean site', async () => {
+    it('returns SEO optimization recommendation when SEO plugin active', async () => {
       const result = await call('get_recommendations', {});
       const text = result.content[0]!.text;
-      expect(text).toContain('No recommendations');
+      expect(text).toContain('optimize_seo_meta');
+      expect(text).toContain('Optimize SEO meta for key pages');
     });
 
     it('returns recommendations when issues exist', async () => {
@@ -271,8 +335,12 @@ describe('recommendation MCP tools', () => {
       }));
       const result = await call('get_recommendations', {});
       const text = result.content[0]!.text;
+      expect(text).toContain('Destination: Elementor Pro');
+      expect(text).toContain('Compatibility:');
       expect(text).toContain('set_logo');
       expect(text).toContain('define_global_colors');
+      // Also includes SEO optimization recommendation (SEO plugin active)
+      expect(text).toContain('optimize_seo_meta');
     });
 
     it('filters by category', async () => {
@@ -312,6 +380,19 @@ describe('recommendation MCP tools', () => {
       const text = result.content[0]!.text;
       const count = (text.match(/^##/gm) ?? []).length;
       expect(count).toBeLessThanOrEqual(2);
+    });
+
+    it('surfaces capability warnings when the destination is limited', async () => {
+      vi.mocked(client.assessSite).mockResolvedValueOnce(makeAssessment({
+        elementor: { version: '3.20', pro: false, pro_version: null, active_kit_id: 1 },
+        theme_builder: { header: [], footer: [], single: [], 'single-post': [], 'single-page': [], archive: [], search: [], 'error-404': [], popup: [] },
+      }));
+      const result = await call('get_recommendations', {});
+      const text = result.content[0]!.text;
+
+      expect(text).toContain('Warnings:');
+      expect(text).toContain('Elementor Pro is not detected');
+      expect(text).toContain('unlock_theme_builder_capability');
     });
   });
 });

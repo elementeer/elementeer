@@ -4,6 +4,137 @@ import type {
   ElementifyTemplateList,
   ElementifyError,
   ElementifyErrorCode,
+  SiteInfo,
+  GlobalColor,
+  GlobalTypographyEntry,
+  GlobalStylesData,
+  SiteContext,
+  SiteAssessment,
+  SiteFingerprint,
+  SiteFingerprintSignal,
+  QueuedChange,
+  AssessmentIssue,
+  SiteContextRole,
+  SiteContextPurpose,
+  Recommendation,
+  RecommendationCategory,
+  ThemeBuilderTemplateSummary,
+  DestinationProfile,
+  DestinationProfileKind,
+  Capability,
+  CapabilityId,
+  CapabilityMatrix,
+  ControlIntent,
+  BrandAdaptationPlan,
+  DesignColorToken,
+  DesignSpacingToken,
+  DesignTokenReport,
+  DesignTypographyToken,
+  DesignValueHint,
+  ImportReport,
+  ImportSmokeTestPlan,
+  LayoutRiskCode,
+  LayoutRiskSeverity,
+  LayoutRiskSignal,
+  OutputCritique,
+  PipelinePathPlan,
+  ProjectChangeStyle,
+  ProjectCopyDensity,
+  ProjectEditingMode,
+  ProjectLayoutPriority,
+  ProjectProfile,
+  ProjectQuestionPolicy,
+  ProductSurfaceAssignment,
+  RiskResolutionMode,
+  TierBoundaryCase,
+  RebuildStrategy,
+  RecommendationEngineInput,
+  RecommendationEngineReport,
+  StrategyCritique,
+  AddonProfileId,
+  GuidanceMode,
+  IntentWizardDepth,
+  IntentWizardId,
+  IntentWizardInput,
+  IntentWizardIntent,
+  IntentWizardOrigin,
+  IntentWizardRoute,
+  IntentWizardScenarioId,
+  IntentWizardTierRecommendation,
+  IntentWizardUserPosture,
+  RecommendedAddonProfile,
+  RecommendedSkillProfile,
+  RecommendedStackProfile,
+  SkillProfileId,
+  StackProfileId,
+  StackReadinessSignals,
+} from '@elementify/shared';
+
+export type {
+  AssessmentIssue,
+  Capability,
+  CapabilityId,
+  CapabilityMatrix,
+  ControlIntent,
+  BrandAdaptationPlan,
+  DesignColorToken,
+  DesignSpacingToken,
+  DesignTokenReport,
+  DesignTypographyToken,
+  DesignValueHint,
+  DestinationProfile,
+  DestinationProfileKind,
+  GlobalColor,
+  GlobalStylesData,
+  GlobalTypographyEntry,
+  ImportReport,
+  ImportSmokeTestPlan,
+  LayoutRiskCode,
+  LayoutRiskSeverity,
+  LayoutRiskSignal,
+  OutputCritique,
+  PipelinePathPlan,
+  ProjectChangeStyle,
+  ProjectCopyDensity,
+  ProjectEditingMode,
+  ProjectLayoutPriority,
+  ProjectProfile,
+  ProjectQuestionPolicy,
+  ProductSurfaceAssignment,
+  QueuedChange,
+  RiskResolutionMode,
+  RebuildStrategy,
+  Recommendation,
+  RecommendationEngineInput,
+  RecommendationEngineReport,
+  RecommendationCategory,
+  SiteAssessment,
+  SiteContext,
+  SiteContextPurpose,
+  SiteContextRole,
+  SiteFingerprint,
+  SiteFingerprintSignal,
+  SiteInfo,
+  StrategyCritique,
+  ThemeBuilderTemplateSummary,
+  TierBoundaryCase,
+  AddonProfileId,
+  GuidanceMode,
+  IntentWizardDepth,
+  IntentWizardId,
+  IntentWizardInput,
+  IntentWizardIntent,
+  IntentWizardOrigin,
+  IntentWizardRoute,
+  IntentWizardScenarioId,
+  IntentWizardTierRecommendation,
+  IntentWizardUserPosture,
+  RecommendedAddonProfile,
+  RecommendedSkillProfile,
+  RecommendedStackProfile,
+  SkillProfileId,
+  StackProfileId,
+  StackReadinessSignals,
 } from '@elementify/shared';
 
 export class ElementifyApiError extends Error {
@@ -33,6 +164,30 @@ export interface UpdateTemplateInput {
   tags?: string[];
 }
 
+export interface LibraryImportSource {
+  kind: 'local-elementor' | 'elementify-premium';
+  asset_id: string;
+  asset_title?: string;
+  reference?: string;
+}
+
+export interface ImportLibraryAssetInput {
+  title: string;
+  type: ElementifyTemplate['type'];
+  status?: ElementifyTemplate['status'];
+  elementor_data: unknown[];
+  categories?: string[];
+  tags?: string[];
+  source: LibraryImportSource;
+}
+
+export interface ImportLibraryAssetResult {
+  imported: true;
+  import_mode: 'manual-import';
+  source: LibraryImportSource;
+  template: ElementifyTemplate;
+}
+
 export interface ListTemplatesParams {
   page?: number;
   per_page?: number;
@@ -40,126 +195,6 @@ export interface ListTemplatesParams {
   status?: string;
   search?: string;
   category?: string;
-}
-
-export interface SiteInfo {
-  name: string;
-  url: string;
-  wp_version: string;
-  elementor_version: string | null;
-  elementor_pro: boolean;
-  activation_mode: string;
-  template_count: number;
-  capabilities: string[];
-}
-
-export interface GlobalColor {
-  id?: string;
-  title: string;
-  color: string;  // hex, e.g. "#1A56DB"
-}
-
-export interface GlobalTypographyEntry {
-  id?: string;
-  title: string;
-  font_family?: string;
-  font_size?: number;      // px
-  font_weight?: string;    // "400", "700", etc.
-  line_height?: number;    // em multiplier, e.g. 1.6
-  letter_spacing?: number; // px
-  text_transform?: 'none' | 'uppercase' | 'lowercase' | 'capitalize';
-}
-
-export interface GlobalStylesData {
-  kit_id: number;
-  system_colors:     Array<{ _id: string; title: string; color: string }>;
-  custom_colors:     Array<{ _id: string; title: string; color: string }>;
-  system_typography: unknown[];
-  custom_typography: unknown[];
-}
-
-export type SiteContextRole = 'freelancer' | 'agency' | 'site-owner' | 'ai-agent';
-export type SiteContextPurpose = 'ecommerce' | 'corporate' | 'portfolio' | 'blog' | 'community' | 'other';
-
-export interface SiteContext {
-  user_role: SiteContextRole | null;
-  site_purpose: SiteContextPurpose | null;
-  brand_notes: string | null;
-  target_audience: string | null;
-  primary_language: string | null;
-  set_at: string | null;
-}
-
-export interface AssessmentIssue {
-  severity: 'critical' | 'warning' | 'info';
-  code: string;
-  message: string;
-  count?: number;
-}
-
-export interface SiteAssessment {
-  assessed_at: string;
-  wordpress: {
-    version: string;
-    language: string;
-    timezone: string;
-    is_multisite: boolean;
-    site_name: string;
-    site_tagline: string;
-    admin_url: string;
-  };
-  elementor: {
-    version: string | null;
-    pro: boolean;
-    pro_version: string | null;
-    active_kit_id: number | null;
-  };
-  brand: {
-    logo_set: boolean;
-    logo_id: number | null;
-    global_colors_count: number;
-    global_typography_count: number;
-  };
-  theme_builder: Record<string, Array<{ id: number; title: string; status: string }>>;
-  template_library: {
-    total: number;
-    by_type: Record<string, number>;
-    uncategorized: number;
-    published: number;
-    draft: number;
-  };
-  pages: {
-    elementor_total: number;
-    by_post_type: Record<string, number>;
-  };
-  performance: {
-    css_print_method: string;
-    optimized_dom: boolean;
-    load_fa4_shim: boolean;
-  };
-  plugins: {
-    active_count: number;
-    classified: Record<string, string[]>;
-    woocommerce: boolean;
-    multilingual: boolean;
-  };
-  custom_post_types: Array<{ name: string; label: string; rest: boolean }>;
-  user_roles: string[];
-  issues: AssessmentIssue[];
-  issues_count: { critical: number; warning: number; info: number };
-}
-
-export interface QueuedChange {
-  id: string;
-  created_at: string;
-  status: 'pending' | 'approved' | 'rejected' | 'applied';
-  operation: string;
-  params: Record<string, unknown>;
-  note: string | null;
-  before_state: Record<string, unknown> | null;
-  reviewed_at: string | null;
-  review_note: string | null;
-  applied_at: string | null;
 }
 
 export class ElementifyClient {
@@ -304,6 +339,11 @@ export class ElementifyClient {
     return res.data;
   }
 
+  async importLibraryAsset(input: ImportLibraryAssetInput): Promise<ImportLibraryAssetResult> {
+    const res = await this.http.post<ImportLibraryAssetResult>('/library/import', input);
+    return res.data;
+  }
+
   // ------------------------------------------------------------------ //
   // Template data (Elementor JSON)
   // ------------------------------------------------------------------ //
@@ -385,6 +425,91 @@ export class ElementifyClient {
 
   async setSiteContext(ctx: Partial<Omit<SiteContext, 'set_at'>>): Promise<SiteContext> {
     const res = await this.http.put<SiteContext>('/site/context', ctx);
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Site Settings
+  // ------------------------------------------------------------------ //
+
+  async getSiteSettings(): Promise<{
+    blogname: string;
+    description: string;
+    homepage: { id: number; title: string; url: string } | null;
+    posts_page: { id: number; title: string; url: string } | null;
+    permalink: string;
+    timezone: string;
+    date_format: string;
+    time_format: string;
+    start_of_week: number;
+  }> {
+    const res = await this.http.get('/site/settings');
+    return res.data;
+  }
+
+  async updateSiteSettings(updates: {
+    blogname?: string;
+    description?: string;
+    homepage?: number;
+    posts_page?: number;
+    permalink?: string;
+  }): Promise<{ updated: string[]; settings: any }> {
+    const res = await this.http.put('/site/settings', updates);
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // SEO Management
+  // ------------------------------------------------------------------ //
+
+  async getSeoMeta(params: { post_id: number }): Promise<{
+    post_id: number;
+    plugin: string;
+    title: string;
+    description: string;
+    focus_keyword: string;
+  }> {
+    const res = await this.http.get('/site/seo/meta', { params });
+    return res.data;
+  }
+
+  async updateSeoMeta(params: {
+    post_id: number;
+    title?: string;
+    description?: string;
+    focus_keyword?: string;
+  }): Promise<{ post_id: number; plugin: string; updated: string[] }> {
+    const res = await this.http.put('/site/seo/meta', params);
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Performance & Cache
+  // ------------------------------------------------------------------ //
+
+  async flushElementorCache(): Promise<{ flushed: boolean; message: string }> {
+    const res = await this.http.post('/site/performance/flush-cache');
+    return res.data;
+  }
+
+  async getPerformanceReport(): Promise<{
+    css_method: string;
+    dom_size: { average_nodes: number; note: string };
+    asset_optimization: Record<string, boolean | string>;
+    cache_status: Record<string, string | null>;
+    elementor_status: string | null;
+    elementor_pro: boolean;
+  }> {
+    const res = await this.http.get('/site/performance/report');
+    return res.data;
+  }
+
+  async optimizeElementorAssets(): Promise<{
+    optimized: boolean;
+    message: string;
+    suggestions: string[];
+  }> {
+    const res = await this.http.post('/site/performance/optimize-assets');
     return res.data;
   }
 
@@ -486,6 +611,406 @@ export class ElementifyClient {
     status?: string;
   }): Promise<{ id: number; title: string; type: string; status: string; conditions: string[] }> {
     const res = await this.http.post('/theme-builder/templates', params);
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Menus
+  // ------------------------------------------------------------------ //
+
+  async listMenus(): Promise<{
+    menus: Array<{
+      id: number;
+      name: string;
+      slug: string;
+      count: number;
+      description: string;
+    }>;
+    total: number;
+  }> {
+    const res = await this.http.get('/menus');
+    return res.data;
+  }
+
+  async createMenu(params: { name: string }): Promise<{
+    menu: {
+      id: number;
+      name: string;
+      slug: string;
+      count: number;
+      description: string;
+    };
+    message: string;
+  }> {
+    const res = await this.http.post('/menus', params);
+    return res.data;
+  }
+
+  async deleteMenu(id: number): Promise<{ message: string }> {
+    const res = await this.http.delete(`/menus/${id}`);
+    return res.data;
+  }
+
+  async listMenuItems(params: { menu_id: number }): Promise<{
+    items: Array<{
+      id: number;
+      label: string;
+      url: string;
+      parent: number;
+      position: number;
+      type: string;
+      target: string;
+      classes: string[];
+      xfn: string;
+    }>;
+    total: number;
+  }> {
+    const res = await this.http.get(`/menus/${params.menu_id}/items`);
+    return res.data;
+  }
+
+  async createMenuItem(params: {
+    menu_id: number;
+    label: string;
+    url: string;
+    parent?: number;
+    position?: number;
+  }): Promise<{
+    item: {
+      id: number;
+      label: string;
+      url: string;
+      parent: number;
+      position: number;
+      type: string;
+      target: string;
+      classes: string[];
+      xfn: string;
+    };
+    message: string;
+  }> {
+    const res = await this.http.post(`/menus/${params.menu_id}/items`, params);
+    return res.data;
+  }
+
+  async updateMenuItem(params: {
+    id: number;
+    menu_id: number;
+    label?: string;
+    url?: string;
+    parent?: number;
+    position?: number;
+  }): Promise<{
+    item: {
+      id: number;
+      label: string;
+      url: string;
+      parent: number;
+      position: number;
+      type: string;
+      target: string;
+      classes: string[];
+      xfn: string;
+    };
+    message: string;
+  }> {
+    const res = await this.http.put(`/menu-items/${params.id}`, params);
+    return res.data;
+  }
+
+  async deleteMenuItem(id: number): Promise<{ message: string }> {
+    const res = await this.http.delete(`/menu-items/${id}`);
+    return res.data;
+  }
+
+  async listMenuLocations(): Promise<{
+    locations: Array<{
+      location: string;
+      description: string;
+      menu_id: number | null;
+    }>;
+    total: number;
+  }> {
+    const res = await this.http.get('/menu-locations');
+    return res.data;
+  }
+
+  async assignMenuLocation(params: { menu_id: number; location: string }): Promise<{
+    message: string;
+    location: string;
+    menu_id: number;
+  }> {
+    const res = await this.http.post('/menu-locations', params);
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Content Management
+  // ------------------------------------------------------------------ //
+
+  async createPage(params: {
+    title: string;
+    content?: string;
+    status?: string;
+    parent?: number;
+    elementor_ready?: boolean;
+  }): Promise<{
+    page: {
+      id: number;
+      title: string;
+      slug: string;
+      content: string;
+      excerpt: string;
+      status: string;
+      type: string;
+      author: number;
+      parent: number;
+      date: string;
+      modified: string;
+      featured_image_id: number;
+      permalink: string;
+      elementor_edit_mode: boolean;
+    };
+    message: string;
+  }> {
+    const res = await this.http.post('/pages', params);
+    return res.data;
+  }
+
+  async createPost(params: {
+    title: string;
+    content?: string;
+    status?: string;
+    categories?: number[];
+    tags?: string[];
+  }): Promise<{
+    post: {
+      id: number;
+      title: string;
+      slug: string;
+      content: string;
+      excerpt: string;
+      status: string;
+      type: string;
+      author: number;
+      parent: number;
+      date: string;
+      modified: string;
+      featured_image_id: number;
+      permalink: string;
+      elementor_edit_mode: boolean;
+    };
+    message: string;
+  }> {
+    const res = await this.http.post('/posts', params);
+    return res.data;
+  }
+
+  async updatePostMeta(params: {
+    id: number;
+    slug?: string;
+    excerpt?: string;
+    featured_image_id?: number;
+  }): Promise<{
+    post_id: number;
+    updated: Record<string, unknown>;
+    message: string;
+  }> {
+    const res = await this.http.put(`/posts/${params.id}/meta`, params);
+    return res.data;
+  }
+
+  async deletePost(params: {
+    id: number;
+    force?: boolean;
+  }): Promise<{
+    post_id: number;
+    deleted: boolean;
+    message: string;
+  }> {
+    const res = await this.http.delete(`/posts/${params.id}`, { params: { force: params.force } });
+    return res.data;
+  }
+
+  async listTaxonomies(): Promise<{
+    taxonomies: Array<{
+      name: string;
+      label: string;
+      labels: Record<string, string>;
+      hierarchical: boolean;
+      public: boolean;
+      object_type: string[];
+    }>;
+    total: number;
+  }> {
+    const res = await this.http.get('/taxonomies');
+    return res.data;
+  }
+
+  async createTerm(params: {
+    taxonomy: string;
+    name: string;
+    slug?: string;
+    parent?: number;
+    description?: string;
+  }): Promise<{
+    term: {
+      id: number;
+      name: string;
+      slug: string;
+      description: string;
+      parent: number;
+      count: number;
+      taxonomy: string;
+    };
+    message: string;
+  }> {
+    const res = await this.http.post(`/terms/${params.taxonomy}`, params);
+    return res.data;
+  }
+
+  async updateTerm(params: {
+    taxonomy: string;
+    id: number;
+    name?: string;
+    slug?: string;
+    parent?: number;
+    description?: string;
+  }): Promise<{
+    term: {
+      id: number;
+      name: string;
+      slug: string;
+      description: string;
+      parent: number;
+      count: number;
+      taxonomy: string;
+    };
+    message: string;
+  }> {
+    const res = await this.http.put(`/terms/${params.taxonomy}`, params);
+    return res.data;
+  }
+
+  async deleteTerm(params: {
+    taxonomy: string;
+    id: number;
+    force?: boolean;
+  }): Promise<{
+    term_id: number;
+    deleted: boolean;
+    message: string;
+  }> {
+    const res = await this.http.delete(`/terms/${params.taxonomy}`, { params });
+    return res.data;
+  }
+
+  async listPostTypes(): Promise<{
+    post_types: Array<{
+      name: string;
+      label: string;
+      labels: Record<string, string>;
+      public: boolean;
+      hierarchical: boolean;
+      has_archive: boolean;
+      supports: Record<string, boolean>;
+    }>;
+    total: number;
+  }> {
+    const res = await this.http.get('/post-types');
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Media Library
+  // ------------------------------------------------------------------ //
+
+  async listMedia(params: {
+    page?: number;
+    per_page?: number;
+    search?: string;
+    mime_type?: string;
+  }): Promise<{
+    media: Array<{
+      id: number;
+      title: string;
+      caption: string;
+      description: string;
+      alt_text: string;
+      mime_type: string;
+      date: string;
+      modified: string;
+      author: number;
+      url: string;
+      sizes: Record<string, { url: string; width: number; height: number }>;
+      metadata: Record<string, unknown>;
+    }>;
+    total: number;
+    total_pages: number;
+    page: number;
+    per_page: number;
+  }> {
+    const res = await this.http.get('/media', { params });
+    return res.data;
+  }
+
+  async getMedia(id: number): Promise<{
+    media: {
+      id: number;
+      title: string;
+      caption: string;
+      description: string;
+      alt_text: string;
+      mime_type: string;
+      date: string;
+      modified: string;
+      author: number;
+      url: string;
+      sizes: Record<string, { url: string; width: number; height: number }>;
+      metadata: Record<string, unknown>;
+    };
+  }> {
+    const res = await this.http.get(`/media/${id}`);
+    return res.data;
+  }
+
+  async updateMedia(
+    id: number,
+    updates: {
+      alt_text?: string;
+      title?: string;
+      caption?: string;
+      description?: string;
+    },
+  ): Promise<{
+    media_id: number;
+    updated: Record<string, string>;
+    media: {
+      id: number;
+      title: string;
+      caption: string;
+      description: string;
+      alt_text: string;
+      mime_type: string;
+      date: string;
+      modified: string;
+      author: number;
+      url: string;
+      sizes: Record<string, { url: string; width: number; height: number }>;
+      metadata: Record<string, unknown>;
+    };
+    message: string;
+  }> {
+    const res = await this.http.put(`/media/${id}`, updates);
+    return res.data;
+  }
+
+  async deleteMedia(id: number, force = false): Promise<{
+    media_id: number;
+    deleted: boolean;
+    message: string;
+  }> {
+    const res = await this.http.delete(`/media/${id}`, { params: { force } });
     return res.data;
   }
 }

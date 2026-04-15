@@ -1,0 +1,32 @@
+[{
+    _links:
+    {
+      self:
+      [
+        {
+          href: string[97],
+          targetHints:
+          {
+            allow:
+            ...
+          }
+        }
+      ]
+    }
+    author: string,
+    author_uri: url,
+    description:
+    {
+      raw: string[177],
+      rendered: string[239]
+    }
+    name: string,
+    network_only: bool,
+    plugin: string,
+    plugin_uri: url,
+    requires_php: string,
+    requires_wp: string,
+    status: string,
+    textdomain: string,
+    version: string
+  }] (21)

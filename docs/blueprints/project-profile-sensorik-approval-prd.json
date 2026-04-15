@@ -1,0 +1,60 @@
+{
+  "title": "Elementify Project Profile, Sensorik, and Approval Hardening Plan",
+  "sequence_type": "mixed",
+  "execution_mode": "ralph_attended",
+  "reason": "Live-site pilot feedback revealed expectation capture, layout-risk sensing, and approval-mode gaps that now sit on the critical path for trustworthy agency usage.",
+  "batches": [
+    {
+      "id": "batch-1",
+      "items": [
+        "PROJECT-PROFILE-001",
+        "SENSORIK-001"
+      ]
+    },
+    {
+      "id": "batch-2",
+      "items": [
+        "APPROVAL-FLOW-001"
+      ]
+    }
+  ],
+  "slices": [
+    {
+      "id": "PROJECT-PROFILE-001",
+      "title": "Project-specific operating profile",
+      "type": "product-hardening",
+      "goal": "Define and implement a lightweight per-project Elementify profile that shapes editing posture, copy density, layout-vs-copy preference, and approval defaults.",
+      "acceptance": [
+        "A typed project profile contract exists for at least editingMode, copyDensity, layoutPriority, changeStyle, and questionPolicy.",
+        "Runtime flows can read a project profile and reflect its choices in observable output.",
+        "A conservative fallback profile exists when no explicit project profile is present.",
+        "The project profile model works for both Free and Advanced without collapsing their surface boundaries."
+      ]
+    },
+    {
+      "id": "SENSORIK-001",
+      "title": "Deterministic layout-risk sensorik",
+      "type": "runtime-hardening",
+      "goal": "Introduce a deterministic sensing layer that flags likely text-wrapping, density, and spacing risks before or after writes.",
+      "acceptance": [
+        "Current runtime wizard outputs can emit structured layout-risk warnings.",
+        "The system can flag at least headline_wrap_risk, card_density_risk, package_card_overflow_risk, and cta_spacing_review.",
+        "Risk resolution uses either project-profile defaults or explicit questioning instead of silent truncation/omission.",
+        "The first sensorik version is deterministic and covered by tests."
+      ]
+    },
+    {
+      "id": "APPROVAL-FLOW-001",
+      "title": "Direct, draft, and approval write modes",
+      "type": "workflow-hardening",
+      "goal": "Add explicit write-mode routing so Elementify can operate in direct-edit, draft-first, or approval-first mode.",
+      "acceptance": [
+        "Runtime flows can declare direct-edit, draft-first, or approval-first behavior.",
+        "Draft-first can stage a change without immediate live publication.",
+        "Approval-first can create a reviewable change item or bundle with context and risk notes.",
+        "Approval behavior can be influenced by project profile and governance settings."
+      ]
+    }
+  ],
+  "next_slice": "PROJECT-PROFILE-001"
+}

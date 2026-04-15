@@ -1,0 +1,15 @@
+[
+  {
+    "id": "proc_2026-04-15T1616_2b3765",
+    "workspaceId": "mnxvy9fz",
+    "title": "Elementify MCP Server",
+    "command": "cd /Users/andrelange/Documents/repositories/github/elementify-mcp/mcp-server && node dist/cli.js",
+    "cwd": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+    "status": "stopped",
+    "pid": 17308,
+    "startedAt": "2026-04-15T16:16:06.591Z",
+    "outputSizeBytes": 31,
+    "exitCode": 0,
+    "stoppedAt": "2026-04-15T16:16:07.199Z"
+  }
+]

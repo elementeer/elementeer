@@ -137,4 +137,280 @@ export function registerContentTools(
       };
     },
   );
+
+  // ------------------------------------------------------------------ //
+  // create_page
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'create_page',
+    'Create a new WordPress page. Optionally make it Elementor-ready.',
+    {
+      title: z.string().min(1).describe('Page title'),
+      content: z.string().optional().describe('Page content (HTML)'),
+      status: z.enum(['draft', 'publish', 'pending', 'private']).default('draft').describe('Page status'),
+      parent: z.number().int().nonnegative().optional().describe('Parent page ID'),
+      elementor_ready: z.boolean().default(false).describe('Set Elementor edit mode to builder and initialize empty Elementor data'),
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ title, content, status, parent, elementor_ready, site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.createPage({
+        title,
+        content: content || '',
+        status,
+        parent,
+        elementor_ready,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ------------------------------------------------------------------ //
+  // create_post
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'create_post',
+    'Create a new WordPress post with optional categories and tags.',
+    {
+      title: z.string().min(1).describe('Post title'),
+      content: z.string().optional().describe('Post content (HTML)'),
+      status: z.enum(['draft', 'publish', 'pending', 'private']).default('draft').describe('Post status'),
+      categories: z.array(z.number().int().positive()).optional().describe('Category IDs'),
+      tags: z.array(z.string()).optional().describe('Tag names'),
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ title, content, status, categories, tags, site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.createPost({
+        title,
+        content: content || '',
+        status,
+        categories,
+        tags,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ------------------------------------------------------------------ //
+  // update_post_meta
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'update_post_meta',
+    'Update post meta: slug, excerpt, or featured image ID.',
+    {
+      id: z.number().int().positive().describe('Post ID'),
+      slug: z.string().optional().describe('URL slug (post_name)'),
+      excerpt: z.string().optional().describe('Post excerpt'),
+      featured_image_id: z.number().int().nonnegative().optional().describe('Featured image media ID (0 to remove)'),
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ id, slug, excerpt, featured_image_id, site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.updatePostMeta({
+        id,
+        slug,
+        excerpt,
+        featured_image_id,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ------------------------------------------------------------------ //
+  // delete_post
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'delete_post',
+    'Delete a post (move to trash or permanently delete).',
+    {
+      id: z.number().int().positive().describe('Post ID'),
+      force: z.boolean().default(false).describe('Permanently delete instead of moving to trash'),
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ id, force, site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.deletePost({ id, force });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ------------------------------------------------------------------ //
+  // list_taxonomies
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'list_taxonomies',
+    'List all registered taxonomies with their labels and properties.',
+    {
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.listTaxonomies();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ------------------------------------------------------------------ //
+  // create_term
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'create_term',
+    'Create a new term in a taxonomy (category, tag, etc.).',
+    {
+      taxonomy: z.string().describe('Taxonomy name (e.g., "category", "post_tag")'),
+      name: z.string().min(1).describe('Term name'),
+      slug: z.string().optional().describe('Term slug (auto-generated from name if omitted)'),
+      parent: z.number().int().nonnegative().optional().describe('Parent term ID'),
+      description: z.string().optional().describe('Term description'),
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ taxonomy, name, slug, parent, description, site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.createTerm({
+        taxonomy,
+        name,
+        slug,
+        parent,
+        description,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ------------------------------------------------------------------ //
+  // update_term
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'update_term',
+    'Update an existing term.',
+    {
+      taxonomy: z.string().describe('Taxonomy name'),
+      id: z.number().int().positive().describe('Term ID'),
+      name: z.string().optional().describe('New term name'),
+      slug: z.string().optional().describe('New term slug'),
+      parent: z.number().int().nonnegative().optional().describe('New parent term ID'),
+      description: z.string().optional().describe('New term description'),
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ taxonomy, id, name, slug, parent, description, site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.updateTerm({
+        taxonomy,
+        id,
+        name,
+        slug,
+        parent,
+        description,
+      });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ------------------------------------------------------------------ //
+  // delete_term
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'delete_term',
+    'Delete a term from a taxonomy.',
+    {
+      taxonomy: z.string().describe('Taxonomy name'),
+      id: z.number().int().positive().describe('Term ID'),
+      force: z.boolean().default(false).describe('Force delete even if term has posts'),
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ taxonomy, id, force, site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.deleteTerm({ taxonomy, id, force });
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
+
+  // ------------------------------------------------------------------ //
+  // list_post_types
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'list_post_types',
+    'List all registered post types with their properties.',
+    {
+      site_id: z.string().optional().describe('Site ID from config'),
+    },
+    async ({ site_id }) => {
+      const client = getClient(site_id);
+      const result = await client.listPostTypes();
+
+      return {
+        content: [
+          {
+            type: 'text',
+            text: JSON.stringify(result, null, 2),
+          },
+        ],
+      };
+    },
+  );
 }

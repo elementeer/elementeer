@@ -65,6 +65,49 @@ function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> 
     getPageData: vi.fn(),
     updatePageData: vi.fn().mockResolvedValue({ id: 5, updated: true }),
     createThemeBuilderTemplate: vi.fn().mockResolvedValue({ id: 200, title: 'Main Header', type: 'header', status: 'publish', conditions: ['include/general'] }),
+    getSiteSettings: vi.fn().mockResolvedValue({
+      blogname: 'Test Site',
+      description: 'Just another WordPress site',
+      homepage: null,
+      posts_page: null,
+      permalink: '/%postname%/',
+      timezone: 'UTC',
+      date_format: 'F j, Y',
+      time_format: 'g:i a',
+      start_of_week: 1,
+    }),
+    updateSiteSettings: vi.fn().mockResolvedValue({
+      updated: ['blogname'],
+      settings: {},
+    }),
+    getSeoMeta: vi.fn().mockResolvedValue({
+      post_id: 1,
+      plugin: 'none',
+      title: '',
+      description: '',
+      focus_keyword: '',
+    }),
+    updateSeoMeta: vi.fn().mockResolvedValue({
+      post_id: 1,
+      plugin: 'none',
+      title: '',
+      description: '',
+      focus_keyword: '',
+    }),
+    flushElementorCache: vi.fn().mockResolvedValue({
+      success: true,
+    }),
+    getPerformanceReport: vi.fn().mockResolvedValue({
+      css_print_method: 'external',
+      optimized_dom: true,
+      load_fa4_shim: false,
+      asset_optimization: 'none',
+      cache_status: 'disabled',
+    }),
+    optimizeElementorAssets: vi.fn().mockResolvedValue({
+      success: true,
+      changes: [],
+    }),
     ...overrides,
   } as unknown as ElementifyClient;
 }
@@ -262,6 +305,33 @@ describe('wizard tools', () => {
       });
 
       expect(client.updatePageData).toHaveBeenCalledWith(55, expect.any(Array));
+    });
+
+    it('keeps composed section order stable for regression coverage', async () => {
+      vi.mocked(client.listTemplates).mockResolvedValueOnce({
+        templates: [
+          makeTemplate(1, 'SECTION_Hero'),
+          makeTemplate(2, 'SECTION_Features'),
+          makeTemplate(3, 'SECTION_CTA'),
+        ],
+        total: 3,
+        total_pages: 1,
+      });
+      vi.mocked(client.getTemplateData)
+        .mockResolvedValueOnce({ id: 1, elementor_data: [{ id: 'hero', elType: 'container', elements: [] }] })
+        .mockResolvedValueOnce({ id: 2, elementor_data: [{ id: 'features', elType: 'container', elements: [] }] })
+        .mockResolvedValueOnce({ id: 3, elementor_data: [{ id: 'cta', elType: 'container', elements: [] }] });
+
+      await call('creator_mode', {
+        sections: ['hero', 'features', 'cta'],
+        write_to_page: { page_id: 77 },
+      });
+
+      expect(client.updatePageData).toHaveBeenCalledWith(77, [
+        { id: 'hero', elType: 'container', elements: [] },
+        { id: 'features', elType: 'container', elements: [] },
+        { id: 'cta', elType: 'container', elements: [] },
+      ]);
     });
 
     it('shows guidance when no templates match', async () => {
