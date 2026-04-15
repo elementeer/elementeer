@@ -14,7 +14,7 @@ final class MediaSideload {
     public function __construct() { $this->auth = Auth::get_instance(); }
 
     public function sideload(WP_REST_Request $request): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize($request, 'global-styles:write');
+        $auth = $this->auth->authorize($request, 'media-operations:write');
         if (is_wp_error($auth)) return $auth;
 
         $body = $request->get_json_params() ?: [];

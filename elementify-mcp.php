@@ -3,7 +3,7 @@
  * Plugin Name: Elementify MCP Plugin
  * Plugin URI:  https://github.com/elementify/elementify-mcp
  * Description: AI-native REST API for Elementor template management. Exposes the Elementor library to MCP servers with capability-scoped API keys and optional governance controls.
- * Version:     0.2.0
+ * Version:     0.5.0
  * Author:      Elementify
  * Author URI:  https://elementify.dev
  * License:     GPL-3.0-or-later
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 // Plugin constants
-define( 'ELEMENTIFY_MCP_VERSION', '0.2.0' );
+define( 'ELEMENTIFY_MCP_VERSION', '0.5.0' );
 define( 'ELEMENTIFY_MCP_FILE', __FILE__ );
 define( 'ELEMENTIFY_MCP_DIR', plugin_dir_path( __FILE__ ) );
 define( 'ELEMENTIFY_MCP_URL', plugin_dir_url( __FILE__ ) );

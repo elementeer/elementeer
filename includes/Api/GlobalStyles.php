@@ -33,7 +33,7 @@ final class GlobalStyles {
     // ------------------------------------------------------------------ //
 
     public function get_global_styles( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:read' );
+        $auth = $this->auth->authorize( $request, 'design-system:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $kit_id = $this->get_active_kit_id();
@@ -57,7 +57,7 @@ final class GlobalStyles {
     // ------------------------------------------------------------------ //
 
     public function set_colors( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'global-styles:write' );
+        $auth = $this->auth->authorize( $request, 'design-system:write' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $kit_id = $this->get_active_kit_id();
@@ -111,7 +111,7 @@ final class GlobalStyles {
     // ------------------------------------------------------------------ //
 
     public function set_typography( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'global-styles:write' );
+        $auth = $this->auth->authorize( $request, 'design-system:write' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $kit_id = $this->get_active_kit_id();

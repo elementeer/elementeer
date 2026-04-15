@@ -39,7 +39,6 @@ class ManagerTest extends TestCase
 
         // Reset singleton between tests
         $ref = new \ReflectionProperty( Manager::class, 'instance' );
-        $ref->setAccessible( true );
         $ref->setValue( null, null );
     }
 
@@ -193,6 +192,20 @@ class ManagerTest extends TestCase
         $this->assertTrue( $result );
     }
 
+    public function test_check_capability_accepts_canonical_domain_capability_for_legacy_required_scope(): void
+    {
+        $keyData = [
+            'key'          => 'ek_test',
+            'capabilities' => [ 'content-structure:read' ],
+            'is_active'    => true,
+        ];
+
+        $manager = Manager::get_instance();
+        $result  = $manager->check_capability( $keyData, 'templates:read' );
+
+        $this->assertTrue( $result );
+    }
+
     public function test_check_capability_returns_insufficient_scope_not_invalid_key(): void
     {
         // CRITICAL: when a valid key lacks a capability, the error MUST be
@@ -237,7 +250,7 @@ class ManagerTest extends TestCase
     public function test_governance_allows_returns_true_when_capability_allowed(): void
     {
         Functions\when( 'get_option' )->justReturn( [
-            'allowed_capabilities' => [ 'templates:read', 'templates:write', 'templates:delete' ],
+            'allowed_capabilities' => [ 'content-structure:read', 'content-structure:write' ],
             'require_approval'     => false,
             'audit_log_enabled'    => true,
             'max_keys'             => 10,
@@ -245,7 +258,6 @@ class ManagerTest extends TestCase
 
         // Reset Settings singleton too
         $settingsRef = new \ReflectionProperty( \Elementify\MCP\Governance\Settings::class, 'instance' );
-        $settingsRef->setAccessible( true );
         $settingsRef->setValue( null, null );
 
         $manager = Manager::get_instance();
@@ -257,11 +269,10 @@ class ManagerTest extends TestCase
     public function test_governance_allows_returns_governance_blocked_when_denied(): void
     {
         Functions\when( 'get_option' )->justReturn( [
-            'allowed_capabilities' => [ 'templates:read' ], // delete not allowed
+            'allowed_capabilities' => [ 'content-structure:read' ], // write not allowed
         ] );
 
         $settingsRef = new \ReflectionProperty( \Elementify\MCP\Governance\Settings::class, 'instance' );
-        $settingsRef->setAccessible( true );
         $settingsRef->setValue( null, null );
 
         $manager = Manager::get_instance();
@@ -286,7 +297,7 @@ class ManagerTest extends TestCase
 
         $this->assertStringStartsWith( 'ek_', $record['key'] );
         $this->assertSame( 'Test Key', $record['label'] );
-        $this->assertSame( [ 'templates:read' ], $record['capabilities'] );
+        $this->assertSame( [ 'content-structure:read' ], $record['capabilities'] );
         $this->assertTrue( $record['is_active'] );
         $this->assertNull( $record['last_used'] );
     }
@@ -301,6 +312,17 @@ class ManagerTest extends TestCase
         $key2    = $manager->generate_key( 'Key 2', [] );
 
         $this->assertNotSame( $key1['key'], $key2['key'] );
+    }
+
+    public function test_generate_key_filters_unknown_capabilities(): void
+    {
+        Functions\when( 'get_option' )->justReturn( [] );
+        Functions\when( 'update_option' )->justReturn( true );
+
+        $manager = Manager::get_instance();
+        $record  = $manager->generate_key( 'Scoped Key', [ 'templates:read', 'fake:capability', 'site:read' ] );
+
+        $this->assertSame( [ 'content-structure:read', 'site-audit:read' ], $record['capabilities'] );
     }
 
     // ------------------------------------------------------------------ //

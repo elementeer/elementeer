@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Elementify\MCP\Governance;
 
+use Elementify\MCP\Auth\Capabilities;
+
 /**
  * Manages site-level governance settings stored in wp_options.
  *
@@ -15,17 +17,7 @@ final class Settings {
     private static ?self $instance = null;
 
     private const DEFAULTS = [
-        'allowed_capabilities' => [
-            'templates:read',
-            'templates:write',
-            'templates:delete',
-            'theme-builder:read',
-            'theme-builder:write',
-            'global-widgets:read',
-            'global-widgets:write',
-            'library:export',
-            'library:import',
-        ],
+        'allowed_capabilities' => Capabilities::ALL,
         'require_approval'   => false,
         'audit_log_enabled'  => true,
         'max_keys'           => 10,
@@ -45,7 +37,13 @@ final class Settings {
      */
     public function get(): array {
         $stored = get_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, [] );
-        return array_merge( self::DEFAULTS, is_array( $stored ) ? $stored : [] );
+        $settings = array_merge( self::DEFAULTS, is_array( $stored ) ? $stored : [] );
+
+        if ( isset( $settings['allowed_capabilities'] ) ) {
+            $settings['allowed_capabilities'] = Capabilities::filter( (array) $settings['allowed_capabilities'] );
+        }
+
+        return $settings;
     }
 
     /**
@@ -65,20 +63,7 @@ final class Settings {
 
         // Validate allowed_capabilities is a subset of known capabilities
         if ( isset( $current['allowed_capabilities'] ) ) {
-            $all_caps = [
-                'templates:read', 'templates:write', 'templates:delete',
-                'pages:write',
-                'global-styles:write',
-                'theme-builder:read', 'theme-builder:write',
-                'global-widgets:read', 'global-widgets:write',
-                'library:export', 'library:import',
-            ];
-            $current['allowed_capabilities'] = array_values(
-                array_filter(
-                    (array) $current['allowed_capabilities'],
-                    fn( $cap ) => in_array( $cap, $all_caps, true )
-                )
-            );
+            $current['allowed_capabilities'] = Capabilities::filter( (array) $current['allowed_capabilities'] );
         }
 
         update_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, $current );
@@ -89,6 +74,6 @@ final class Settings {
      */
     public function is_allowed( string $capability ): bool {
         $settings = $this->get();
-        return in_array( $capability, $settings['allowed_capabilities'] ?? [], true );
+        return Capabilities::matches_granted( (array) ( $settings['allowed_capabilities'] ?? [] ), $capability );
     }
 }

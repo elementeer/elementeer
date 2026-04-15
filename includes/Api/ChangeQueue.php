@@ -32,7 +32,7 @@ final class ChangeQueue {
     // GET /changes/queue
     // ------------------------------------------------------------------ //
     public function list_changes( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:read' );
+        $auth = $this->auth->authorize( $request, 'governance:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $status = sanitize_text_field( $request->get_param( 'status' ) ?? 'all' );
@@ -52,7 +52,7 @@ final class ChangeQueue {
     // POST /changes/queue
     // ------------------------------------------------------------------ //
     public function create_change( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:write' );
+        $auth = $this->auth->authorize( $request, 'workflow-orchestration:prepare' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $body = $request->get_json_params() ?: [];
@@ -93,7 +93,7 @@ final class ChangeQueue {
     // GET /changes/{id}
     // ------------------------------------------------------------------ //
     public function get_change( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:read' );
+        $auth = $this->auth->authorize( $request, 'governance:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $id     = sanitize_text_field( $request->get_param( 'id' ) ?? '' );
@@ -109,9 +109,6 @@ final class ChangeQueue {
     // PUT /changes/{id}/status   { status: "approved"|"rejected"|"applied", note?: string }
     // ------------------------------------------------------------------ //
     public function update_status( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:write' );
-        if ( is_wp_error( $auth ) ) return $auth;
-
         $id   = sanitize_text_field( $request->get_param( 'id' ) ?? '' );
         $body = $request->get_json_params() ?: [];
 
@@ -123,6 +120,10 @@ final class ChangeQueue {
                 [ 'status' => 400 ]
             );
         }
+
+        $required_capability = $new_status === 'applied' ? 'governance:apply' : 'governance:review';
+        $auth = $this->auth->authorize( $request, $required_capability );
+        if ( is_wp_error( $auth ) ) return $auth;
 
         $queue = $this->load_queue();
         $found = false;
@@ -155,7 +156,7 @@ final class ChangeQueue {
     // DELETE /changes/{id}
     // ------------------------------------------------------------------ //
     public function delete_change( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:write' );
+        $auth = $this->auth->authorize( $request, 'governance:write' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $id        = sanitize_text_field( $request->get_param( 'id' ) ?? '' );

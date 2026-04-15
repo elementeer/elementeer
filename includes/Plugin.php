@@ -7,6 +7,7 @@ namespace Elementify\MCP;
 use Elementify\MCP\Admin\Page;
 use Elementify\MCP\Api\Router;
 use Elementify\MCP\Activation\Mode;
+use Elementify\MCP\Auth\Capabilities;
 
 /**
  * Main plugin singleton.
@@ -52,15 +53,7 @@ final class Plugin {
         // Seed default governance settings if not already set
         if ( false === get_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE ) ) {
             update_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, [
-                'allowed_capabilities' => [
-                    'templates:read',
-                    'templates:write',
-                    'templates:delete',
-                    'theme-builder:read',
-                    'global-widgets:read',
-                    'library:export',
-                    'library:import',
-                ],
+                'allowed_capabilities' => Capabilities::default_governance_allowed(),
                 'require_approval'   => false,
                 'audit_log_enabled'  => true,
                 'max_keys'           => 10,

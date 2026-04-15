@@ -88,7 +88,7 @@ class Manager {
     public function check_capability( array $key_data, string $capability ): bool|WP_Error {
         $key_capabilities = $key_data['capabilities'] ?? [];
 
-        if ( ! in_array( $capability, $key_capabilities, true ) ) {
+        if ( ! Capabilities::matches_granted( (array) $key_capabilities, $capability ) ) {
             return new WP_Error(
                 'elementify_insufficient_scope',
                 sprintf(
@@ -113,7 +113,7 @@ class Manager {
     public function governance_allows( string $capability ): bool|WP_Error {
         $settings = Settings::get_instance()->get();
 
-        if ( ! in_array( $capability, $settings['allowed_capabilities'] ?? [], true ) ) {
+        if ( ! Capabilities::matches_granted( (array) ( $settings['allowed_capabilities'] ?? [] ), $capability ) ) {
             return new WP_Error(
                 'elementify_governance_blocked',
                 sprintf(
@@ -170,6 +170,7 @@ class Manager {
      */
     public function generate_key( string $label, array $capabilities ): array {
         $raw_key = 'ek_' . bin2hex( random_bytes( 24 ) );
+        $capabilities = Capabilities::filter( $capabilities );
 
         $record = [
             'key'          => $raw_key,

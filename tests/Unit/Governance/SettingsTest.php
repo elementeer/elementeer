@@ -22,7 +22,6 @@ class SettingsTest extends TestCase
 
         // Reset singleton between tests
         $ref = new \ReflectionProperty( Settings::class, 'instance' );
-        $ref->setAccessible( true );
         $ref->setValue( null, null );
     }
 
@@ -49,10 +48,10 @@ class SettingsTest extends TestCase
         $this->assertArrayHasKey( 'audit_log_enabled', $result );
         $this->assertArrayHasKey( 'max_keys', $result );
 
-        // Default capabilities include templates:read
-        $this->assertContains( 'templates:read', $result['allowed_capabilities'] );
-        $this->assertContains( 'templates:write', $result['allowed_capabilities'] );
-        $this->assertContains( 'templates:delete', $result['allowed_capabilities'] );
+        // Default capabilities use the canonical domain model
+        $this->assertContains( 'content-structure:read', $result['allowed_capabilities'] );
+        $this->assertContains( 'content-structure:write', $result['allowed_capabilities'] );
+        $this->assertContains( 'site-audit:read', $result['allowed_capabilities'] );
 
         // Default values
         $this->assertFalse( $result['require_approval'] );
@@ -147,8 +146,8 @@ class SettingsTest extends TestCase
         ] );
 
         $this->assertNotNull( $savedValue );
-        $this->assertContains( 'templates:read', $savedValue['allowed_capabilities'] );
-        $this->assertContains( 'templates:delete', $savedValue['allowed_capabilities'] );
+        $this->assertContains( 'content-structure:read', $savedValue['allowed_capabilities'] );
+        $this->assertContains( 'content-structure:write', $savedValue['allowed_capabilities'] );
         $this->assertNotContains( 'fake:capability', $savedValue['allowed_capabilities'] );
     }
 
@@ -165,6 +164,17 @@ class SettingsTest extends TestCase
         $settings = Settings::get_instance();
         $this->assertTrue( $settings->is_allowed( 'templates:read' ) );
         $this->assertTrue( $settings->is_allowed( 'templates:write' ) );
+    }
+
+    public function test_is_allowed_accepts_canonical_domain_capabilities(): void
+    {
+        Functions\when( 'get_option' )->justReturn( [
+            'allowed_capabilities' => [ 'library-operations:read', 'governance:review' ],
+        ] );
+
+        $settings = Settings::get_instance();
+        $this->assertTrue( $settings->is_allowed( 'library-operations:read' ) );
+        $this->assertTrue( $settings->is_allowed( 'governance:review' ) );
     }
 
     public function test_is_allowed_returns_false_when_capability_not_in_allowed_list(): void

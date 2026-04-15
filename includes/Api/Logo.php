@@ -28,7 +28,7 @@ final class Logo {
     }
 
     public function get_logo( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:read' );
+        $auth = $this->auth->authorize( $request, 'site-foundation:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $logo_id  = (int) get_theme_mod( 'custom_logo', 0 );
@@ -42,7 +42,7 @@ final class Logo {
     }
 
     public function set_logo( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'global-styles:write' );
+        $auth = $this->auth->authorize( $request, 'site-foundation:write' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $body     = $request->get_json_params() ?: [];

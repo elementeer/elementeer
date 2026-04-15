@@ -16,7 +16,7 @@ use Elementify\MCP\Activation\Mode;
 final class Site {
 
     public function get_site_info( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = Auth::get_instance()->authorize( $request, 'templates:read' );
+        $auth = Auth::get_instance()->authorize( $request, 'site-audit:read' );
         if ( is_wp_error( $auth ) ) {
             return $auth;
         }

@@ -29,10 +29,10 @@ final class Pages {
      *   ?extract=section&index=N  — returns only the Nth top-level element (0-based)
      *   ?extract=all              — returns all top-level elements as array with index info
      *
-     * Requires 'templates:read' capability.
+     * Requires 'content-structure:read' capability.
      */
     public function get_page_data( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:read' );
+        $auth = $this->auth->authorize( $request, 'content-structure:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $id = (int) $request->get_param( 'id' );
@@ -112,10 +112,10 @@ final class Pages {
      *
      * Writes Elementor JSON back to any post/page, replacing its _elementor_data.
      * Flushes Elementor's CSS cache so changes are reflected immediately.
-     * Requires 'pages:write' capability.
+     * Requires 'content-structure:write' capability.
      */
     public function update_page_data( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'pages:write' );
+        $auth = $this->auth->authorize( $request, 'content-structure:write' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $id   = (int) $request->get_param( 'id' );
@@ -162,10 +162,10 @@ final class Pages {
      * GET /pages
      *
      * Lists all posts/pages that were built with Elementor (have _elementor_edit_mode = builder).
-     * Requires 'templates:read' capability.
+     * Requires 'content-structure:read' capability.
      */
     public function list_pages( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-        $auth = $this->auth->authorize( $request, 'templates:read' );
+        $auth = $this->auth->authorize( $request, 'content-structure:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
         $post_type = sanitize_text_field( $request->get_param( 'post_type' ) ?: 'page' );
