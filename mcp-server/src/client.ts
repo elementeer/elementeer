@@ -206,6 +206,48 @@ export interface ImportExternalDataResult {
   summary: string;
 }
 
+export interface ExportDataParams {
+  post_type?: string;
+  format?: 'csv' | 'json';
+  filters?: {
+    status?: string;
+    category?: string | number;
+    author?: number;
+    search?: string;
+    date_range?: { start?: string; end?: string };
+  };
+  limit?: number;
+  offset?: number;
+}
+
+export interface ExportDataResponse {
+  exported: boolean;
+  total: number;
+  count: number;
+  offset: number;
+  limit: number;
+  format: 'csv' | 'json';
+  data: Array<{
+    id: number;
+    title: string;
+    content: string;
+    excerpt: string;
+    slug: string;
+    status: string;
+    author: number;
+    date: string;
+    modified: string;
+    post_type: string;
+    parent: number;
+    menu_order: number;
+    comment_count: number;
+    guid: string;
+    featured_image?: string;
+    meta: Record<string, unknown>;
+    [key: `taxonomy_${string}`]: string[];
+  }>;
+}
+
 export interface TranslationCoverageAnalysis {
   multilingual_plugin: string | null;
   configured_languages: string[];
@@ -318,6 +360,20 @@ export interface AllyApplyFixResponse {
   issue_id: string;
   fix_type: string;
   ally_status: AllyStatus;
+}
+
+export interface AccessibilityScanResult {
+  scanned_at: string;
+  page_id: number | null;
+  scan_type: string;
+  violations: Array<{
+    severity: 'critical' | 'serious' | 'moderate' | 'minor';
+    element_type: string;
+    location: Record<string, any>;
+    description: string;
+    suggested_fix: string;
+  }>;
+  count: number;
 }
 
 export interface TranslateMediaResponse {
@@ -563,6 +619,11 @@ export class ElementifyClient {
 
   async importExternalData(input: ImportExternalDataInput): Promise<ImportExternalDataResult> {
     const res = await this.http.post<ImportExternalDataResult>('/import/external', input);
+    return res.data;
+  }
+
+  async exportData(params: ExportDataParams): Promise<ExportDataResponse> {
+    const res = await this.http.post<ExportDataResponse>('/export/data', params);
     return res.data;
   }
 
@@ -951,6 +1012,11 @@ export class ElementifyClient {
     return res.data;
   }
 
+  async scanAccessibility(params: { page_id?: number; scan_type?: 'quick' | 'full' }): Promise<AccessibilityScanResult> {
+    const res = await this.http.get('/ally/scan/accessibility', { params });
+    return res.data;
+  }
+
   // ------------------------------------------------------------------ //
   // LMS Integration
   // ------------------------------------------------------------------ //
@@ -1005,6 +1071,56 @@ export class ElementifyClient {
 
   async getBookingStats(): Promise<any> {
     const res = await this.http.get('/booking/stats');
+    return res.data;
+  }
+
+  async listAmeliaServices(params: { page?: number; per_page?: number } = {}): Promise<any> {
+    const res = await this.http.get('/booking/amelia/services', { params });
+    return res.data;
+  }
+
+  async getAmeliaService(serviceId: number): Promise<any> {
+    const res = await this.http.get(`/booking/amelia/services/${serviceId}`);
+    return res.data;
+  }
+
+  async createAmeliaService(data: any): Promise<any> {
+    const res = await this.http.post('/booking/amelia/services', data);
+    return res.data;
+  }
+
+  async updateAmeliaService(serviceId: number, data: any): Promise<any> {
+    const res = await this.http.patch(`/booking/amelia/services/${serviceId}`, data);
+    return res.data;
+  }
+
+  async deleteAmeliaService(serviceId: number): Promise<any> {
+    const res = await this.http.delete(`/booking/amelia/services/${serviceId}`);
+    return res.data;
+  }
+
+  async listAmeliaAppointments(params: { page?: number; per_page?: number; status?: string } = {}): Promise<any> {
+    const res = await this.http.get('/booking/amelia/appointments', { params });
+    return res.data;
+  }
+
+  async getAmeliaAppointment(appointmentId: number): Promise<any> {
+    const res = await this.http.get(`/booking/amelia/appointments/${appointmentId}`);
+    return res.data;
+  }
+
+  async createAmeliaAppointment(data: any): Promise<any> {
+    const res = await this.http.post('/booking/amelia/appointments', data);
+    return res.data;
+  }
+
+  async updateAmeliaAppointment(appointmentId: number, data: any): Promise<any> {
+    const res = await this.http.patch(`/booking/amelia/appointments/${appointmentId}`, data);
+    return res.data;
+  }
+
+  async deleteAmeliaAppointment(appointmentId: number): Promise<any> {
+    const res = await this.http.delete(`/booking/amelia/appointments/${appointmentId}`);
     return res.data;
   }
 

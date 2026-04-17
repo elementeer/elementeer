@@ -39,9 +39,8 @@ final class Wizards {
 		}
 
 		// Get cached assessment data (in a real implementation, this would come from a transient)
-		$assessment = [];
-		// For now, return empty assessment; the placeholder wizards don't need real data
-		// TODO: In Phase 3.3, fetch cached assessment from transient or call Assessment endpoint
+		// Get cached assessment data
+		$assessment = $this->get_cached_assessment();
 
 		// Map wizard ID to class name
 		$class_map = [
@@ -120,5 +119,27 @@ final class Wizards {
 			'suggested_tools' => [],
 			'suggested_plugins' => [],
 		];
+	}
+	/**
+	 * Get cached assessment data from transient or fresh from Assessment API.
+	 *
+	 * @return array
+	 */
+	private function get_cached_assessment(): array {
+		$transient_key = "elementify_assessment_cache";
+		$cached = \get_transient( $transient_key );
+		
+		if ( $cached !== false ) {
+			return (array) $cached;
+		}
+		
+		// No cached data, fetch fresh assessment
+		$assessment_api = new Assessment();
+		$assessment = $assessment_api->get_assessment();
+		
+		// Cache for 1 hour
+		\set_transient( $transient_key, $assessment, HOUR_IN_SECONDS );
+		
+		return $assessment;
 	}
 }
