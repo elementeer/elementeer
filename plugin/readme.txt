@@ -3,7 +3,7 @@ Contributors: elementify
 Tags: elementor, mcp, ai, rest-api, template-management
 Requires at least: 6.0
 Tested up to: 6.5
-Stable tag: 0.2.0
+Stable tag: 0.5.1
 Requires PHP: 8.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
