@@ -97,10 +97,10 @@ export function registerWooCommerceTools(
         ];
 
         if (product.categories.length > 0) {
-          lines.push(`**Categories**: ${product.categories.map(c => c.name).join(', ')}`);
+          lines.push(`**Categories**: ${product.categories.map((c: any) => c.name).join(', ')}`);
         }
         if (product.tags.length > 0) {
-          lines.push(`**Tags**: ${product.tags.map(t => t.name).join(', ')}`);
+          lines.push(`**Tags**: ${product.tags.map((t: any) => t.name).join(', ')}`);
         }
 
         if (product.images.length > 0) {
@@ -118,7 +118,7 @@ export function registerWooCommerceTools(
           lines.push('| ID | Attributes | Price | Stock |');
           lines.push('|----|------------|-------|-------|');
           for (const variation of product.variations.slice(0, 10)) {
-            const attrs = variation.attributes.map(a => `${a.name}: ${a.option}`).join(', ');
+            const attrs = variation.attributes.map((a: any) => `${a.name}: ${a.option}`).join(', ');
             lines.push(`| ${variation.id} | ${attrs} | ${variation.price ? `$${variation.price}` : '—'} | ${variation.stock_quantity ?? variation.stock_status} |`);
           }
           if (product.variations.length > 10) {

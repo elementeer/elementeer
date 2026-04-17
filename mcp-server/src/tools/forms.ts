@@ -645,78 +645,7 @@ export function registerFormTools(
       }
     },
   );
-}
       
-      // Generate the advanced form widget JSON
-      const formWidget = generateAdvancedFormWidget(fields, {
-        formName: form_name,
-        emailTo: email_to,
-        redirectUrl: redirect_url,
-        successMessage: success_message,
-        steps,
-        conditionalLogic: conditional_logic,
-        marketingIntegrations: marketing_integrations,
-      });
-      
-      // For L2/L3, queue the creation
-      if (level === 'L2' || level === 'L3') {
-        const change = await client.createChange({
-          operation: 'create_template', // We'll create a template with the form
-          params: {
-            title: `${form_name} (Advanced Form)`,
-            type: 'widget',
-            elementor_data: [formWidget],
-            status: 'draft',
-          },
-          note: note || `Advanced form "${form_name}" auto-queued by governance level ${level}`,
-        });
-
-        const lines = [
-          `🟡 Advanced form template queued for review (governance level ${level})`,
-          `   ID: ${change.id}`,
-          `   Operation: create_template`,
-          `   Form name: ${form_name}`,
-          `   Fields: ${fields.length} field(s)`,
-          steps ? `   Steps: ${steps.length} step(s)` : '',
-          conditional_logic ? `   Conditional logic rules: ${conditional_logic.length}` : '',
-          marketing_integrations ? `   Marketing integrations: ${marketing_integrations.length}` : '',
-          note ? `   Note: ${note}` : '',
-          '',
-          'Next steps:',
-          '  1. review_change(change_id, "approve") — approve it',
-          '  2. apply_change(change_id)             — create the form template',
-          '  Or: review_change(change_id, "reject") to discard.',
-          '',
-          'After approval, use update_page_data to insert the form into a page.',
-        ].filter(Boolean);
-
-        return { content: [{ type: 'text', text: lines.join('\n') }] };
-      }
-      
-      // L0/L1: Return the JSON directly (should not happen as advanced is L2)
-      const lines = [
-        `✅ Advanced form "${form_name}" generated`,
-        `   Fields: ${fields.length} field(s)`,
-        `   Email notification: ${email_to ? 'Yes' : 'No'}`,
-        `   Redirect: ${redirect_url || 'None'}`,
-        steps ? `   Steps: ${steps.length} step(s)` : '',
-        conditional_logic ? `   Conditional logic rules: ${conditional_logic.length}` : '',
-        marketing_integrations ? `   Marketing integrations: ${marketing_integrations.length}` : '',
-        '',
-        '## Elementor Advanced Form Widget JSON',
-        '```json',
-        JSON.stringify([formWidget], null, 2),
-        '```',
-        '',
-        '## Usage',
-        '1. Copy the JSON above',
-        '2. Use update_page_data(page_id, elementor_data: JSON) to insert into a page',
-        '3. Or use create_template to save as a reusable template',
-      ].filter(Boolean);
-
-       return { content: [{ type: 'text', text: lines.join('\n') }] };
-    },
-  );
 
   // ------------------------------------------------------------------ //
   // list_form_templates (FORM-007)

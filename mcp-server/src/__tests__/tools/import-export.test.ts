@@ -151,4 +151,90 @@ describe('Import/Export tools', () => {
       );
     });
   });
+
+  describe('mass_export', () => {
+    it('calls createChange with correct parameters and returns queued message', async () => {
+      const result = await callTool('mass_export', {
+        site_id: 'test-site',
+        post_type: 'post',
+        format: 'json',
+        filters: {
+          status: 'publish',
+          category: 'news',
+          author: 1,
+          search: 'test',
+          date_range: { start: '2025-01-01', end: '2025-12-31' },
+        },
+        limit: 50,
+        offset: 0,
+        note: 'Export test data',
+      });
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'mass_export',
+        params: {
+          post_type: 'post',
+          format: 'json',
+          filters: {
+            status: 'publish',
+            category: 'news',
+            author: 1,
+            search: 'test',
+            date_range: { start: '2025-01-01', end: '2025-12-31' },
+          },
+          limit: 50,
+          offset: 0,
+        },
+        note: 'Export test data',
+      });
+      expect(result.content[0].text).toContain('🟡 Bulk export queued for review (governance level L2)');
+      expect(result.content[0].text).toContain('ID: change-123');
+      expect(result.content[0].text).toContain('Operation: mass_export');
+      expect(result.content[0].text).toContain('Post type: post');
+      expect(result.content[0].text).toContain('Format: json');
+      expect(result.content[0].text).toContain('Limit: 50');
+      expect(result.content[0].text).toContain('Offset: 0');
+    });
+
+    it('handles minimal parameters', async () => {
+      const result = await callTool('mass_export', {
+        post_type: 'page',
+        format: 'csv',
+      });
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'mass_export',
+        params: {
+          post_type: 'page',
+          format: 'csv',
+          filters: {},
+          limit: 100,
+          offset: 0,
+        },
+        note: 'Export page as csv',
+      });
+      expect(result.content[0].text).toContain('🟡 Bulk export queued for review (governance level L2)');
+    });
+
+    it('requires consent for L3 operations (should not happen for mass_export)', async () => {
+      const originalLevels = await import('../../product-tiers.js');
+      vi.spyOn(originalLevels, 'GOVERNANCE_LEVELS', 'get').mockReturnValue({
+        mass_export: 'L3',
+      } as any);
+      registerImportExportTools(server, getClient);
+      
+      const result = await callTool('mass_export', {
+        post_type: 'post',
+        format: 'json',
+      });
+      expect(result.content[0].text).toContain('requires explicit consent (governance level L3)');
+    });
+
+    it('handles errors gracefully', async () => {
+      vi.mocked(client.createChange).mockRejectedValueOnce(new Error('Queue error'));
+      const result = await callTool('mass_export', {
+        post_type: 'post',
+        format: 'json',
+      });
+      expect(result.content[0].text).toContain('❌ Error queuing bulk export');
+    });
+  });
 });

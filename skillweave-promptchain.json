@@ -1,0 +1,212 @@
+{
+  "project": "Elementify MCP - Close Remaining Gaps",
+  "version": "1.0",
+  "description": "Parallel execution plan to close all identified gaps in PRD-v2/v3 implementation",
+  "estimatedEffort": "8-12 hours",
+  "parallelOpportunities": 3,
+  "workflow": "ralph-loop-attended",
+  "prerequisites": [
+    "Git repository is clean and committed",
+    "Current implementation passes all existing tests",
+    "Development environment ready (TypeScript, PHP, WordPress test setup)"
+  ],
+  "strands": [
+    {
+      "id": "strand-1",
+      "name": "Feature Implementation: AI Translation & A11Y Scanner",
+      "tasks": [
+        {
+          "id": "TRANS-001",
+          "title": "Implement AI-powered batch string translation",
+          "source": "prd-remaining.json",
+          "description": "Replace placeholder in translation.ts with actual AI-powered batch translation via FaiGate integration.",
+          "files": [
+            "mcp-server/src/tools/translation.ts",
+            "plugin/includes/Api/Translation.php",
+            "shared/src/config/types.ts"
+          ],
+          "acceptanceCriteria": [
+            "translate_strings tool accepts string arrays and target language",
+            "Integration with FaiGate config from ~/.elementify/config.json",
+            "Returns translation results with confidence scores",
+            "Handles batch translation with progress reporting",
+            "Governance level L2 (auto-queue) as per product-tiers.ts"
+          ],
+          "steps": [
+            "1. Examine current translation.ts placeholder implementation (lines 159, 222)",
+            "2. Design FaiGate integration for batch string translation",
+            "3. Implement translate_strings tool with proper error handling",
+            "4. Add corresponding PHP endpoint if needed",
+            "5. Update product-tiers.ts if new tool name is different",
+            "6. Write tests for the new functionality",
+            "7. Verify integration with WPML/Polylang string tables"
+          ],
+          "capabilities": ["code_generation", "integration"]
+        },
+        {
+          "id": "ALLY-001",
+          "title": "Implement built-in accessibility scanner",
+          "source": "prd-remaining.json",
+          "description": "Build the built-in accessibility scanner referenced as TODO in Ally.php.",
+          "files": [
+            "plugin/includes/Api/Ally.php",
+            "mcp-server/src/tools/ally.ts",
+            "shared/src/types/ally.ts"
+          ],
+          "acceptanceCriteria": [
+            "New tool scan_accessibility (Free tier) implemented",
+            "Scanner detects missing alt text, heading hierarchy issues, low color contrast",
+            "Returns structured violations with severity levels",
+            "Integration with existing ally.ts tools",
+            "Can run independently of Elementor Ally plugin"
+          ],
+          "steps": [
+            "1. Locate TODO in Ally.php line 177",
+            "2. Design basic WCAG scanner for Elementor data",
+            "3. Implement scan_accessibility tool in ally.ts",
+            "4. Create PHP implementation in Ally.php",
+            "5. Add tests for the scanner",
+            "6. Update documentation and tool registration"
+          ],
+          "capabilities": ["code_generation", "testing"]
+        }
+      ],
+      "parallel": true
+    },
+    {
+      "id": "strand-2",
+      "name": "Verification & Bugfix: Booking & Wizards",
+      "tasks": [
+        {
+          "id": "BOOKING-001",
+          "title": "Confirm booking integration release readiness",
+          "source": "prd-remaining.json",
+          "description": "Verify booking.ts implementation and update roadmap.",
+          "files": [
+            "mcp-server/src/tools/booking.ts",
+            "plugin/includes/Api/Booking.php",
+            "ROADMAP.md",
+            "mcp-server/src/product-tiers.ts"
+          ],
+          "acceptanceCriteria": [
+            "Review booking.ts tools for completeness",
+            "Test booking tools with mock data",
+            "Update ROADMAP.md to change 'Planned Integration' to 'Implemented'",
+            "Ensure booking tools are properly registered in product-tiers.ts",
+            "Verify plugin-side API endpoints exist"
+          ],
+          "steps": [
+            "1. Review booking.ts implementation for all planned tools",
+            "2. Check Amelia/SSA/TEC support completeness",
+            "3. Run existing tests or create simple validation tests",
+            "4. Verify ROADMAP.md already updated (should be done)",
+            "5. Check product-tiers.ts for booking tool registrations",
+            "6. Confirm API endpoints in Router.php"
+          ],
+          "capabilities": ["testing", "documentation"]
+        },
+        {
+          "id": "WIZARDS-001",
+          "title": "Fix wizards cached assessment placeholder",
+          "source": "prd-remaining.json",
+          "description": "Replace placeholder assessment data in Wizards.php with actual cached assess_site data.",
+          "files": [
+            "plugin/includes/Api/Wizards.php",
+            "plugin/includes/Api/Assessment.php",
+            "mcp-server/src/client.ts"
+          ],
+          "acceptanceCriteria": [
+            "Wizards use actual assess_site cached data instead of placeholder",
+            "All 7 wizards (ACF, Forms, Comments, etc.) receive proper assessment input",
+            "Wizard recommendations are based on real site state",
+            "Backward compatibility maintained for sites without cached data"
+          ],
+          "steps": [
+            "1. Locate TODO in Wizards.php line 44",
+            "2. Design caching mechanism for assess_site results",
+            "3. Modify Wizards.php to fetch cached assessment",
+            "4. Update client.ts to support wizard assessment data",
+            "5. Test with actual site assessment data",
+            "6. Ensure backward compatibility"
+          ],
+          "capabilities": ["code_generation", "integration"]
+        }
+      ],
+      "parallel": true
+    },
+    {
+      "id": "strand-3",
+      "name": "New Feature & Infrastructure: Export & Packaging",
+      "tasks": [
+        {
+          "id": "EXPORT-001",
+          "title": "Add missing export tools",
+          "source": "prd-remaining.json",
+          "description": "Implement export tools for Import-Export module.",
+          "files": [
+            "mcp-server/src/tools/import-export.ts",
+            "plugin/includes/Api/ImportExport.php",
+            "mcp-server/src/product-tiers.ts"
+          ],
+          "acceptanceCriteria": [
+            "New tool mass_export implemented in import-export.ts",
+            "Supports filtering by post_type, category, date range, status",
+            "Output formats: CSV and JSON",
+            "Governance level L2 (auto-queue for large exports)",
+            "Integration with existing import_external_data tool"
+          ],
+          "steps": [
+            "1. Design mass_export tool interface and parameters",
+            "2. Implement in import-export.ts",
+            "3. Add corresponding PHP endpoint in ImportExport.php",
+            "4. Register tool in product-tiers.ts",
+            "5. Write tests for export functionality",
+            "6. Update documentation"
+          ],
+          "capabilities": ["code_generation", "automation"]
+        },
+        {
+          "id": "PACKAGING-001",
+          "title": "Implement mirror-export verification for public Free repository",
+          "source": "prd-remaining.json",
+          "description": "Create verification system for mirror export to ensure Free tier tools are correctly separated from Advanced.",
+          "files": [
+            "scripts/",
+            "package.json",
+            "mcp-server/src/product-tiers.ts",
+            "docs/blueprints/free-advanced-launch-prd.md"
+          ],
+          "acceptanceCriteria": [
+            "Script to verify mirror export contains only Free tier tools",
+            "Check product-tiers.ts consistency between main repo and mirror",
+            "Automated validation in CI pipeline",
+            "Documentation for mirror maintenance process"
+          ],
+          "steps": [
+            "1. Design verification script that checks tool tiers",
+            "2. Create script in scripts/verify-mirror.js or .ts",
+            "3. Integrate with package.json scripts",
+            "4. Test with current codebase",
+            "5. Document mirror export process",
+            "6. Consider CI integration (GitHub Actions/Forgejo CI)"
+          ],
+          "capabilities": ["automation", "infrastructure"]
+        }
+      ],
+      "parallel": true
+    }
+  ],
+  "successCriteria": [
+    "All 6 tasks from prd-remaining.json marked as completed",
+    "No remaining TODOs in source code for PRD-v2/v3 modules",
+    "All tests pass",
+    "Roadmap accurately reflects current implementation status",
+    "Mirror-export verification script functional"
+  ],
+  "postCompletion": [
+    "Run full test suite: npm test && composer test",
+    "Update prd-remaining.json status to 'completed'",
+    "Create release notes for v0.6.0",
+    "Consider version bump to v0.6.0"
+  ]
+}

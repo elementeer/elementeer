@@ -214,4 +214,62 @@ export function registerAllyTools(
       }
     },
   );
+
+  // ------------------------------------------------------------------ //
+  // scan_accessibility (ALLY-004)
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'scan_accessibility',
+    'Run built‑in accessibility scan on Elementor pages. Returns structured violations with severity, element type, location, description, and suggested fix.',
+    {
+      site_id: z.string().optional().describe('Site ID from config (defaults to active site)'),
+      page_id: z.number().optional().describe('Page ID to scan (if omitted, scan all pages)'),
+      scan_type: z.enum(['quick', 'full']).default('quick').describe('Scan depth: quick (50 pages) or full (200 pages)'),
+    },
+    async ({ site_id, page_id, scan_type }) => {
+      try {
+        const client = getClient(site_id);
+        const result = await client.scanAccessibility({ page_id, scan_type });
+
+        const lines: string[] = [
+          '# Accessibility Scan Results',
+          `**Scanned at**: ${result.scanned_at}`,
+          `**Page ID**: ${result.page_id ?? 'All pages'}`,
+          `**Scan type**: ${result.scan_type}`,
+          `**Violations found**: ${result.count}`,
+          '',
+        ];
+
+        if (result.violations.length === 0) {
+          lines.push('No accessibility violations detected.');
+        } else {
+          lines.push('## Violations');
+          for (const violation of result.violations.slice(0, 20)) {
+            lines.push(`### ${violation.severity.toUpperCase()}: ${violation.element_type}`);
+            lines.push(`**Location**: ${JSON.stringify(violation.location)}`);
+            lines.push(`**Description**: ${violation.description}`);
+            lines.push(`**Suggested fix**: ${violation.suggested_fix}`);
+            lines.push('');
+          }
+          if (result.violations.length > 20) {
+            lines.push(`... and ${result.violations.length - 20} more violations.`);
+          }
+        }
+
+        return {
+          content: [{
+            type: 'text',
+            text: lines.join('\n'),
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error running accessibility scan: ${error instanceof Error ? error.message : String(error)}`,
+          }],
+        };
+      }
+    },
+  );
 }

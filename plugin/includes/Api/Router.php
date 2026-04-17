@@ -203,6 +203,48 @@ final class Router {
             ],
         ] );
 
+        // Data export (CSV/JSON)
+        register_rest_route( self::NAMESPACE, '/export/data', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $importExport, 'export_data' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'post_type' => [
+                        'type'              => 'string',
+                        'default'           => 'post',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'format' => [
+                        'type'              => 'string',
+                        'default'           => 'json',
+                        'enum'              => [ 'csv', 'json' ],
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'limit' => [
+                        'type'              => 'integer',
+                        'default'           => 100,
+                        'minimum'           => 1,
+                        'maximum'           => 1000,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'offset' => [
+                        'type'              => 'integer',
+                        'default'           => 0,
+                        'minimum'           => 0,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'filters' => [
+                        'type'              => 'object',
+                        'default'           => [],
+                        'sanitize_callback' => function( $value ) {
+                            return \is_array( $value ) ? $value : [];
+                        },
+                    ],
+                ],
+            ],
+        ] );
+
         // Translation coverage analysis
         register_rest_route( self::NAMESPACE, '/translation/coverage', [
             [
@@ -323,6 +365,25 @@ final class Router {
                 'methods'             => 'GET',
                 'callback'            => [ $ally, 'get_ally_scan_results' ],
                 'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/ally/scan/accessibility', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $ally, 'scan_accessibility' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page_id'   => [
+                        'type'     => 'integer',
+                        'required' => false,
+                    ],
+                    'scan_type' => [
+                        'type'     => 'string',
+                        'required' => false,
+                        'default'  => 'quick',
+                        'enum'     => [ 'quick', 'full' ],
+                    ],
+                ],
             ],
         ] );
         register_rest_route( self::NAMESPACE, '/ally/scan/trigger', [
