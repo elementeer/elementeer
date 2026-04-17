@@ -13,6 +13,8 @@ final class Router {
 
     public static function register(): void {
         $templates = new Templates();
+        $importExport = new ImportExport();
+        $translation = new Translation();
 
         // Templates collection
         register_rest_route( self::NAMESPACE, '/templates', [
@@ -192,6 +194,388 @@ final class Router {
             ],
         ] );
 
+        // External data import (CSV/JSON/XML)
+        register_rest_route( self::NAMESPACE, '/import/external', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $importExport, 'import_external_data' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // Translation coverage analysis
+        register_rest_route( self::NAMESPACE, '/translation/coverage', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $translation, 'get_coverage' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // String translation (LANG-004)
+        register_rest_route( self::NAMESPACE, '/translation/strings/untranslated', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $translation, 'get_untranslated_strings' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'target_language' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/translation/strings/translate', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $translation, 'translate_strings' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'target_language' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'strings' => [
+                        'type'              => 'array',
+                        'required'          => true,
+                        'items'             => [
+                            'type'       => 'object',
+                            'properties' => [
+                                'id'   => [ 'type' => 'string' ],
+                                'text' => [ 'type' => 'string' ],
+                            ],
+                        ],
+                    ],
+                    'preview' => [
+                        'type'              => 'boolean',
+                        'default'           => true,
+                        'sanitize_callback' => 'rest_sanitize_boolean',
+                    ],
+                ],
+            ],
+        ] );
+
+        // Media metadata translation (LANG-005)
+        register_rest_route( self::NAMESPACE, '/translation/media/untranslated', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $translation, 'get_untranslated_media' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'target_language' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/translation/media/translate', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $translation, 'translate_media_metadata' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'target_language' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'items' => [
+                        'type'              => 'array',
+                        'required'          => true,
+                        'items'             => [
+                            'type'       => 'object',
+                            'properties' => [
+                                'media_id' => [ 'type' => 'integer' ],
+                                'alt'      => [ 'type' => 'string' ],
+                                'caption'  => [ 'type' => 'string' ],
+                                'description' => [ 'type' => 'string' ],
+                                'title'    => [ 'type' => 'string' ],
+                            ],
+                        ],
+                    ],
+                    'preview' => [
+                        'type'              => 'boolean',
+                        'default'           => true,
+                        'sanitize_callback' => 'rest_sanitize_boolean',
+                    ],
+                ],
+            ],
+        ] );
+
+        // Ally detection (ALLY-001)
+        $ally = new \Elementify\MCP\Api\Ally();
+        register_rest_route( self::NAMESPACE, '/ally/status', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $ally, 'get_ally_status' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/ally/scan/results', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $ally, 'get_ally_scan_results' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/ally/scan/trigger', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $ally, 'trigger_ally_scan' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/ally/fix/apply', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $ally, 'apply_ally_fix' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'scan_id'  => [
+                        'type'     => 'integer',
+                        'required' => true,
+                    ],
+                    'issue_id' => [
+                        'type'     => 'string',
+                        'required' => true,
+                    ],
+                    'fix_type' => [
+                        'type'     => 'string',
+                        'required' => false,
+                        'default'  => 'basic',
+                        'enum'     => [ 'basic', 'ai' ],
+                    ],
+                ],
+            ],
+        ] );
+
+        // LMS integration (LMS-001, LMS-002)
+        $lms = new \Elementify\MCP\Api\Lms();
+        register_rest_route( self::NAMESPACE, '/lms/status', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $lms, 'get_lms_status' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/lms/courses', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $lms, 'list_courses' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page'     => [
+                        'type'    => 'integer',
+                        'default' => 1,
+                        'minimum' => 1,
+                    ],
+                    'per_page' => [
+                        'type'    => 'integer',
+                        'default' => 20,
+                        'minimum' => 1,
+                        'maximum' => 100,
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/lms/courses/(?P<course_id>\d+)/structure', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $lms, 'get_course_structure' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'course_id' => [
+                        'type'    => 'integer',
+                        'required' => true,
+                    ],
+                ],
+            ],
+        ] );
+
+        // Charity integration (CHARITY-001, CHARITY-002)
+        $charity = new \Elementify\MCP\Api\Charity();
+        register_rest_route( self::NAMESPACE, '/charity/status', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $charity, 'get_charity_status' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/charity/forms', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $charity, 'list_donation_forms' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page'     => [
+                        'type'    => 'integer',
+                        'default' => 1,
+                        'minimum' => 1,
+                    ],
+                    'per_page' => [
+                        'type'    => 'integer',
+                        'default' => 20,
+                        'minimum' => 1,
+                        'maximum' => 100,
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/charity/stats', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $charity, 'get_donation_stats' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // Booking & Events integration (BOOK-001, BOOK-002)
+        $booking = new \Elementify\MCP\Api\Booking();
+        register_rest_route( self::NAMESPACE, '/booking/status', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $booking, 'get_booking_status' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/booking/list', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $booking, 'list_bookings' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page'     => [
+                        'type'    => 'integer',
+                        'default' => 1,
+                        'minimum' => 1,
+                    ],
+                    'per_page' => [
+                        'type'    => 'integer',
+                        'default' => 20,
+                        'minimum' => 1,
+                        'maximum' => 100,
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/booking/stats', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $booking, 'get_booking_stats' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        // Amelia-specific CRUD operations (Advanced tier)
+        register_rest_route( self::NAMESPACE, '/booking/amelia/services', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $booking, 'list_amelia_services' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page'     => [
+                        'type'    => 'integer',
+                        'default' => 1,
+                        'minimum' => 1,
+                    ],
+                    'per_page' => [
+                        'type'    => 'integer',
+                        'default' => 20,
+                        'minimum' => 1,
+                        'maximum' => 100,
+                    ],
+                ],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $booking, 'create_amelia_service' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/booking/amelia/services/(?P<id>\d+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $booking, 'get_amelia_service' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+            [
+                'methods'             => 'PATCH',
+                'callback'            => [ $booking, 'update_amelia_service' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [ $booking, 'delete_amelia_service' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/booking/amelia/appointments', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $booking, 'list_amelia_appointments' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page'     => [
+                        'type'    => 'integer',
+                        'default' => 1,
+                        'minimum' => 1,
+                    ],
+                    'per_page' => [
+                        'type'    => 'integer',
+                        'default' => 20,
+                        'minimum' => 1,
+                        'maximum' => 100,
+                    ],
+                ],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $booking, 'create_amelia_appointment' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/booking/amelia/appointments/(?P<id>\d+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $booking, 'get_amelia_appointment' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+            [
+                'methods'             => 'PATCH',
+                'callback'            => [ $booking, 'update_amelia_appointment' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [ $booking, 'delete_amelia_appointment' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
+
         // Site info
         register_rest_route( self::NAMESPACE, '/site', [
             [
@@ -207,6 +591,23 @@ final class Router {
                 'methods'             => 'GET',
                 'callback'            => [ new \Elementify\MCP\Api\Assessment(), 'get_assessment' ],
                 'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // Module wizards
+        $wizards = new \Elementify\MCP\Api\Wizards();
+        register_rest_route( self::NAMESPACE, '/site/wizards/(?P<wizard_id>[a-zA-Z0-9_-]+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $wizards, 'get_wizard' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'wizard_id' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
             ],
         ] );
 
@@ -268,6 +669,86 @@ final class Router {
                 'methods'             => 'POST',
                 'callback'            => [ $performance, 'optimize_elementor_assets' ],
                 'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/site/performance/clean-database', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $performance, 'clean_database' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'preview' => [
+                        'type'              => 'boolean',
+                        'default'           => true,
+                        'sanitize_callback' => 'rest_sanitize_boolean',
+                    ],
+                ],
+            ],
+        ] );
+
+        // Cache plugin recommendation (HEALTH-005)
+        register_rest_route( self::NAMESPACE, '/site/performance/cache-recommendation', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $performance, 'get_cache_recommendation' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // Guided troubleshooting (HEALTH-006)
+        register_rest_route( self::NAMESPACE, '/site/performance/diagnose-issue', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $performance, 'diagnose_issue' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'symptom' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'enum'              => [ 'slow_page', 'white_screen', '500_error', 'plugin_conflict' ],
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ] );
+
+        // Error log reader (HEALTH-006 helper)
+        register_rest_route( self::NAMESPACE, '/site/performance/error-log', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $performance, 'read_error_log' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'lines' => [
+                        'type'              => 'integer',
+                        'default'           => 50,
+                        'minimum'           => 1,
+                        'maximum'           => 1000,
+                        'sanitize_callback' => 'absint',
+                    ],
+                ],
+            ],
+        ] );
+
+        // Safe plugin conflict test (HEALTH-006 helper, L2 governance)
+        register_rest_route( self::NAMESPACE, '/site/performance/test-plugin-conflict', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $performance, 'test_plugin_conflict' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'plugin_slug' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'action' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'enum'              => [ 'deactivate', 'reactivate' ],
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
             ],
         ] );
 
@@ -638,6 +1119,35 @@ final class Router {
                 'args'                => [
                     'id'    => [ 'type' => 'integer', 'required' => true ],
                     'force' => [ 'type' => 'boolean', 'default' => false ],
+                ],
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // WooCommerce
+        // ------------------------------------------------------------------ //
+        $woocommerce = new WooCommerce();
+        register_rest_route( self::NAMESPACE, '/woocommerce/products', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $woocommerce, 'list_products' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page'     => [ 'type' => 'integer', 'default' => 1, 'minimum' => 1 ],
+                    'per_page' => [ 'type' => 'integer', 'default' => 20, 'minimum' => 1, 'maximum' => 100 ],
+                    'status'   => [ 'type' => 'string', 'default' => 'any' ],
+                    'category' => [ 'type' => 'integer' ],
+                    'search'   => [ 'type' => 'string' ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/woocommerce/products/(?P<id>\d+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $woocommerce, 'get_product' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
                 ],
             ],
         ] );

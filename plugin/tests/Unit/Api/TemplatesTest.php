@@ -463,6 +463,23 @@ class TemplatesTest extends TestCase
         Functions\when( 'wp_update_post' )->justReturn( 9 );
         Functions\when( '__' )->returnArg();
         Functions\when( 'get_option' )->justReturn( [] );
+        
+        // Define Elementor\Plugin class if not exists
+        if (!class_exists('\\Elementor\\Plugin', false)) {
+            eval('namespace Elementor; class Plugin { public static $instance; public $files_manager; }');
+        }
+        
+        // Create mock instance
+        $mockFilesManager = Mockery::mock('\\Elementor\\Plugin');
+        $mockFilesManager->files_manager = Mockery::mock();
+        $mockFilesManager->files_manager->shouldReceive('clear_cache')->once();
+        
+        // Set static instance
+        \Elementor\Plugin::$instance = $mockFilesManager;
+        
+        Functions\when('class_exists')->alias(function($class) {
+            return $class === 'Elementor\Plugin' || $class === '\\Elementor\\Plugin';
+        });
 
         $controller = new Templates();
         $response   = $controller->update_template_data( $request );

@@ -1,0 +1,30 @@
+[
+  {
+    "id": "proc_2026-04-17T1811_881db8",
+    "workspaceId": "mo381n7o",
+    "title": "Elementify MCP Server Test",
+    "command": "cd /Users/andrelange/Documents/repositories/github/elementify-mcp/mcp-server && timeout 5 node dist/index.js 2>&1 || echo \"Process exited\"",
+    "cwd": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+    "status": "stopped",
+    "pid": 79728,
+    "startedAt": "2026-04-17T18:11:40.882Z",
+    "outputSizeBytes": 31,
+    "terminalReason": "finished",
+    "exitCode": 0,
+    "stoppedAt": "2026-04-17T18:11:41.212Z"
+  },
+  {
+    "id": "proc_2026-04-17T1812_a7de79",
+    "workspaceId": "mo381n7o",
+    "title": "Elementify MCP Server Debug",
+    "command": "cd /Users/andrelange/Documents/repositories/github/elementify-mcp/mcp-server && NODE_DEBUG=mcp node dist/index.js 2>&1",
+    "cwd": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+    "status": "stopped",
+    "pid": 80141,
+    "startedAt": "2026-04-17T18:12:48.501Z",
+    "outputSizeBytes": 31,
+    "terminalReason": "finished",
+    "exitCode": 0,
+    "stoppedAt": "2026-04-17T18:12:48.827Z"
+  }
+]

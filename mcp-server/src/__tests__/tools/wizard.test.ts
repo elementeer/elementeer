@@ -44,6 +44,10 @@ function makeTemplate(id: number, title: string, tags: string[] = [], categories
 
 function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> = {}): ElementifyClient {
   return {
+    createChange:         vi.fn().mockResolvedValue({ id: 'chg_test', created_at: '2026-03-30T10:00:00+00:00', status: 'pending', operation: 'set_site_logo', params: {}, note: '', before_state: null, reviewed_at: null, review_note: null, applied_at: null }),
+    listChanges:          vi.fn().mockResolvedValue({ changes: [], total: 0 }),
+    getChange:            vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
+    updateChangeStatus:   vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
     listTemplates: vi.fn().mockResolvedValue({ templates: [], total: 0, total_pages: 1 } as ElementifyTemplateList),
     getTemplate: vi.fn(),
     createTemplate: vi.fn().mockResolvedValue(makeTemplate(99, 'New')),
@@ -142,16 +146,21 @@ describe('wizard tools', () => {
   // set_site_logo
   // ---------------------------------------------------------------- //
   describe('set_site_logo', () => {
-    it('calls setLogo with media_id', async () => {
+    it('queues change for governance L2', async () => {
       const result = await call('set_site_logo', { media_id: 10 });
-      expect(client.setLogo).toHaveBeenCalledWith(10);
-      expect(result.content[0]!.text).toContain('Logo set');
-      expect(result.content[0]!.text).toContain('10');
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'set_site_logo',
+        params: { media_id: 10 },
+        note: 'Auto-queued by governance level L2',
+      });
+      expect(client.setLogo).not.toHaveBeenCalled();
+      expect(result.content[0]!.text).toContain('Change queued for review');
+      expect(result.content[0]!.text).toContain('chg_test');
     });
 
-    it('shows logo URL in output when available', async () => {
+    it('includes operation name in output', async () => {
       const result = await call('set_site_logo', { media_id: 10 });
-      expect(result.content[0]!.text).toContain('example.com/logo.png');
+      expect(result.content[0]!.text).toContain('Operation: set_site_logo');
     });
 
     it('passes site_id to getClient', async () => {

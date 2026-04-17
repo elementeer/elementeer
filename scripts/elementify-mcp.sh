@@ -140,15 +140,17 @@ AI_AGENT_NAMES=(
     "antigravity"
     "openclaw"
     "qwen"
+    "elementify-installer"
 )
 
 AI_AGENT_PATHS=(
     "$HOME/.config/opencode/opencode.json"
     "$HOME/.codex/config.toml"
     "$HOME/.gemini/settings.json"
-    "$HOME/.antigravity/config.json"
+    "$HOME/.gemini/antigravity/mcp_config.json"
     "$HOME/.config/openclaw/config.json"
     "$HOME/.qwen/settings.json"
+    "$HOME/.elementify/installer.json"
 )
 
 AI_AGENT_TYPES=(
@@ -158,15 +160,17 @@ AI_AGENT_TYPES=(
     "json"  # antigravity
     "json"  # openclaw
     "json"  # qwen
+    "json"  # elementify-installer
 )
 
 AI_AGENT_ALT_PATHS=(
     ""  # opencode - no alt
     ""  # codex - no alt
     "$HOME/.gemini-cli/settings.json"  # gemini-cli alt
-    "$HOME/.gemini/antigravity/config.json"  # antigravity alt
+    "$HOME/.antigravity/config.json"  # antigravity alt (legacy path)
     ""  # openclaw - no alt
     ""  # qwen - no alt
+    ""  # elementify-installer - no alt
 )
 
 log() {
@@ -208,6 +212,118 @@ check_npm() {
     fi
     
     log "npm $(npm --version) detected"
+    return 0
+}
+
+get_node_path() {
+    # Try to find the full path to node executable
+    # Check common installation locations
+    
+    local node_paths=(
+        "$(command -v node 2>/dev/null)"  # Standard PATH
+        "/opt/homebrew/bin/node"          # Homebrew on Apple Silicon
+        "/usr/local/bin/node"             # Homebrew on Intel / system
+        "/usr/bin/node"                   # System Node (Linux)
+        "$HOME/.nvm/versions/*/bin/node"  # nvm installations
+        "$HOME/.asdf/shims/node"          # asdf installation
+        "/opt/node/bin/node"              # Alternative installation
+    )
+    
+    for path in "${node_paths[@]}"; do
+        # Expand glob patterns
+        if [[ "$path" == *"*"* ]]; then
+            # Find the latest nvm version
+            local expanded_path=$(ls -d $path 2>/dev/null | sort -V | tail -n1)
+            if [ -n "$expanded_path" ] && [ -x "$expanded_path" ]; then
+                echo "$expanded_path"
+                return 0
+            fi
+        elif [ -n "$path" ] && [ -x "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    # Fallback: use 'node' from PATH (might fail if not in agent's PATH)
+    echo "node"
+    log "WARNING: Could not find absolute path to node, using 'node' from PATH"
+    log "  If MCP servers fail to start, ensure 'node' is in your PATH"
+    return 1
+}
+
+get_wrapper_path() {
+    # Get absolute path to elementify-mcp wrapper
+    if command -v elementify-mcp &> /dev/null; then
+        local wrapper_path=$(command -v elementify-mcp)
+        echo "$wrapper_path"
+        return 0
+    fi
+    
+    # Check common locations
+    local common_paths=(
+        "/usr/local/bin/elementify-mcp"
+        "/usr/bin/elementify-mcp"
+        "$HOME/.local/bin/elementify-mcp"
+        "/opt/homebrew/bin/elementify-mcp"
+    )
+    
+    for path in "${common_paths[@]}"; do
+        if [ -x "$path" ]; then
+            echo "$path"
+            return 0
+        fi
+    done
+    
+    echo "elementify-mcp"
+    log "WARNING: Could not find absolute wrapper path, using 'elementify-mcp'"
+    log "  AI agents may fail to find the executable"
+    return 1
+}
+
+repair_existing_wrapper() {
+    # Check and repair existing wrapper if it uses plain 'node' instead of full path
+    local wrapper_path=""
+    
+    # Find existing wrapper
+    if command -v elementify-mcp &> /dev/null; then
+        wrapper_path=$(command -v elementify-mcp)
+    else
+        return 0  # No wrapper found, nothing to repair
+    fi
+    
+    if [ ! -f "$wrapper_path" ]; then
+        return 0
+    fi
+    
+    # Check if wrapper uses plain 'node' (without full path)
+    if grep -q "^exec node " "$wrapper_path" 2>/dev/null; then
+        log "Found wrapper using plain 'node': $wrapper_path"
+        local node_path=$(get_node_path)
+        
+        if [ "$node_path" = "node" ]; then
+            log "  Cannot repair: could not determine absolute node path"
+            return 1
+        fi
+        
+        log "  Repairing with node path: $node_path"
+        
+        # Create backup
+        local backup_path="${wrapper_path}.backup.$(date +%s)"
+        cp "$wrapper_path" "$backup_path"
+        log "  Created backup: $backup_path"
+        
+        # Replace the wrapper
+        cat > "$wrapper_path" << EOF
+#!/bin/bash
+# Elementify MCP wrapper (repaired)
+# Node.js path: $node_path
+exec "$node_path" "$SOURCE_DIR/mcp-server/dist/cli.js" "\$@"
+EOF
+        chmod +x "$wrapper_path"
+        log "✓ Wrapper repaired"
+        return 0
+    fi
+    
     return 0
 }
 
@@ -292,6 +408,16 @@ add_elementify_to_config() {
     
     log "  Adding Elementify to $client_name configuration..."
     
+    # Get absolute wrapper path for consistent configuration
+    local wrapper_path="elementify-mcp"
+    if command -v elementify-mcp &> /dev/null; then
+        wrapper_path=$(command -v elementify-mcp)
+        log "    Using wrapper path: $wrapper_path"
+    else
+        log "    WARNING: Could not find elementify-mcp in PATH, using 'elementify-mcp'"
+        log "    MCP clients may fail to find the executable"
+    fi
+    
     if [ ! -f "$config_path" ]; then
         # Create empty config file
         if [ -z "$DRY_RUN" ]; then
@@ -314,7 +440,7 @@ except:
 if 'mcpServers' not in config:
     config['mcpServers'] = {}
 
-config['mcpServers']['elementify'] = {'command': 'elementify-mcp'}
+config['mcpServers']['elementify'] = {'command': '$wrapper_path'}
 
 with open('$config_path', 'w') as f:
     json.dump(config, f, indent=2)
@@ -324,7 +450,7 @@ with open('$config_path', 'w') as f:
         fi
     elif command -v jq &> /dev/null; then
         if [ -z "$DRY_RUN" ]; then
-            jq '.mcpServers.elementify = {"command": "elementify-mcp"}' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path" || return 1
+            jq --arg wrapper "$wrapper_path" '.mcpServers.elementify = {"command": $wrapper}' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path" || return 1
         else
             log "  Would add elementify to mcpServers in $config_path"
         fi
@@ -434,10 +560,10 @@ show_mcp_clients_status() {
 }
 
 interactive_select_clients() {
-    echo "Elementify MCP Client Selection"
-    echo "================================"
-    echo ""
-    echo "Available MCP clients:"
+    echo "Elementify MCP Client Selection" >&2
+    echo "================================" >&2
+    echo "" >&2
+    echo "Available MCP clients:" >&2
     
     local clients=()
     local client_paths=()
@@ -457,39 +583,43 @@ interactive_select_clients() {
             local config_status=$(check_mcp_client_config "$client" "$config_path")
             if [ "$config_status" = "elementify_configured" ]; then
                 client_status+=("configured")
-                echo "  $index. ✓ $client: $config_path (already configured)"
+                echo "  $index. ✓ $client: $config_path (already configured)" >&2
             else
                 client_status+=("not_configured")
-                echo "  $index. ○ $client: $config_path"
+                echo "  $index. ○ $client: $config_path" >&2
             fi
             ((index++))
         fi
     done
     
     if [ ${#clients[@]} -eq 0 ]; then
-        echo "  No MCP clients found."
-        echo ""
+        echo "  No MCP clients found." >&2
+        echo "" >&2
         return 1
     fi
     
-    echo ""
-    echo "Select clients to configure (enter numbers separated by commas, 'all', or 'none'):"
-    echo "  'all' = all detected clients"
-    echo "  'none' = skip client configuration"
-    echo -n "> "
+    echo "" >&2
+    echo "Select clients to configure (enter numbers separated by commas, 'all', or 'none'):" >&2
+    echo "  'all' = all detected clients" >&2
+    echo "  'none' = skip client configuration" >&2
+    echo -n "> " >&2
     
     local selection=""
     read selection
     
     case "$selection" in
         [Aa][Ll][Ll])
-            echo "Selected: all clients (${#clients[@]} clients)"
-            echo "${clients[@]}"
-            echo "${client_paths[@]}"
+            echo "Selected: all clients (${#clients[@]} clients)" >&2
+            # Output arrays in structured format
+            # First line: count
+            echo "${#clients[@]}"
+            # Then each item on its own line
+            printf '%s\n' "${clients[@]}"
+            printf '%s\n' "${client_paths[@]}"
             ;;
         [Nn][Oo][Nn][Ee])
-            echo "No clients selected. Skipping client configuration."
-            echo ""
+            echo "No clients selected. Skipping client configuration." >&2
+            echo "" >&2
             return 1
             ;;
         *)
@@ -506,20 +636,21 @@ interactive_select_clients() {
                         selected_clients+=("${clients[$idx]}")
                         selected_paths+=("${client_paths[$idx]}")
                     else
-                        echo "Warning: Invalid number $num. Skipping."
+                        echo "Warning: Invalid number $num. Skipping." >&2
                     fi
                 fi
             done
             
             if [ ${#selected_clients[@]} -eq 0 ]; then
-                echo "No valid clients selected. Skipping."
+                echo "No valid clients selected. Skipping." >&2
                 return 1
             fi
             
-            echo "Selected: ${selected_clients[*]}"
-            # Output clients and paths on separate lines for parsing
-            echo "${selected_clients[@]}"
-            echo "${selected_paths[@]}"
+            echo "Selected: ${selected_clients[*]}" >&2
+            # Output arrays in structured format
+            echo "${#selected_clients[@]}"
+            printf '%s\n' "${selected_clients[@]}"
+            printf '%s\n' "${selected_paths[@]}"
             ;;
     esac
 }
@@ -530,16 +661,22 @@ configure_mcp_clients() {
     echo ""
     show_mcp_clients_status
     
-    echo ""
-    echo "Would you like to configure MCP clients? (yes/no)"
-    echo -n "> "
-    
-    local answer=""
-    read answer
-    
-    if [[ ! "$answer" =~ ^[Yy](es)?$ ]]; then
-        echo "Skipping client configuration."
-        return 0
+    # Skip prompt in non-interactive mode
+    if [ -n "$AUTO_YES" ]; then
+        echo "Auto-configuring MCP clients (non-interactive mode)..."
+        answer="yes"
+    else
+        echo ""
+        echo "Would you like to configure MCP clients? (yes/no)"
+        echo -n "> "
+        
+        local answer=""
+        read answer
+        
+        if [[ ! "$answer" =~ ^[Yy](es)?$ ]]; then
+            echo "Skipping client configuration."
+            return 0
+        fi
     fi
     
     local selection_result
@@ -548,12 +685,28 @@ configure_mcp_clients() {
         return 1
     fi
     
-    # Parse the result (first line: client names, second line: paths)
-    local clients_line=$(echo "$selection_result" | head -n1)
-    local paths_line=$(echo "$selection_result" | tail -n1)
+    # Parse the structured output
+    local count=0
+    local selected_clients=()
+    local selected_paths=()
     
-    IFS=' ' read -ra selected_clients <<< "$clients_line"
-    IFS=' ' read -ra selected_paths <<< "$paths_line"
+    # Read count (first line)
+    count=$(echo "$selection_result" | head -n1)
+    if ! [[ "$count" =~ ^[0-9]+$ ]] || [ "$count" -eq 0 ]; then
+        error "Invalid output from selection"
+        return 1
+    fi
+    
+    # Read names (next 'count' lines)
+    selected_clients=()
+    for ((i=0; i<count; i++)); do
+        selected_clients[i]=$(echo "$selection_result" | sed -n "$((i+2))p")
+    done
+    
+    # Read paths (next 'count' lines after names)
+    for ((i=0; i<count; i++)); do
+        selected_paths[i]=$(echo "$selection_result" | sed -n "$((i+2+count))p")
+    done
     
     local success_count=0
     local total_count=${#selected_clients[@]}
@@ -740,6 +893,16 @@ add_elementify_to_ai_agent() {
     
     log "  Adding Elementify to $agent_name configuration..."
     
+    # Get absolute wrapper path for AI agents (they often have restricted PATH)
+    local wrapper_path="elementify-mcp"
+    if command -v elementify-mcp &> /dev/null; then
+        wrapper_path=$(command -v elementify-mcp)
+        log "    Using wrapper path: $wrapper_path"
+    else
+        log "    WARNING: Could not find elementify-mcp in PATH, using 'elementify-mcp'"
+        log "    AI agents may fail to find the executable"
+    fi
+    
     if [ ! -f "$config_path" ]; then
         # Create empty config file based on type
         if [ -z "$DRY_RUN" ]; then
@@ -768,12 +931,17 @@ except (json.JSONDecodeError, FileNotFoundError):
 if '$agent_name' == 'opencode':
     if 'mcp' not in config:
         config['mcp'] = {}
-    config['mcp']['elementify'] = {'command': ['elementify-mcp']}
+    # opencode requires type and enabled fields
+    config['mcp']['elementify'] = {
+        'type': 'local',
+        'enabled': True,
+        'command': ['$wrapper_path']
+    }
 else:
     # Default to mcpServers structure (gemini, etc.)
     if 'mcpServers' not in config:
         config['mcpServers'] = {}
-    config['mcpServers']['elementify'] = {'command': 'elementify-mcp'}
+    config['mcpServers']['elementify'] = {'command': '$wrapper_path'}
 
 with open('$config_path', 'w') as f:
     json.dump(config, f, indent=2)
@@ -784,9 +952,9 @@ with open('$config_path', 'w') as f:
         elif command -v jq &> /dev/null; then
             if [ -z "$DRY_RUN" ]; then
                 if [ "$agent_name" = "opencode" ]; then
-                    jq '.mcp.elementify = {"command": ["elementify-mcp"]}' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path" || return 1
+                    jq --arg wrapper "$wrapper_path" '.mcp.elementify = {"type": "local", "enabled": true, "command": [$wrapper]}' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path" || return 1
                 else
-                    jq '.mcpServers.elementify = {"command": "elementify-mcp"}' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path" || return 1
+                    jq --arg wrapper "$wrapper_path" '.mcpServers.elementify = {"command": $wrapper}' "$config_path" > "${config_path}.tmp" && mv "${config_path}.tmp" "$config_path" || return 1
                 fi
             else
                 log "  Would add elementify to $config_path"
@@ -821,7 +989,7 @@ except:
 # Add elementify to mcp_servers
 if 'mcp_servers' not in config:
     config['mcp_servers'] = {}
-config['mcp_servers']['elementify'] = {'command': 'elementify-mcp'}
+config['mcp_servers']['elementify'] = {'command': '$wrapper_path'}
 
 # Write back as TOML (need tomli-w for writing)
 try:
@@ -832,7 +1000,7 @@ except ImportError:
     # Fallback: write as INI-like TOML (simplified)
     with open('$config_path', 'a') as f:
         f.write('\n[mcp_servers.elementify]\n')
-        f.write('command = \"elementify-mcp\"\n')
+        f.write('command = \"$wrapper_path\"\n')
 " || return 1
             else
                 log "  Would add elementify to $config_path (TOML)"
@@ -1124,7 +1292,7 @@ interactive_select_all() {
         ((display_index++))
     done
     
-    echo ""
+    echo "" >&2
     echo "Enter selection (comma-separated numbers, 'all', or 'none'):" >&2
     echo -n "> " >&2
     
@@ -1183,22 +1351,83 @@ interactive_select_all() {
     esac
 }
 
+configure_all_noninteractive() {
+    local mode="$1"  # "add" or "remove"
+    
+    log "Non-interactive configuration mode: $mode"
+    
+    local success_count=0
+    local total_count=0
+    
+    # Configure MCP clients
+    for i in "${!MCP_CLIENT_NAMES[@]}"; do
+        local client="${MCP_CLIENT_NAMES[$i]}"
+        local config_path
+        
+        config_path=$(mcp_client_exists "$client")
+        if [ $? -eq 0 ]; then
+            ((total_count++))
+            if [ "$mode" = "add" ]; then
+                if add_elementify_to_config "$client" "$config_path"; then
+                    ((success_count++))
+                fi
+            elif [ "$mode" = "remove" ]; then
+                if remove_elementify_from_config "$client" "$config_path"; then
+                    ((success_count++))
+                fi
+            fi
+        fi
+    done
+    
+    # Configure AI agents
+    for i in "${!AI_AGENT_NAMES[@]}"; do
+        local agent="${AI_AGENT_NAMES[$i]}"
+        local config_path
+        
+        config_path=$(ai_agent_exists "$agent")
+        if [ $? -eq 0 ]; then
+            ((total_count++))
+            if [ "$mode" = "add" ]; then
+                if add_elementify_to_ai_agent "$agent" "$config_path"; then
+                    ((success_count++))
+                fi
+            elif [ "$mode" = "remove" ]; then
+                if remove_elementify_from_ai_agent "$agent" "$config_path"; then
+                    ((success_count++))
+                fi
+            fi
+        fi
+    done
+    
+    log "Non-interactive configuration complete: $success_count/$total_count items"
+    echo "Configuration complete: $success_count/$total_count items $mode"
+    return 0
+}
+
 configure_all_clients() {
     local mode="$1"  # "add" or "remove"
     
     echo ""
     show_all_clients_status
     
-    echo ""
-    echo "Would you like to configure MCP clients and AI agents? (yes/no)"
-    echo -n "> "
-    
-    local answer=""
-    read answer
-    
-    if [[ ! "$answer" =~ ^[Yy](es)?$ ]]; then
-        echo "Skipping client configuration."
-        return 0
+    # Skip prompt in non-interactive mode
+    if [ -n "$AUTO_YES" ]; then
+        echo "Auto-configuring MCP clients and AI agents (non-interactive mode)..."
+        # Use non-interactive configuration for all detected clients
+        configure_all_noninteractive "$mode"
+        return $?
+    else
+        echo ""
+        echo "Would you like to configure MCP clients and AI agents? (yes/no)"
+        echo -n "> "
+        
+        local answer=""
+        read answer
+        
+        if [[ ! "$answer" =~ ^[Yy](es)?$ ]]; then
+            echo "Skipping client configuration."
+            return 0
+        fi
     fi
     
     local selection_result
@@ -1306,6 +1535,9 @@ install_mcp_server() {
     if command -v elementify-mcp &> /dev/null; then
         local version=$(elementify-mcp --version 2>/dev/null || echo "unknown")
         log "✓ Elementify MCP already installed: $version"
+        
+        # Try to repair existing wrapper if needed
+        repair_existing_wrapper
         return 0
     fi
     
@@ -1346,12 +1578,16 @@ install_mcp_server() {
                 
                 # Create wrapper script
                 local wrapper="$target_dir/elementify-mcp"
+                local node_path=$(get_node_path)
                 cat > "$wrapper" << EOF
 #!/bin/bash
-exec node "$SOURCE_DIR/mcp-server/dist/cli.js" "\$@"
+# Elementify MCP wrapper
+# Node.js path: $node_path
+exec "$node_path" "$SOURCE_DIR/mcp-server/dist/cli.js" "\$@"
 EOF
                 chmod +x "$wrapper"
                 log "  Created wrapper at: $wrapper"
+                log "  Using node path: $node_path"
                 log "✓ MCP server installed locally"
                 return 0
             else
@@ -1369,12 +1605,16 @@ EOF
                     fi
                     
                     local wrapper="$target_dir/elementify-mcp"
+                    local node_path=$(get_node_path)
                     cat > "$wrapper" << EOF
 #!/bin/bash
-exec node "$SOURCE_DIR/mcp-server/dist/cli.js" "\$@"
+# Elementify MCP wrapper
+# Node.js path: $node_path
+exec "$node_path" "$SOURCE_DIR/mcp-server/dist/cli.js" "\$@"
 EOF
                     chmod +x "$wrapper"
                     log "  Created wrapper at: $wrapper"
+                    log "  Using node path: $node_path"
                     log "✓ MCP server built and installed locally"
                     return 0
                 else
@@ -1444,6 +1684,144 @@ EOF
     return 0
 }
 
+show_status_json() {
+    # Machine-readable JSON output for agents
+    local node_ok=false
+    local npm_ok=false
+    local mcp_installed=false
+    local config_exists=false
+    local node_version=""
+    local npm_version=""
+    local installed_version=""
+    local latest_version=""
+    local site_count=0
+    local update_available=false
+    
+    # Check Node.js
+    if check_node > /dev/null 2>&1; then
+        node_ok=true
+        node_version=$(node --version)
+    fi
+    
+    # Check npm
+    if check_npm > /dev/null 2>&1; then
+        npm_ok=true
+        npm_version=$(npm --version)
+    fi
+    
+    # Check MCP server
+    installed_version=$(check_installed_version)
+    if [ "$installed_version" != "not_installed" ]; then
+        mcp_installed=true
+        latest_version=$(check_latest_version)
+        if [ "$latest_version" != "unknown" ] && [ "$installed_version" != "$latest_version" ]; then
+            update_available=true
+        fi
+    fi
+    
+    # Check config
+    if [ -f "$CONFIG_FILE" ]; then
+        config_exists=true
+        # Count sites
+        if command -v python3 &> /dev/null; then
+            site_count=$(python3 -c "import json; f=open('$CONFIG_FILE'); data=json.load(f); print(len(data.get('sites', [])))" 2>/dev/null || echo "0")
+        elif command -v jq &> /dev/null; then
+            site_count=$(jq '.sites | length' "$CONFIG_FILE" 2>/dev/null || echo "0")
+        fi
+    fi
+    
+    # Output JSON
+    cat << EOF
+{
+  "node": {
+    "installed": $node_ok,
+    "version": "$node_version"
+  },
+  "npm": {
+    "installed": $npm_ok,
+    "version": "$npm_version"
+  },
+  "elementify_mcp": {
+    "installed": $mcp_installed,
+    "version": "$installed_version",
+    "latest_version": "$latest_version",
+    "update_available": $update_available
+  },
+  "config": {
+    "exists": $config_exists,
+    "path": "$CONFIG_FILE",
+    "sites_count": $site_count
+  },
+  "timestamp": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+}
+EOF
+}
+
+show_agent_usage() {
+    echo "Agent Native Usage"
+    echo "=================="
+    echo ""
+    echo "The Elementify MCP Installer supports full non-interactive operation for AI agents."
+    echo ""
+    echo "Environment variables for non-interactive setup:"
+    echo "  ELEMENTIFY_SITE_ID      Site identifier (e.g., 'my-site')"
+    echo "  ELEMENTIFY_SITE_NAME    Site display name"
+    echo "  ELEMENTIFY_SITE_URL     WordPress site URL"
+    echo "  ELEMENTIFY_API_KEY      API key starting with 'ek_'"
+    echo ""
+    echo "Examples for agents:"
+    echo "  1. Install Elementify MCP:"
+    echo "     $0 install --quiet"
+    echo ""
+    echo "  2. Setup with environment variables:"
+    echo "     export ELEMENTIFY_SITE_ID='my-site'"
+    echo "     export ELEMENTIFY_SITE_NAME='My Site'"
+    echo "     export ELEMENTIFY_SITE_URL='https://example.com'"
+    echo "     export ELEMENTIFY_API_KEY='ek_your_key'"
+    echo "     $0 setup --yes"
+    echo ""
+    echo "  3. Configure all MCP clients non-interactively:"
+    echo "     $0 config --yes"
+    echo ""
+    echo "  4. Get machine-readable status:"
+    echo "     $0 status --json"
+    echo ""
+    echo "  5. Update Elementify MCP:"
+    echo "     $0 update --quiet"
+    echo ""
+    echo "All commands support --quiet for minimal output and --dry-run for simulation."
+    echo "Exit codes: 0 = success, 1 = error, 2 = invalid arguments"
+    echo ""
+}
+
+show_supported_clients() {
+    echo "Supported MCP Clients and AI Agents"
+    echo "==================================="
+    echo ""
+    echo "MCP Clients (uses 'mcpServers' JSON structure):"
+    echo "  • claude-desktop"
+    echo "    - macOS: ~/Library/Application Support/Claude/claude_desktop_config.json"
+    echo "    - Linux: ~/.config/Claude/claude_desktop_config.json"
+    echo "    - Windows: %APPDATA%\\Claude\\claude_desktop_config.json"
+    echo "  • cursor: ~/.cursor/mcp.json"
+    echo "  • windsurf: ~/.config/windsurf/config.json"
+    echo "  • continue: ~/.continue/config.json"
+    echo "  • tabby: ~/.tabby/agent/config.json (or ~/.tabby/config.toml)"
+    echo "  • aider: ~/.aider/config.json"
+    echo ""
+    echo "AI Agents (uses various structures):"
+    echo "  • opencode: ~/.config/opencode/opencode.json (uses 'mcp' object)"
+    echo "  • codex: ~/.codex/config.toml (uses 'mcp_servers' TOML)"
+    echo "  • gemini-cli: ~/.gemini/settings.json (or ~/.gemini-cli/settings.json)"
+    echo "  • antigravity: ~/.gemini/antigravity/mcp_config.json (or ~/.antigravity/config.json) (uses 'mcpServers' like MCP clients)"
+    echo "  • openclaw: ~/.config/openclaw/config.json"
+    echo "  • qwen: ~/.qwen/settings.json"
+    echo ""
+    echo "The installer automatically detects which clients/agents are installed"
+    echo "and configures them with the appropriate structure."
+    echo ""
+}
+
 show_config_help() {
     echo ""
     echo "Elementify Configuration"
@@ -1451,6 +1829,10 @@ show_config_help() {
     echo ""
     echo "Config file location: $CONFIG_FILE"
     echo ""
+    
+    show_supported_clients
+    
+    show_agent_usage
     
     if [ -f "$CONFIG_FILE" ]; then
         echo "Current configuration:"
@@ -1532,7 +1914,7 @@ uninstall_mcp_server() {
     if command -v elementify-mcp &> /dev/null; then
         local cmd_path=$(which elementify-mcp)
         # Check if it's our wrapper script (contains our source path)
-        if [ -f "$cmd_path" ] && head -n5 "$cmd_path" 2>/dev/null | grep -q "exec node.*$SOURCE_DIR/mcp-server/dist/cli.js"; then
+        if [ -f "$cmd_path" ] && head -n5 "$cmd_path" 2>/dev/null | grep -q "$SOURCE_DIR/mcp-server/dist/cli.js"; then
             installed_locally=1
             wrapper_path="$cmd_path"
         elif [[ "$cmd_path" == *"/.local/bin/"* ]] || [[ "$cmd_path" == *"$HOME/.local/bin/"* ]]; then
@@ -1647,8 +2029,8 @@ show_status() {
 
 show_usage() {
     cat << EOF
-Elementify MCP Installer
-========================
+Elementify MCP Interactive Control Center
+=========================================
 
 Usage: $0 [COMMAND] [OPTIONS]
 
@@ -1659,12 +2041,16 @@ Commands:
   status            Show installation status
   uninstall         Remove Elementify MCP
   config            Configure MCP clients
+  docs              Show configuration documentation
+  repair            Repair existing installation (node path, wrapper)
   help              Show this help message
 
 Options:
   --quiet           Minimal output
   --dry-run         Simulate actions
   --remove-config   Remove config when uninstalling
+  --json            Machine-readable JSON output (for agents)
+  --yes             Automatic yes to all prompts (non-interactive)
 
 Examples:
   $0 install        # Install Elementify MCP
@@ -1713,48 +2099,95 @@ setup_config() {
     local site_url=""
     local api_key=""
     
-    # Get site ID
-    while [ -z "$site_id" ]; do
-        echo -n "Site ID (e.g., 'my-site'): "
-        read site_id
+    # Non-interactive mode (for agents)
+    if [ -n "$AUTO_YES" ]; then
+        # Try environment variables first
+        site_id="${ELEMENTIFY_SITE_ID}"
+        site_name="${ELEMENTIFY_SITE_NAME}"
+        site_url="${ELEMENTIFY_SITE_URL}"
+        api_key="${ELEMENTIFY_API_KEY}"
+        
+        # Generate defaults if not provided
         if [ -z "$site_id" ]; then
-            echo "Site ID cannot be empty."
+            site_id="my-site-$(date +%s)"
+            log "  Generated site ID: $site_id"
         fi
-    done
-    
-    # Get site name
-    while [ -z "$site_name" ]; do
-        echo -n "Site name (e.g., 'My WordPress Site'): "
-        read site_name
+        
         if [ -z "$site_name" ]; then
-            echo "Site name cannot be empty."
+            site_name="My WordPress Site"
+            log "  Using default site name: $site_name"
         fi
-    done
-    
-    # Get site URL
-    while [ -z "$site_url" ]; do
-        echo -n "WordPress site URL (e.g., 'https://example.com'): "
-        read site_url
+        
         if [ -z "$site_url" ]; then
-            echo "Site URL cannot be empty."
-        elif [[ ! "$site_url" =~ ^https?:// ]]; then
-            echo "Please enter a valid URL starting with http:// or https://"
-            site_url=""
+            site_url="https://example.com"
+            log "  Using default URL: $site_url (please update with your actual site)"
         fi
-    done
-    
-    # Get API key
-    while [ -z "$api_key" ]; do
-        echo -n "API key (starts with 'ek_'): "
-        read api_key
+        
         if [ -z "$api_key" ]; then
-            echo "API key cannot be empty."
-        elif [[ ! "$api_key" =~ ^ek_ ]]; then
-            echo "API key should start with 'ek_'."
-            echo "Generate one in WordPress: Settings → Elementify MCP"
-            api_key=""
+            api_key="ek_replace_with_your_api_key"
+            log "  Using placeholder API key (please update with your actual key)"
         fi
-    done
+        
+        # Validate what we have
+        if [[ ! "$site_url" =~ ^https?:// ]]; then
+            log "  Warning: Site URL '$site_url' doesn't start with http:// or https://"
+        fi
+        
+        if [[ ! "$api_key" =~ ^ek_ ]] && [ "$api_key" != "ek_replace_with_your_api_key" ]; then
+            log "  Warning: API key should start with 'ek_'"
+        fi
+        
+        echo "Using configuration:"
+        echo "  Site ID: $site_id"
+        echo "  Site name: $site_name"
+        echo "  Site URL: $site_url"
+        echo "  API key: ${api_key:0:10}..."  # Show only first 10 chars
+        
+    else
+        # Interactive mode
+        # Get site ID
+        while [ -z "$site_id" ]; do
+            echo -n "Site ID (e.g., 'my-site'): "
+            read site_id
+            if [ -z "$site_id" ]; then
+                echo "Site ID cannot be empty."
+            fi
+        done
+        
+        # Get site name
+        while [ -z "$site_name" ]; do
+            echo -n "Site name (e.g., 'My WordPress Site'): "
+            read site_name
+            if [ -z "$site_name" ]; then
+                echo "Site name cannot be empty."
+            fi
+        done
+        
+        # Get site URL
+        while [ -z "$site_url" ]; do
+            echo -n "WordPress site URL (e.g., 'https://example.com'): "
+            read site_url
+            if [ -z "$site_url" ]; then
+                echo "Site URL cannot be empty."
+            elif [[ ! "$site_url" =~ ^https?:// ]]; then
+                echo "Please enter a valid URL starting with http:// or https://"
+                site_url=""
+            fi
+        done
+        
+        # Get API key
+        while [ -z "$api_key" ]; do
+            echo -n "API key (starts with 'ek_'): "
+            read api_key
+            if [ -z "$api_key" ]; then
+                echo "API key cannot be empty."
+            elif [[ ! "$api_key" =~ ^ek_ ]]; then
+                echo "API key should start with 'ek_'."
+                echo "Generate one in WordPress: Settings → Elementify MCP"
+                api_key=""
+            fi
+        done
+    fi
     
     echo ""
     echo "Adding site to configuration..."
@@ -1886,9 +2319,10 @@ show_interactive_menu() {
     echo "  6)  Uninstall         Remove Elementify MCP"
     echo ""
     echo "  7)  Quick Setup       Guided installation and configuration"
-    echo "  8)  Client Status     Show detected MCP clients and agents"
-    echo ""
-    echo "  h)  Help              Show usage information"
+echo "  8)  Client Status     Show detected MCP clients and agents"
+echo "  9)  Repair            Repair existing installation (node path, wrapper)"
+echo ""
+echo "  h)  Help              Show usage information"
     echo "  q)  Quit              Exit menu"
     echo ""
     
@@ -1935,6 +2369,11 @@ show_interactive_menu() {
             echo ""
             echo "Showing client status..."
             run_client_status
+            ;;
+        9)
+            echo ""
+            echo "Repairing installation..."
+            exec "$0" repair
             ;;
         h|H|help)
             echo ""
@@ -2067,7 +2506,7 @@ main() {
     # Create log directory
     mkdir -p "$(dirname "$INSTALL_LOG")"
     
-    log "Starting Elementify MCP installer"
+    log "Starting Elementify MCP"
     [ -n "$DRY_RUN" ] && log "DRY RUN MODE - simulating actions only"
     
     # Check for command
@@ -2091,6 +2530,12 @@ main() {
                 ;;
             --remove-config)
                 REMOVE_CONFIG=1
+                ;;
+            --json)
+                JSON_OUTPUT=1
+                ;;
+            --yes)
+                AUTO_YES=1
                 ;;
             --help|-h)
                 show_usage
@@ -2116,9 +2561,13 @@ main() {
             init_config
             
             if [ -z "$QUIET" ]; then
-                show_simple_status
-                echo ""
-                echo "Run '$0 setup' to configure your WordPress site."
+                if [ -n "$JSON_OUTPUT" ]; then
+                    show_status_json
+                else
+                    show_simple_status "$0"
+                    echo ""
+                    echo "Run '$0 setup' to configure your WordPress site."
+                fi
             else
                 echo "✓ Installation complete"
             fi
@@ -2133,7 +2582,11 @@ main() {
             update_mcp_server
             
             if [ -z "$QUIET" ]; then
-                show_simple_status
+                if [ -n "$JSON_OUTPUT" ]; then
+                    show_status_json
+                else
+                    show_simple_status "$0"
+                fi
             else
                 echo "✓ Update complete"
             fi
@@ -2144,7 +2597,11 @@ main() {
             ;;
             
         status)
-            show_simple_status
+            if [ -n "$JSON_OUTPUT" ]; then
+                show_status_json
+            else
+                show_simple_status "$0"
+            fi
             ;;
             
         uninstall)
@@ -2165,10 +2622,32 @@ main() {
                 configure_all_clients "add"
             else
                 # Quiet mode: configure all without interactive prompts
-                echo "Configuring MCP clients..."
-                # We'll need to implement non-interactive configuration
-                echo "Non-interactive configuration not yet implemented."
-                echo "Run without --quiet for interactive configuration."
+                configure_all_noninteractive "add"
+            fi
+            ;;
+            
+        docs)
+            show_config_help
+            ;;
+            
+        repair)
+            echo "Repairing Elementify MCP installation..."
+            if ! check_node || ! check_npm; then
+                exit 1
+            fi
+            
+            repair_existing_wrapper
+            
+            if [ -z "$QUIET" ]; then
+                if [ -n "$JSON_OUTPUT" ]; then
+                    show_status_json
+                else
+                    show_simple_status "$0"
+                    echo ""
+                    echo "✓ Repair completed"
+                fi
+            else
+                echo "✓ Repair completed"
             fi
             ;;
             
@@ -2183,7 +2662,7 @@ main() {
             ;;
     esac
     
-    log "Elementify installer finished"
+    log "Elementify MCP finished"
 }
 
 main "$@"

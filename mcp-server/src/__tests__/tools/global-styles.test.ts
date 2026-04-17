@@ -23,6 +23,10 @@ function makeStylesData(overrides: Partial<GlobalStylesData> = {}): GlobalStyles
 
 function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> = {}): ElementifyClient {
   return {
+    createChange:         vi.fn().mockResolvedValue({ id: 'chg_test', created_at: '2026-03-30T10:00:00+00:00', status: 'pending', operation: 'set_global_colors', params: {}, note: '', before_state: null, reviewed_at: null, review_note: null, applied_at: null }),
+    listChanges:          vi.fn().mockResolvedValue({ changes: [], total: 0 }),
+    getChange:            vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
+    updateChangeStatus:   vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
     listTemplates: vi.fn(),
     getTemplate: vi.fn(),
     createTemplate: vi.fn(),
@@ -116,33 +120,41 @@ describe('global styles tools', () => {
   // set_global_colors
   // ---------------------------------------------------------------- //
   describe('set_global_colors', () => {
-    it('calls setGlobalColors with colors and slot', async () => {
+    it('queues change for review (governance level L2)', async () => {
       const colors = [
         { id: 'primary', title: 'Primary', color: '#1A56DB' },
         { id: 'accent',  title: 'Accent',  color: '#6EC1E4' },
       ];
       await call('set_global_colors', { colors, slot: 'system' });
-      expect(client.setGlobalColors).toHaveBeenCalledWith(colors, 'system');
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'set_global_colors',
+        params: { colors, slot: 'system' },
+        note: 'Auto-queued by governance level L2',
+      });
+      expect(client.setGlobalColors).not.toHaveBeenCalled();
     });
 
-    it('defaults slot to system', async () => {
+    it('includes note in queued change when provided', async () => {
       await call('set_global_colors', {
         colors: [{ title: 'Primary', color: '#000000' }],
+        note: 'Custom note',
       });
-      expect(client.setGlobalColors).toHaveBeenCalledWith(
-        expect.any(Array),
-        'system',
+      expect(client.createChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          note: 'Custom note',
+        })
       );
     });
 
-    it('shows written colors in output', async () => {
+    it('returns queued change summary', async () => {
       const result = await call('set_global_colors', {
         colors: [{ id: 'primary', title: 'Primary', color: '#1A56DB' }],
       });
       const text = result.content[0]!.text;
-      expect(text).toContain('1 color(s) written');
-      expect(text).toContain('#1A56DB');
-      expect(text).toContain('cache cleared');
+      expect(text).toContain('🟡 Change queued for review (governance level L2)');
+      expect(text).toContain('ID: chg_test');
+      expect(text).toContain('Operation: set_global_colors');
+      expect(text).toContain('Next steps:');
     });
 
     it('can write to custom slot', async () => {
@@ -150,7 +162,11 @@ describe('global styles tools', () => {
         colors: [{ title: 'Brand Teal', color: '#0D9488' }],
         slot: 'custom',
       });
-      expect(client.setGlobalColors).toHaveBeenCalledWith(expect.any(Array), 'custom');
+      expect(client.createChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({ slot: 'custom' }),
+        })
+      );
     });
   });
 
@@ -158,28 +174,40 @@ describe('global styles tools', () => {
   // set_global_typography
   // ---------------------------------------------------------------- //
   describe('set_global_typography', () => {
-    it('calls setGlobalTypography with entries and slot', async () => {
+    it('queues change for review (governance level L2)', async () => {
       const typography = [
         { id: 'primary', title: 'Primary', font_family: 'Inter', font_size: 16, font_weight: '400', line_height: 1.6 },
       ];
       await call('set_global_typography', { typography, slot: 'system' });
-      expect(client.setGlobalTypography).toHaveBeenCalledWith(typography, 'system');
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'set_global_typography',
+        params: { typography, slot: 'system' },
+        note: 'Auto-queued by governance level L2',
+      });
+      expect(client.setGlobalTypography).not.toHaveBeenCalled();
     });
 
-    it('shows written typography in output', async () => {
+    it('returns queued change summary', async () => {
       const result = await call('set_global_typography', {
         typography: [{ id: 'primary', title: 'Primary', font_family: 'Inter' }],
       });
       const text = result.content[0]!.text;
-      expect(text).toContain('1 typography entry');
-      expect(text).toContain('cache cleared');
+      expect(text).toContain('🟡 Change queued for review (governance level L2)');
+      expect(text).toContain('ID: chg_test');
+      expect(text).toContain('Operation: set_global_typography');
+      expect(text).toContain('Next steps:');
     });
 
-    it('defaults slot to system', async () => {
+    it('can write to custom slot', async () => {
       await call('set_global_typography', {
         typography: [{ title: 'Heading', font_family: 'Playfair Display' }],
+        slot: 'custom',
       });
-      expect(client.setGlobalTypography).toHaveBeenCalledWith(expect.any(Array), 'system');
+      expect(client.createChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          params: expect.objectContaining({ slot: 'custom' }),
+        })
+      );
     });
   });
 

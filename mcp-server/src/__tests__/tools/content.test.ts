@@ -5,6 +5,14 @@ import type { ElementifyClient } from '../../client.js';
 
 function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> = {}): ElementifyClient {
   return {
+    createChange:         vi.fn().mockResolvedValue({ id: 'chg_test', created_at: '2026-03-30T10:00:00+00:00', status: 'pending', operation: 'update_template_data', params: {}, note: '', before_state: null, reviewed_at: null, review_note: null, applied_at: null }),
+    listChanges:          vi.fn().mockResolvedValue({ changes: [], total: 0 }),
+    getChange:            vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
+    updateChangeStatus:   vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
+    setGlobalColors:      vi.fn().mockResolvedValue({ kit_id: 1, slot: 'system', colors: [], updated: true }),
+    setGlobalTypography:  vi.fn().mockResolvedValue({ kit_id: 1, slot: 'system', typography: [], updated: true }),
+    setLogo:              vi.fn().mockResolvedValue({ logo_id: 1, logo_url: null, updated: true }),
+    setSiteContext:       vi.fn().mockResolvedValue({ user_role: 'site-owner', site_purpose: null, brand_notes: null, target_audience: null, primary_language: null, set_at: '' }),
     listTemplates: vi.fn(),
     getTemplate: vi.fn(),
     createTemplate: vi.fn(),
@@ -76,16 +84,21 @@ describe('Content tools', () => {
   });
 
   describe('update_template_data', () => {
-    it('parses JSON string and calls updateTemplateData with array', async () => {
+    it('parses JSON string and queues change for review (governance level L2)', async () => {
       const data = [{ id: 'x', elType: 'container', elements: [] }];
       const jsonStr = JSON.stringify(data);
 
       await callTool('update_template_data', { id: 3, elementor_data: jsonStr });
 
-      expect(client.updateTemplateData).toHaveBeenCalledWith(3, data);
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'update_template_data',
+        params: { id: 3, elementor_data: jsonStr },
+        note: 'Auto-queued by governance level L2',
+      });
+      expect(client.updateTemplateData).not.toHaveBeenCalled();
     });
 
-    it('returns success message with element count', async () => {
+    it('returns queued change summary with element count', async () => {
       const data = [
         { id: 'a', elType: 'section', elements: [] },
         { id: 'b', elType: 'section', elements: [] },
@@ -94,8 +107,28 @@ describe('Content tools', () => {
         id: 3,
         elementor_data: JSON.stringify(data),
       });
-      expect(result.content[0]!.text).toContain('2 top-level element(s)');
-      expect(result.content[0]!.text).toContain('[3]');
+      const text = result.content[0]!.text;
+      expect(text).toContain('🟡 Change queued for review (governance level L2)');
+      expect(text).toContain('ID: chg_test');
+      expect(text).toContain('Operation: update_template_data');
+      expect(text).toContain('Next steps:');
+    });
+
+    it('includes note in queued change when provided', async () => {
+      const data = [{ id: 'x', elType: 'container', elements: [] }];
+      const jsonStr = JSON.stringify(data);
+
+      await callTool('update_template_data', { 
+        id: 3, 
+        elementor_data: jsonStr,
+        note: 'Custom note' 
+      });
+
+      expect(client.createChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          note: 'Custom note',
+        })
+      );
     });
 
     it('returns error when elementor_data is invalid JSON', async () => {
@@ -105,6 +138,7 @@ describe('Content tools', () => {
       });
       expect(result.isError).toBe(true);
       expect(result.content[0]!.text).toContain('valid JSON');
+      expect(client.createChange).not.toHaveBeenCalled();
     });
 
     it('returns error when elementor_data is a JSON object (not array)', async () => {
@@ -114,11 +148,12 @@ describe('Content tools', () => {
       });
       expect(result.isError).toBe(true);
       expect(result.content[0]!.text).toContain('JSON array');
+      expect(client.createChange).not.toHaveBeenCalled();
     });
 
-    it('does not call updateTemplateData when JSON is invalid', async () => {
+    it('does not call createChange when JSON is invalid', async () => {
       await callTool('update_template_data', { id: 3, elementor_data: 'bad json' });
-      expect(client.updateTemplateData).not.toHaveBeenCalled();
+      expect(client.createChange).not.toHaveBeenCalled();
     });
   });
 

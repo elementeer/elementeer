@@ -1,0 +1,4 @@
+{
+    "redefinable-internals": ["defined", "class_exists", "is_dir", "scandir", "function_exists", "ini_get", "extension_loaded", "version_compare"],
+    "blacklist": ["vendor/phpunit", "vendor/antecedent/patchwork", "vendor/mockery"]
+}

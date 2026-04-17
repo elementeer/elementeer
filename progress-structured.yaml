@@ -1,0 +1,41 @@
+# ReleaseChain Progress - Elementify MCP Creator v0.5.0
+version: 1
+project: elementify-mcp
+release_version: 0.5.0
+iteration: 1
+status: completed
+tasks:
+  - id: VERIFICATION
+    status: passed
+    checks:
+      - type: typecheck
+        passed: true
+      - type: tests
+        passed: true
+        test_count: 508
+      - type: build
+        passed: true
+      - type: plugin_zip
+        passed: true
+  - id: GIT_COMMIT
+    status: passed
+    commit: "v0.5.0: Comprehensive WordPress Creator"
+  - id: GIT_TAG
+    status: passed
+    tag: v0.5.0
+  - id: GITHUB_RELEASE
+    status: passed
+    note: release already exists
+  - id: DEPLOYMENT
+    status: pending
+    sites:
+      - id: fusionaize-preview
+        current_version: 0.4.0
+        target_version: 0.5.0
+        action: manual_upload
+      - id: Marcus-urban
+        current_version: 0.3.0
+        target_version: 0.5.0
+        action: manual_upload
+completion_promise: "<skillweave-complete>"
+timestamp: "2026-04-15T21:00:00Z"

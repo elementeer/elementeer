@@ -5,6 +5,14 @@ import type { ElementifyClient } from '../../client.js';
 
 function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> = {}): ElementifyClient {
   return {
+    createChange:         vi.fn().mockResolvedValue({ id: 'chg_test', created_at: '2026-03-30T10:00:00+00:00', status: 'pending', operation: 'flush_elementor_cache', params: {}, note: '', before_state: null, reviewed_at: null, review_note: null, applied_at: null }),
+    listChanges:          vi.fn().mockResolvedValue({ changes: [], total: 0 }),
+    getChange:            vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
+    updateChangeStatus:   vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
+    setGlobalColors:      vi.fn().mockResolvedValue({ kit_id: 1, slot: 'system', colors: [], updated: true }),
+    setGlobalTypography:  vi.fn().mockResolvedValue({ kit_id: 1, slot: 'system', typography: [], updated: true }),
+    setLogo:              vi.fn().mockResolvedValue({ logo_id: 1, logo_url: null, updated: true }),
+    setSiteContext:       vi.fn().mockResolvedValue({ user_role: 'site-owner', site_purpose: null, brand_notes: null, target_audience: null, primary_language: null, set_at: '' }),
     flushElementorCache: vi.fn().mockResolvedValue({
       flushed: true,
       message: 'Elementor CSS cache cleared.',
@@ -22,11 +30,90 @@ function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> 
       cache_status: { elementor_cache: 'active', cache_dir: '/var/www/wp-content/uploads/elementor/css' },
       elementor_status: '3.21.0',
       elementor_pro: false,
+      php_info: {
+        version: '8.2.0',
+        memory_limit: '256M',
+        max_execution_time: '30',
+        upload_max_filesize: '64M',
+        post_max_size: '64M',
+        opcache_enabled: true,
+        eol: false,
+      },
+      object_cache: {
+        enabled: false,
+        type: 'none',
+        redis: false,
+        memcached: false,
+        apc: false,
+      },
+      autoloaded_options: {
+        count: 150,
+        size_bytes: 102400,
+        size_human: '100 KB',
+        note: 'OK',
+      },
+      database_stats: {
+        total_size_bytes: 10485760,
+        total_size_human: '10 MB',
+        data_size_bytes: 8388608,
+        index_size_bytes: 2097152,
+        table_count: 42,
+        has_query_cache: true,
+        engine: 'MySQL 8.0',
+      },
+      enqueued_assets: {
+        scripts: 12,
+        styles: 8,
+        external_scripts: 2,
+        external_styles: 1,
+        total: 20,
+      },
+      render_blocking_resources: {
+        count: 3,
+        resources: [],
+        note: 'OK',
+      },
     }),
     optimizeElementorAssets: vi.fn().mockResolvedValue({
       optimized: true,
       message: 'Elementor cache cleared. Further optimizations require manual configuration.',
       suggestions: ['Consider using a caching plugin (e.g., WP Rocket, W3 Total Cache).'],
+    }),
+    cleanDatabase: vi.fn().mockResolvedValue({
+      cleaned: true,
+      preview: false,
+      stats: { revisions: 0, transients: 0, spam_comments: 0, total: 0 },
+      message: 'Database cleaned.',
+    }),
+    getCacheRecommendation: vi.fn().mockResolvedValue({
+      hosting: 'generic',
+      server: 'Apache',
+      recommended_plugin: 'WP Rocket',
+      should_install: true,
+      reason: 'No caching plugin detected.',
+      detected_server_software: 'Apache',
+    }),
+    diagnoseIssue: vi.fn().mockResolvedValue({
+      symptom: 'slow_page',
+      title: 'Slow page load',
+      steps: [
+        { step: 1, action: 'Check plugin count', command: 'wp plugin list', expected: 'Identify resource-heavy plugins', risk: 'Low' },
+      ],
+      note: 'Diagnosis complete.',
+    }),
+    readErrorLog: vi.fn().mockResolvedValue({
+      exists: true,
+      message: 'Log file found.',
+      total_lines: 100,
+      recent_lines: 50,
+      entries: ['[2026-03-30] PHP Notice: Something'],
+    }),
+    testPluginConflict: vi.fn().mockResolvedValue({
+      action: 'deactivate',
+      plugin: 'example-plugin',
+      simulated: true,
+      message: 'Plugin deactivation simulated.',
+      note: 'No actual changes made.',
     }),
     ...overrides,
   } as unknown as ElementifyClient;
@@ -72,20 +159,32 @@ describe('performance tools', () => {
     });
 
     describe('flush_elementor_cache', () => {
-      it('calls flushElementorCache on the client', async () => {
+      it('queues change for review (governance level L2)', async () => {
         await callTool('flush_elementor_cache', {});
-        expect(client.flushElementorCache).toHaveBeenCalled();
+        expect(client.createChange).toHaveBeenCalledWith({
+          operation: 'flush_elementor_cache',
+          params: {},
+          note: 'Auto-queued by governance level L2',
+        });
+        expect(client.flushElementorCache).not.toHaveBeenCalled();
       });
 
-      it('passes site_id to getClient', async () => {
-        await callTool('flush_elementor_cache', { site_id: 'staging' });
-        expect(getClient).toHaveBeenCalledWith('staging');
+      it('includes note in queued change when provided', async () => {
+        await callTool('flush_elementor_cache', { note: 'Custom note' });
+        expect(client.createChange).toHaveBeenCalledWith(
+          expect.objectContaining({
+            note: 'Custom note',
+          })
+        );
       });
 
-      it('returns the success message', async () => {
+      it('returns queued change summary', async () => {
         const result = await callTool('flush_elementor_cache', {});
         const text = result.content[0]!.text;
-        expect(text).toBe('Elementor CSS cache cleared.');
+        expect(text).toContain('🟡 Change queued for review (governance level L2)');
+        expect(text).toContain('ID: chg_test');
+        expect(text).toContain('Operation: flush_elementor_cache');
+        expect(text).toContain('Next steps:');
       });
     });
 
@@ -130,6 +229,49 @@ describe('performance tools', () => {
           cache_status: { elementor_cache: 'inactive', cache_dir: null },
           elementor_status: null,
           elementor_pro: false,
+          php_info: {
+            version: '8.2.0',
+            memory_limit: '256M',
+            max_execution_time: '30',
+            upload_max_filesize: '64M',
+            post_max_size: '64M',
+            opcache_enabled: true,
+            eol: false,
+          },
+          object_cache: {
+            enabled: false,
+            type: 'none',
+            redis: false,
+            memcached: false,
+            apc: false,
+          },
+          autoloaded_options: {
+            count: 150,
+            size_bytes: 102400,
+            size_human: '100 KB',
+            note: 'OK',
+          },
+          database_stats: {
+            total_size_bytes: 10485760,
+            total_size_human: '10 MB',
+            data_size_bytes: 8388608,
+            index_size_bytes: 2097152,
+            table_count: 42,
+            has_query_cache: true,
+            engine: 'MySQL 8.0',
+          },
+          enqueued_assets: {
+            scripts: 12,
+            styles: 8,
+            external_scripts: 2,
+            external_styles: 1,
+            total: 20,
+          },
+          render_blocking_resources: {
+            count: 3,
+            resources: [],
+            note: 'OK',
+          },
         });
         const result = await callTool('get_performance_report', {});
         const text = result.content[0]!.text;
@@ -148,34 +290,37 @@ describe('performance tools', () => {
     });
 
     describe('optimize_elementor_assets', () => {
-      it('calls optimizeElementorAssets on the client', async () => {
+      it('queues change for review (governance level L2)', async () => {
         await callTool('optimize_elementor_assets', {});
-        expect(client.optimizeElementorAssets).toHaveBeenCalled();
+        expect(client.createChange).toHaveBeenCalledWith({
+          operation: 'optimize_elementor_assets',
+          params: {},
+          note: 'Auto-queued by governance level L2',
+        });
+        expect(client.optimizeElementorAssets).not.toHaveBeenCalled();
+      });
+
+      it('includes note in queued change when provided', async () => {
+        await callTool('optimize_elementor_assets', { note: 'Custom note' });
+        expect(client.createChange).toHaveBeenCalledWith(
+          expect.objectContaining({
+            note: 'Custom note',
+          })
+        );
+      });
+
+      it('returns queued change summary', async () => {
+        const result = await callTool('optimize_elementor_assets', {});
+        const text = result.content[0]!.text;
+        expect(text).toContain('🟡 Change queued for review (governance level L2)');
+        expect(text).toContain('ID: chg_test');
+        expect(text).toContain('Operation: optimize_elementor_assets');
+        expect(text).toContain('Next steps:');
       });
 
       it('passes site_id to getClient', async () => {
         await callTool('optimize_elementor_assets', { site_id: 'staging' });
         expect(getClient).toHaveBeenCalledWith('staging');
-      });
-
-      it('returns optimization result with suggestions', async () => {
-        const result = await callTool('optimize_elementor_assets', {});
-        const text = result.content[0]!.text;
-        expect(text).toContain('Elementor cache cleared. Further optimizations require manual configuration.');
-        expect(text).toContain('Suggestions:');
-        expect(text).toContain('• Consider using a caching plugin (e.g., WP Rocket, W3 Total Cache).');
-      });
-
-      it('handles empty suggestions', async () => {
-        vi.mocked(client.optimizeElementorAssets).mockResolvedValueOnce({
-          optimized: true,
-          message: 'Cache cleared.',
-          suggestions: [],
-        });
-        const result = await callTool('optimize_elementor_assets', {});
-        const text = result.content[0]!.text;
-        expect(text).toBe('Cache cleared.');
-        expect(text).not.toContain('Suggestions:');
       });
     });
   });

@@ -1,0 +1,120 @@
+{
+  "projectName": "Elementify MCP PRD v2/v3 Completion - Remaining Enhancements",
+  "version": "1.0",
+  "status": "draft",
+  "execution_recommendation": {
+    "mode": "complex",
+    "reason": "6 development tasks with parallelization opportunities, estimated 8-12 hours total",
+    "suggested_workflow": "ralph-loop-attended",
+    "estimated_iterations": 15,
+    "parallel_opportunities": 3
+  },
+  "tasks": [
+    {
+      "id": "TRANS-001",
+      "title": "Implement AI-powered batch string translation",
+      "description": "Replace placeholder in translation.ts with actual AI-powered batch translation via FaiGate integration. Implement translate_strings tool that hooks into WPML/Polylang string translation with context-aware prompts.",
+      "acceptanceCriteria": [
+        "translate_strings tool accepts string arrays and target language",
+        "Integration with FaiGate config from ~/.elementify/config.json",
+        "Returns translation results with confidence scores",
+        "Handles batch translation with progress reporting",
+        "Governance level L2 (auto-queue) as per product-tiers.ts"
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [],
+      "type": "feature",
+      "passes": false,
+      "capabilities": ["code_generation", "integration"]
+    },
+    {
+      "id": "ALLY-001",
+      "title": "Implement built-in accessibility scanner",
+      "description": "Build the built-in accessibility scanner referenced as TODO in Ally.php. Create scanner that parses _elementor_data for WCAG violations (headings, alt text, color contrast).",
+      "acceptanceCriteria": [
+        "New tool scan_accessibility (Free tier) implemented",
+        "Scanner detects missing alt text, heading hierarchy issues, low color contrast",
+        "Returns structured violations with severity levels",
+        "Integration with existing ally.ts tools",
+        "Can run independently of Elementor Ally plugin"
+      ],
+      "priority": "medium",
+      "estimatedEffort": "2",
+      "dependsOn": [],
+      "type": "feature",
+      "passes": false,
+      "capabilities": ["code_generation", "testing"]
+    },
+    {
+      "id": "BOOKING-001",
+      "title": "Confirm booking integration release readiness",
+      "description": "Verify booking.ts implementation and update roadmap. Check if Amelia/SSA/TEC tools are fully implemented and ready for release. Update ROADMAP.md status.",
+      "acceptanceCriteria": [
+        "Review booking.ts tools for completeness",
+        "Test booking tools with mock data",
+        "Update ROADMAP.md to change 'Planned Integration' to 'Implemented'",
+        "Ensure booking tools are properly registered in product-tiers.ts",
+        "Verify plugin-side API endpoints exist"
+      ],
+      "priority": "medium",
+      "estimatedEffort": "1",
+      "dependsOn": [],
+      "type": "verification",
+      "passes": false,
+      "capabilities": ["testing", "documentation"]
+    },
+    {
+      "id": "EXPORT-001",
+      "title": "Add missing export tools",
+      "description": "Implement export tools for Import-Export module. Add mass_export tool for bulk export of posts/pages/products as CSV/JSON with filters.",
+      "acceptanceCriteria": [
+        "New tool mass_export implemented in import-export.ts",
+        "Supports filtering by post_type, category, date range, status",
+        "Output formats: CSV and JSON",
+        "Governance level L2 (auto-queue for large exports)",
+        "Integration with existing import_external_data tool"
+      ],
+      "priority": "low",
+      "estimatedEffort": "2",
+      "dependsOn": [],
+      "type": "feature",
+      "passes": false,
+      "capabilities": ["code_generation", "automation"]
+    },
+    {
+      "id": "WIZARDS-001",
+      "title": "Fix wizards cached assessment placeholder",
+      "description": "Replace placeholder assessment data in Wizards.php with actual cached assess_site data. Ensure wizards can access comprehensive site assessment for recommendations.",
+      "acceptanceCriteria": [
+        "Wizards use actual assess_site cached data instead of placeholder",
+        "All 7 wizards (ACF, Forms, Comments, etc.) receive proper assessment input",
+        "Wizard recommendations are based on real site state",
+        "Backward compatibility maintained for sites without cached data"
+      ],
+      "priority": "low",
+      "estimatedEffort": "1",
+      "dependsOn": [],
+      "type": "bugfix",
+      "passes": false,
+      "capabilities": ["code_generation", "integration"]
+    },
+    {
+      "id": "PACKAGING-001",
+      "title": "Implement mirror-export verification for public Free repository",
+      "description": "Create verification system for mirror export to ensure Free tier tools are correctly separated from Advanced. Implement checks that prevent Advanced tools from leaking to public mirror.",
+      "acceptanceCriteria": [
+        "Script to verify mirror export contains only Free tier tools",
+        "Check product-tiers.ts consistency between main repo and mirror",
+        "Automated validation in CI pipeline",
+        "Documentation for mirror maintenance process"
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": [],
+      "type": "infrastructure",
+      "passes": false,
+      "capabilities": ["automation", "infrastructure"]
+    }
+  ]
+}

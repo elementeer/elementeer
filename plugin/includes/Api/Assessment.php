@@ -8,6 +8,7 @@ use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use Elementify\MCP\Auth\Manager as Auth;
+use Elementify\MCP\Api\Wizards\BookingWizard;
 
 /**
  * REST controller for the site assessment endpoint.
@@ -28,7 +29,7 @@ final class Assessment {
 
     public function get_assessment( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'site-audit:read' );
-        if ( is_wp_error( $auth ) ) return $auth;
+        if ( \is_wp_error( $auth ) ) return $auth;
 
         $issues = [];
 
@@ -36,13 +37,13 @@ final class Assessment {
         // 1. WordPress basics
         // ------------------------------------------------------------------ //
         $wordpress = [
-            'version'      => get_bloginfo( 'version' ),
-            'language'     => get_bloginfo( 'language' ),
-            'timezone'     => wp_timezone_string(),
-            'is_multisite' => is_multisite(),
-            'site_name'    => get_bloginfo( 'name' ),
-            'site_tagline' => get_bloginfo( 'description' ),
-            'admin_url'    => admin_url(),
+            'version'      => \get_bloginfo( 'version' ),
+            'language'     => \get_bloginfo( 'language' ),
+            'timezone'     => \wp_timezone_string(),
+            'is_multisite' => \is_multisite(),
+            'site_name'    => \get_bloginfo( 'name' ),
+            'site_tagline' => \get_bloginfo( 'description' ),
+            'admin_url'    => \admin_url(),
         ];
 
         // ------------------------------------------------------------------ //
@@ -50,7 +51,7 @@ final class Assessment {
         // ------------------------------------------------------------------ //
         $el_version     = defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : null;
         $el_pro_version = defined( 'ELEMENTOR_PRO_VERSION' ) ? ELEMENTOR_PRO_VERSION : null;
-        $kit_id         = (int) get_option( 'elementor_active_kit', 0 );
+        $kit_id         = (int) \get_option( 'elementor_active_kit', 0 );
 
         $elementor = [
             'version'       => $el_version,
@@ -72,7 +73,7 @@ final class Assessment {
         $logo_set                = false;
 
         if ( $kit_id ) {
-            $kit_settings = get_post_meta( $kit_id, '_elementor_page_settings', true );
+            $kit_settings = \get_post_meta( $kit_id, '_elementor_page_settings', true );
             if ( is_array( $kit_settings ) ) {
                 $global_colors_count     = count( $kit_settings['system_colors'] ?? [] );
                 $global_typography_count = count( $kit_settings['system_typography'] ?? [] );
@@ -80,7 +81,7 @@ final class Assessment {
         }
 
         // WP custom logo (works with most themes including Astra)
-        $logo_id  = (int) get_theme_mod( 'custom_logo', 0 );
+        $logo_id  = (int) \get_theme_mod( 'custom_logo', 0 );
         $logo_set = $logo_id > 0;
 
         if ( ! $logo_set ) {
@@ -110,7 +111,7 @@ final class Assessment {
             $theme_builder[ $type ] = [];
         }
 
-        $tb_posts = get_posts( [
+        $tb_posts = \get_posts( [
             'post_type'      => 'elementor_library',
             'post_status'    => [ 'publish', 'draft' ],
             'posts_per_page' => 200,
@@ -124,7 +125,7 @@ final class Assessment {
         ] );
 
         foreach ( $tb_posts as $post ) {
-            $type = get_post_meta( $post->ID, '_elementor_template_type', true );
+            $type = \get_post_meta( $post->ID, '_elementor_template_type', true );
             if ( isset( $theme_builder[ $type ] ) ) {
                 $theme_builder[ $type ][] = [
                     'id'     => $post->ID,
@@ -146,7 +147,7 @@ final class Assessment {
         // ------------------------------------------------------------------ //
         $content_types = [ 'page', 'section', 'container', 'widget', 'popup', 'kit', 'global-widget' ];
 
-        $all_templates = get_posts( [
+        $all_templates = \get_posts( [
             'post_type'      => 'elementor_library',
             'post_status'    => [ 'publish', 'draft', 'private' ],
             'posts_per_page' => -1,
@@ -166,17 +167,17 @@ final class Assessment {
         $draft         = 0;
 
         foreach ( $all_templates as $tid ) {
-            $type = get_post_meta( $tid, '_elementor_template_type', true );
+            $type = \get_post_meta( $tid, '_elementor_template_type', true );
             if ( isset( $by_type[ $type ] ) ) {
                 $by_type[ $type ]++;
             }
 
-            $status = get_post_status( $tid );
+            $status = \get_post_status( $tid );
             if ( $status === 'publish' ) $published++;
             else $draft++;
 
-            $terms = wp_get_object_terms( $tid, 'elementor_library_category', [ 'fields' => 'ids' ] );
-            if ( empty( $terms ) || is_wp_error( $terms ) ) {
+            $terms = \wp_get_object_terms( $tid, 'elementor_library_category', [ 'fields' => 'ids' ] );
+            if ( empty( $terms ) || \is_wp_error( $terms ) ) {
                 $uncategorized++;
             }
         }
@@ -202,7 +203,7 @@ final class Assessment {
         $pages_data = [];
         $pages_total_elementor = 0;
 
-        $public_post_types = get_post_types( [ 'public' => true, '_builtin' => false ], 'names' );
+        $public_post_types = \get_post_types( [ 'public' => true, '_builtin' => false ], 'names' );
         $page_post_types   = array_merge( [ 'page', 'post' ], array_values( $public_post_types ) );
 
         foreach ( $page_post_types as $pt ) {
@@ -227,9 +228,9 @@ final class Assessment {
         // ------------------------------------------------------------------ //
         // 7. Performance indicators
         // ------------------------------------------------------------------ //
-        $css_method  = get_option( 'elementor_css_print_method', 'internal' );
-        $opt_dom     = get_option( 'elementor_optimized_dom_output', '' );
-        $load_fa4    = get_option( 'elementor_load_fa4_shim', '' );
+        $css_method  = \get_option( 'elementor_css_print_method', 'internal' );
+        $opt_dom     = \get_option( 'elementor_optimized_dom_output', '' );
+        $load_fa4    = \get_option( 'elementor_load_fa4_shim', '' );
 
         if ( $css_method === 'internal' ) {
             $issues[] = [ 'severity' => 'info', 'code' => 'css_internal_embedding', 'message' => 'Elementor CSS is embedded inline (internal). Switch to "external" CSS files for better caching.' ];
@@ -247,7 +248,7 @@ final class Assessment {
         // ------------------------------------------------------------------ //
         // 8. Active plugins — categorized
         // ------------------------------------------------------------------ //
-        $active = (array) get_option( 'active_plugins', [] );
+        $active = (array) \get_option( 'active_plugins', [] );
 
         $plugin_map = [
             'seo'           => [ 'seo-by-rank-math', 'wordpress-seo', 'all-in-one-seo-pack', 'autodescription', 'squirrly-seo' ],
@@ -258,6 +259,7 @@ final class Assessment {
             'security'      => [ 'wordfence', 'all-in-one-wp-security-and-firewall', 'better-wp-security', 'wp-cerber' ],
             'backup'        => [ 'updraftplus', 'backwpup', 'all-in-one-wp-migration' ],
             'membership'    => [ 'learndash', 'memberpress', 'restrict-content-pro', 'learnpress' ],
+            'booking'       => [ 'ameliabooking', 'simply-schedule-appointments', 'the-events-calendar' ],
         ];
 
         $plugins_classified = [];
@@ -275,10 +277,54 @@ final class Assessment {
             'classified'    => $plugins_classified,
             'woocommerce'   => isset( $plugins_classified['woocommerce'] ),
             'multilingual'  => ! empty( $plugins_classified['multilingual'] ),
+            'booking'       => ! empty( $plugins_classified['booking'] ),
         ];
 
         // ------------------------------------------------------------------ //
-        // 9. Capabilities (Elementify plugin)
+        // 9a. Booking gaps & recommendations (if booking plugin detected)
+        // ------------------------------------------------------------------ //
+        $booking_recommendations = [];
+        if ( ! empty( $plugins_classified['booking'] ) ) {
+            try {
+                $wizard_assessment = [
+                    'plugins' => $plugins,
+                    'pages'   => $pages,
+                ];
+                $booking_wizard = new BookingWizard( $wizard_assessment );
+                $booking_gaps = $booking_wizard->analyze_gaps();
+                foreach ( $booking_gaps as $gap ) {
+                    $issues[] = [
+                        'severity' => $gap['severity'],
+                        'code'     => 'booking_' . $gap['id'],
+                        'message'  => $gap['description'],
+                    ];
+                }
+                // Generate booking-specific recommendations
+                $raw_recs = $booking_wizard->generate_recommendations();
+                foreach ( $raw_recs as $rec ) {
+                    // Map priority strings to numeric priority (high=>1, medium=>2, low=>3)
+                    $priority_map = [ 'high' => 1, 'medium' => 2, 'low' => 3 ];
+                    $priority = $priority_map[ $rec['priority'] ] ?? 2;
+                    $booking_recommendations[] = [
+                        'id'          => $rec['id'],
+                        'priority'    => $priority,
+                        'category'    => 'booking',
+                        'title'       => $rec['title'],
+                        'description' => $rec['description'],
+                        'impact'      => 'medium',
+                        'effort'      => 'medium',
+                        'automated'   => false,
+                        'tools'       => [],
+                        'blocked_by'  => [],
+                    ];
+                }
+            } catch ( \Throwable $e ) {
+                // Silently ignore errors; booking gaps are optional
+            }
+        }
+
+        // ------------------------------------------------------------------ //
+        // 10. Capabilities (Elementify plugin)
         // ------------------------------------------------------------------ //
         $seo_plugin = null;
         if ( ! empty( $plugins_classified['seo'] ) ) {
@@ -294,9 +340,9 @@ final class Assessment {
         ];
 
         // ------------------------------------------------------------------ //
-        // 10. Custom Post Types
+        // 11. Custom Post Types
         // ------------------------------------------------------------------ //
-        $cpt_objects = get_post_types( [ 'public' => true, '_builtin' => false ], 'objects' );
+        $cpt_objects = \get_post_types( [ 'public' => true, '_builtin' => false ], 'objects' );
         $custom_post_types = array_values( array_map( function ( $cpt ) {
             return [
                 'name'  => $cpt->name,
@@ -306,7 +352,7 @@ final class Assessment {
         }, $cpt_objects ) );
 
         // ------------------------------------------------------------------ //
-        // 10. User roles
+        // 12. User roles
         // ------------------------------------------------------------------ //
         $roles = array_keys( wp_roles()->roles );
 
@@ -332,6 +378,7 @@ final class Assessment {
                 'warning'  => count( array_filter( $issues, fn( $i ) => $i['severity'] === 'warning' ) ),
                 'info'     => count( array_filter( $issues, fn( $i ) => $i['severity'] === 'info' ) ),
             ],
+            'booking_recommendations' => $booking_recommendations,
         ], 200 );
     }
 }

@@ -5,6 +5,10 @@ import type { ElementifyClient } from '../../client.js';
 
 function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> = {}): ElementifyClient {
   return {
+    createChange:         vi.fn().mockResolvedValue({ id: 'chg_test', created_at: '2026-03-30T10:00:00+00:00', status: 'pending', operation: 'update_page_data', params: {}, note: '', before_state: null, reviewed_at: null, review_note: null, applied_at: null }),
+    listChanges:          vi.fn().mockResolvedValue({ changes: [], total: 0 }),
+    getChange:            vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
+    updateChangeStatus:   vi.fn().mockResolvedValue({ id: 'chg_test', status: 'approved' }),
     listTemplates: vi.fn(),
     getTemplate: vi.fn(),
     createTemplate: vi.fn().mockResolvedValue({ id: 99, title: '', type: 'container', status: 'publish', author: 1, date: '', modified: '', categories: [], tags: [] }),
@@ -17,6 +21,10 @@ function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> 
     listElementorPages: vi.fn().mockResolvedValue({ posts: [], total: 0, total_pages: 1 }),
     getPageData: vi.fn().mockResolvedValue({ post_id: 1, post_title: 'Test Page', post_type: 'page', element_count: 0, elementor_data: [] }),
     updatePageData: vi.fn().mockResolvedValue({ id: 1, updated: true }),
+    setGlobalColors:      vi.fn().mockResolvedValue({ kit_id: 1, slot: 'system', colors: [], updated: true }),
+    setGlobalTypography:  vi.fn().mockResolvedValue({ kit_id: 1, slot: 'system', typography: [], updated: true }),
+    setLogo:              vi.fn().mockResolvedValue({ logo_id: 1, logo_url: null, updated: true }),
+    setSiteContext:       vi.fn().mockResolvedValue({ user_role: 'site-owner', site_purpose: null, brand_notes: null, target_audience: null, primary_language: null, set_at: '' }),
     ...overrides,
   } as unknown as ElementifyClient;
 }
@@ -151,22 +159,40 @@ describe('Page tools', () => {
   // update_page_data
   // ------------------------------------------------------------------ //
   describe('update_page_data', () => {
-    it('calls updatePageData with id and elementor_data', async () => {
+    it('queues change for governance L2', async () => {
       const data = [{ id: 'c1', elType: 'container', elements: [] }];
-      vi.mocked(client.updatePageData).mockResolvedValueOnce({ id: 42, updated: true });
+      vi.mocked(client.createChange).mockResolvedValueOnce({ id: 'chg_test', created_at: '2026-03-30T10:00:00+00:00', status: 'pending', operation: 'update_page_data', params: { id: 42, elementor_data: data }, note: '', before_state: null, reviewed_at: null, review_note: null, applied_at: null });
 
       const result = await callTool('update_page_data', { id: 42, elementor_data: data });
 
-      expect(client.updatePageData).toHaveBeenCalledWith(42, data);
-      expect(result.content[0]!.text).toContain('Page 42 updated');
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'update_page_data',
+        params: { id: 42, elementor_data: data },
+        note: 'Auto-queued by governance level L2',
+      });
+      expect(client.updatePageData).not.toHaveBeenCalled();
+      expect(result.content[0]!.text).toContain('Change queued for review');
+      expect(result.content[0]!.text).toContain('chg_test');
     });
 
     it('passes site_id to getClient', async () => {
-      vi.mocked(client.updatePageData).mockResolvedValueOnce({ id: 7, updated: true });
+      vi.mocked(client.createChange).mockResolvedValueOnce({ 
+        id: 'chg_test', 
+        created_at: '2026-03-30T10:00:00+00:00', 
+        status: 'pending', 
+        operation: 'update_page_data', 
+        params: { id: 7, elementor_data: [] }, 
+        note: 'Auto-queued by governance level L2', 
+        before_state: null, 
+        reviewed_at: null, 
+        review_note: null, 
+        applied_at: null 
+      });
 
       await callTool('update_page_data', { id: 7, elementor_data: [], site_id: 'prod' });
 
       expect(getClient).toHaveBeenCalledWith('prod');
+      expect(client.createChange).toHaveBeenCalled();
     });
   });
 
@@ -183,58 +209,119 @@ describe('Page tools', () => {
     ];
 
     it('merges all sections from two templates into a new template', async () => {
-      vi.mocked(client.getTemplateData)
-        .mockResolvedValueOnce({ id: 10, elementor_data: tpl1Elements })
-        .mockResolvedValueOnce({ id: 20, elementor_data: tpl2Elements });
-      vi.mocked(client.createTemplate).mockResolvedValueOnce({
-        id: 99, title: 'PAGE_Composed', type: 'page', status: 'publish',
-        author: 1, date: '', modified: '', categories: [], tags: [],
+      vi.mocked(client.createChange).mockResolvedValueOnce({ 
+        id: 'chg_test', 
+        created_at: '2026-03-30T10:00:00+00:00', 
+        status: 'pending', 
+        operation: 'compose_page_from_templates', 
+        params: { 
+          sources: [{ template_id: 10 }, { template_id: 20 }],
+          save_as_template: { title: 'PAGE_Composed', template_type: 'page', status: 'publish' },
+          write_to_page: undefined
+        }, 
+        note: 'Page composition auto-queued by governance level L2', 
+        before_state: null, 
+        reviewed_at: null, 
+        review_note: null, 
+        applied_at: null 
       });
-      vi.mocked(client.updateTemplateData).mockResolvedValueOnce({ id: 99, updated: true });
 
       const result = await callTool('compose_page_from_templates', {
         sources: [{ template_id: 10 }, { template_id: 20 }],
         save_as_template: { title: 'PAGE_Composed', template_type: 'page', status: 'publish' },
       });
 
-      expect(client.getTemplateData).toHaveBeenCalledTimes(2);
-      expect(client.updateTemplateData).toHaveBeenCalledWith(99, [...tpl1Elements, ...tpl2Elements]);
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'compose_page_from_templates',
+        params: { 
+          sources: [{ template_id: 10 }, { template_id: 20 }],
+          save_as_template: { title: 'PAGE_Composed', template_type: 'page', status: 'publish' },
+          write_to_page: undefined
+        },
+        note: 'Page composition auto-queued by governance level L2',
+      });
+      expect(client.getTemplateData).not.toHaveBeenCalled();
+      expect(client.createTemplate).not.toHaveBeenCalled();
+      expect(client.updateTemplateData).not.toHaveBeenCalled();
       const text = result.content[0]!.text;
-      expect(text).toContain('3 top-level element');
+      expect(text).toContain('Page composition queued for review');
+      expect(text).toContain('chg_test');
       expect(text).toContain('PAGE_Composed');
-      expect(text).toContain('ID: 99');
     });
 
     it('respects section indices per source', async () => {
-      vi.mocked(client.getTemplateData)
-        .mockResolvedValueOnce({ id: 10, elementor_data: tpl1Elements })
-        .mockResolvedValueOnce({ id: 20, elementor_data: tpl2Elements });
-      vi.mocked(client.createTemplate).mockResolvedValueOnce({
-        id: 77, title: 'Filtered', type: 'page', status: 'publish',
-        author: 1, date: '', modified: '', categories: [], tags: [],
+      vi.mocked(client.createChange).mockResolvedValueOnce({ 
+        id: 'chg_test', 
+        created_at: '2026-03-30T10:00:00+00:00', 
+        status: 'pending', 
+        operation: 'compose_page_from_templates', 
+        params: { 
+          sources: [{ template_id: 10, sections: [1] }, { template_id: 20 }],
+          save_as_template: { title: 'Filtered', template_type: 'page', status: 'publish' },
+          write_to_page: undefined
+        }, 
+        note: 'Auto-queued by governance level L2', 
+        before_state: null, 
+        reviewed_at: null, 
+        review_note: null, 
+        applied_at: null 
       });
-      vi.mocked(client.updateTemplateData).mockResolvedValueOnce({ id: 77, updated: true });
 
       await callTool('compose_page_from_templates', {
         sources: [{ template_id: 10, sections: [1] }, { template_id: 20 }],
         save_as_template: { title: 'Filtered' },
       });
 
-      // Only index 1 from tpl1 + all of tpl2
-      expect(client.updateTemplateData).toHaveBeenCalledWith(77, [tpl1Elements[1], ...tpl2Elements]);
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'compose_page_from_templates',
+        params: { 
+          sources: [{ template_id: 10, sections: [1] }, { template_id: 20 }],
+          save_as_template: { title: 'Filtered' },
+          write_to_page: undefined
+        },
+        note: 'Page composition auto-queued by governance level L2',
+      });
+      expect(client.getTemplateData).not.toHaveBeenCalled();
+      expect(client.createTemplate).not.toHaveBeenCalled();
+      expect(client.updateTemplateData).not.toHaveBeenCalled();
     });
 
     it('writes to page when write_to_page is set', async () => {
-      vi.mocked(client.getTemplateData).mockResolvedValueOnce({ id: 10, elementor_data: tpl1Elements });
-      vi.mocked(client.updatePageData).mockResolvedValueOnce({ id: 55, updated: true });
+      vi.mocked(client.createChange).mockResolvedValueOnce({ 
+        id: 'chg_test', 
+        created_at: '2026-03-30T10:00:00+00:00', 
+        status: 'pending', 
+        operation: 'compose_page_from_templates', 
+        params: { 
+          sources: [{ template_id: 10 }],
+          save_as_template: undefined,
+          write_to_page: { page_id: 55 }
+        }, 
+        note: 'Page composition auto-queued by governance level L2', 
+        before_state: null, 
+        reviewed_at: null, 
+        review_note: null, 
+        applied_at: null 
+      });
 
       const result = await callTool('compose_page_from_templates', {
         sources: [{ template_id: 10 }],
         write_to_page: { page_id: 55 },
       });
 
-      expect(client.updatePageData).toHaveBeenCalledWith(55, tpl1Elements);
-      expect(result.content[0]!.text).toContain('Written to page 55');
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'compose_page_from_templates',
+        params: { 
+          sources: [{ template_id: 10 }],
+          save_as_template: undefined,
+          write_to_page: { page_id: 55 }
+        },
+        note: 'Page composition auto-queued by governance level L2',
+      });
+      expect(client.getTemplateData).not.toHaveBeenCalled();
+      expect(client.updatePageData).not.toHaveBeenCalled();
+      expect(result.content[0]!.text).toContain('Page composition queued for review');
+      expect(result.content[0]!.text).toContain('chg_test');
     });
 
     it('returns error if neither save_as_template nor write_to_page is set', async () => {
@@ -259,18 +346,24 @@ describe('Page tools', () => {
         index: 1,
         element,
       });
-      vi.mocked(client.createTemplate).mockResolvedValueOnce({
-        id: 55,
-        title: 'SECTION_Hero',
-        type: 'container',
-        status: 'publish',
-        author: 1,
-        date: '',
-        modified: '',
-        categories: [],
-        tags: [],
+      vi.mocked(client.createChange).mockResolvedValueOnce({
+        id: 'chg_test',
+        created_at: '2026-03-30T10:00:00+00:00',
+        status: 'pending',
+        operation: 'save_page_section_as_template',
+        params: {
+          page_id: 20,
+          section_index: 1,
+          template_title: 'SECTION_Hero',
+          template_type: 'container',
+          status: 'publish'
+        },
+        note: 'Template "SECTION_Hero" auto-queued by governance level L2',
+        before_state: null,
+        reviewed_at: null,
+        review_note: null,
+        applied_at: null
       });
-      vi.mocked(client.updateTemplateData).mockResolvedValueOnce({ id: 55, updated: true });
 
       const result = await callTool('save_page_section_as_template', {
         page_id: 20,
@@ -281,17 +374,24 @@ describe('Page tools', () => {
       });
 
       expect(client.getPageData).toHaveBeenCalledWith({ id: 20, extract: 'section', index: 1 });
-      expect(client.createTemplate).toHaveBeenCalledWith({
-        title: 'SECTION_Hero',
-        type: 'container',
-        status: 'publish',
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'save_page_section_as_template',
+        params: {
+          page_id: 20,
+          section_index: 1,
+          template_title: 'SECTION_Hero',
+          template_type: 'container',
+          status: 'publish'
+        },
+        note: 'Template "SECTION_Hero" auto-queued by governance level L2',
       });
-      expect(client.updateTemplateData).toHaveBeenCalledWith(55, [element]);
+      expect(client.createTemplate).not.toHaveBeenCalled();
+      expect(client.updateTemplateData).not.toHaveBeenCalled();
 
       const text = result.content[0]!.text;
+      expect(text).toContain('Template creation queued for review');
+      expect(text).toContain('chg_test');
       expect(text).toContain('SECTION_Hero');
-      expect(text).toContain('ID: 55');
-      expect(text).toContain('[elementor-template id="55"]');
     });
 
     it('throws if element at index does not exist', async () => {
@@ -331,18 +431,22 @@ describe('Page tools', () => {
         element_count: 2,
         elementor_data: elementorData,
       });
-      vi.mocked(client.createTemplate).mockResolvedValueOnce({
-        id: 77,
-        title: 'PAGE_Full',
-        type: 'page',
-        status: 'publish',
-        author: 1,
-        date: '',
-        modified: '',
-        categories: [],
-        tags: [],
+      vi.mocked(client.createChange).mockResolvedValueOnce({
+        id: 'chg_test',
+        created_at: '2026-03-30T10:00:00+00:00',
+        status: 'pending',
+        operation: 'save_full_page_as_template',
+        params: {
+          page_id: 30,
+          template_title: 'PAGE_Full',
+          status: 'publish'
+        },
+        note: 'Page template "PAGE_Full" auto-queued by governance level L2',
+        before_state: null,
+        reviewed_at: null,
+        review_note: null,
+        applied_at: null
       });
-      vi.mocked(client.updateTemplateData).mockResolvedValueOnce({ id: 77, updated: true });
 
       const result = await callTool('save_full_page_as_template', {
         page_id: 30,
@@ -350,19 +454,23 @@ describe('Page tools', () => {
         status: 'publish',
       });
 
-      expect(client.getPageData).toHaveBeenCalledWith({ id: 30 });
-      expect(client.createTemplate).toHaveBeenCalledWith({
-        title: 'PAGE_Full',
-        type: 'page',
-        status: 'publish',
+      expect(client.getPageData).not.toHaveBeenCalled();
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'save_full_page_as_template',
+        params: {
+          page_id: 30,
+          template_title: 'PAGE_Full',
+          status: 'publish'
+        },
+        note: 'Page template "PAGE_Full" auto-queued by governance level L2',
       });
-      expect(client.updateTemplateData).toHaveBeenCalledWith(77, elementorData);
+      expect(client.createTemplate).not.toHaveBeenCalled();
+      expect(client.updateTemplateData).not.toHaveBeenCalled();
 
       const text = result.content[0]!.text;
+      expect(text).toContain('queued for review');
+      expect(text).toContain('chg_test');
       expect(text).toContain('PAGE_Full');
-      expect(text).toContain('ID: 77');
-      expect(text).toContain('"Full Page"');
-      expect(text).toContain('[elementor-template id="77"]');
     });
   });
 });

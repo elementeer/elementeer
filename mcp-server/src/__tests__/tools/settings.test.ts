@@ -20,6 +20,22 @@ function makeClient(overrides: Partial<Record<keyof ElementifyClient, unknown>> 
       updated: ['blogname'],
       settings: { blogname: 'New Site Name' },
     }),
+    // Governance methods
+    createChange: vi.fn().mockResolvedValue({ 
+      id: 'chg_settings_test', 
+      created_at: '2026-03-30T10:00:00+00:00', 
+      status: 'pending', 
+      operation: 'update_site_settings', 
+      params: {}, 
+      note: '', 
+      before_state: null, 
+      reviewed_at: null, 
+      review_note: null, 
+      applied_at: null 
+    }),
+    listChanges: vi.fn().mockResolvedValue({ changes: [], total: 0 }),
+    getChange: vi.fn().mockResolvedValue({ id: 'chg_settings_test', status: 'approved' }),
+    updateChangeStatus: vi.fn().mockResolvedValue({ id: 'chg_settings_test', status: 'approved' }),
     ...overrides,
   } as unknown as ElementifyClient;
 }
@@ -105,59 +121,54 @@ describe('settings tools', () => {
       expect(toolHandlers.has('update_site_settings')).toBe(true);
     });
 
-    it('calls updateSiteSettings with correct parameters', async () => {
+    it('queues change for review (governance level L2)', async () => {
       await callTool('update_site_settings', {
         blogname: 'New Site Name',
         homepage: 2,
       });
-      expect(client.updateSiteSettings).toHaveBeenCalledWith({
-        blogname: 'New Site Name',
-        homepage: 2,
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'update_site_settings',
+        params: {
+          blogname: 'New Site Name',
+          homepage: 2,
+        },
+        note: 'Auto-queued by governance level L2',
       });
+      // Should NOT call updateSiteSettings directly
+      expect(client.updateSiteSettings).not.toHaveBeenCalled();
     });
 
-    it('returns updated fields summary', async () => {
-      vi.mocked(client.updateSiteSettings).mockResolvedValueOnce({
-        updated: ['blogname', 'homepage'],
-        settings: {
-          blogname: 'New Site Name',
-          description: 'Just a test',
-          homepage: { id: 2, title: 'Home', url: 'https://example.com/' },
-          posts_page: null,
-          permalink: '/%postname%/',
-          timezone: 'UTC',
-          date_format: 'F j, Y',
-          time_format: 'g:i a',
-          start_of_week: 1,
-        },
+    it('includes note in queued change when provided', async () => {
+      await callTool('update_site_settings', {
+        blogname: 'Updated',
+        note: 'Custom note for review',
       });
+      expect(client.createChange).toHaveBeenCalledWith(
+        expect.objectContaining({
+          note: 'Custom note for review',
+        })
+      );
+    });
+
+    it('returns queued change summary', async () => {
       const result = await callTool('update_site_settings', {
-        blogname: 'New Site Name',
-        homepage: 2,
+        blogname: 'Test',
       });
       const text = result.content[0]!.text;
-      expect(text).toContain('Updated fields: blogname, homepage');
-      expect(text).toContain('Blog name: New Site Name');
+      expect(text).toContain('🟡 Change queued for review (governance level L2)');
+      expect(text).toContain('ID: chg_settings_test');
+      expect(text).toContain('Operation: update_site_settings');
+      expect(text).toContain('Next steps:');
     });
 
-    it('handles partial updates', async () => {
-      vi.mocked(client.updateSiteSettings).mockResolvedValueOnce({
-        updated: ['description'],
-        settings: {
-          blogname: 'Test Site',
-          description: 'Updated tagline',
-          homepage: null,
-          posts_page: null,
-          permalink: '/%postname%/',
-          timezone: 'UTC',
-          date_format: 'F j, Y',
-          time_format: 'g:i a',
-          start_of_week: 1,
-        },
-      });
+    it('handles partial updates in queued params', async () => {
       await callTool('update_site_settings', { description: 'Updated tagline' });
-      expect(client.updateSiteSettings).toHaveBeenCalledWith({
-        description: 'Updated tagline',
+      expect(client.createChange).toHaveBeenCalledWith({
+        operation: 'update_site_settings',
+        params: {
+          description: 'Updated tagline',
+        },
+        note: 'Auto-queued by governance level L2',
       });
     });
   });

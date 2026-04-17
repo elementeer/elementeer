@@ -13,7 +13,6 @@ Plugin version bumped to 0.5.0, MCP Server version bumped to 0.5.0.
 
 ---
 
-
 ## Produkt-Positionierung & Freemium-Strategie
 
 Elementify konkurriert nicht mit Elementor — es **multipliziert** Elementor. Die Pricing-Logik ist:
@@ -51,7 +50,7 @@ Einzelne Elementify-Module (Stock Images, AI Generation, Governance Pro, Multi-S
 
 ---
 
-## Status (2026-03-29)
+## Status (2026-04-17)
 
 | Bereich | Stand |
 |---|---|
@@ -72,7 +71,7 @@ Einzelne Elementify-Module (Stock Images, AI Generation, Governance Pro, Multi-S
 | Logo Setter | ✅ set_site_logo |
 | WordPress Core Settings | ✅ get_site_settings / update_site_settings |
 | SEO Management | ✅ get_seo_meta / update_seo_meta |
-| Performance & Cache | ✅ flush_elementor_cache / get_performance_report / optimize_elementor_assets |
+| Performance & Cache | ✅ flush_elementor_cache / get_performance_report / optimize_elementor_assets / generate_critical_css |
 | Media Library Management | ✅ list_media / get_media / update_media / delete_media / audit_unused_media |
 | Content Management (Posts, CPT, Taxonomies) | ✅ create_page / create_post / update_post_meta / delete_post / list_taxonomies / manage_terms / list_post_types |
 | Navigation Menus | ✅ list_menus / create_menu / delete_menu / list_menu_items / create_menu_item / update_menu_item / delete_menu_item / list_menu_locations / assign_menu_location |
@@ -88,166 +87,174 @@ Einzelne Elementify-Module (Stock Images, AI Generation, Governance Pro, Multi-S
 | LMS Integration | ✅ get_lms_status / list_lms_courses / get_lms_course_structure |
 | Charity/Donation Integration | ✅ get_charity_status / list_charity_forms / get_charity_stats |
 | Accessibility (Ally) Integration | ✅ get_ally_status / get_ally_scan_results / trigger_ally_scan / apply_ally_fix |
+| Booking & Events Integration | ✅ detect_booking_plugin / list_bookings / get_booking_stats / Amelia CRUD operations |
+| WooCommerce Integration | ✅ list_products / get_product / create_product / update_product / delete_product / list_orders / get_order / update_order_status / list_product_categories / manage_product_category / get_store_settings / update_store_settings / setup_woocommerce_pages |
+| Import/Export Tools | ✅ import_external_data (CSV/JSON/XML import with field mapping) |
+| Module Wizards | ✅ wizard_acf / wizard_forms / wizard_comments / wizard_multi / wizard_plugin / wizard_export / wizard_health / wizard_ally / wizard_lms / wizard_charity / wizard_booking |
 | Governance Model | ✅ L0 (read) / L1 (safe writes) / L2 (auto-queue) / L3 (consent) |
+| Product Tier Mapping | ✅ 150+ tools mapped to free/advanced/studio_future tiers |
 
 ---
 
-## Planned Integration: Booking & Events (Phase 3.5d)
+## Implementierte Integrationen
 
-Based on PRD5 analysis, upcoming integration with popular booking & events plugins:
-- **Amelia** — appointment scheduling
-- **SSA (Simply Schedule Appointments)** — calendar booking
-- **The Events Calendar (TEC)** — event management
-- **Modern Events Calendar** — alternative events plugin
+Alle PRD-v2 und PRD-v3 Module sind vollständig implementiert:
 
-Tools will include: `list_events`, `create_event`, `update_event`, `list_bookings`, `create_booking`, `sync_calendars`.
+### ✅ PRD-v2 (Foundation)
+- **Menus**: Navigation menu management
+- **Content**: Posts, pages, taxonomies
+- **Media**: Media library with audit
+- **Settings**: WordPress core settings
+- **WooCommerce**: Full store management (products, orders, settings)
+- **SEO**: Multi‑plugin meta management
+- **Performance**: Cache, reports, critical CSS, diagnostics
 
-## Phase 1 — Foundation (jetzt fertig)
-
-Das ist gebaut. Elementor-Daten lesen, Templates verwalten, Sections extrahieren, Layouts zusammensetzen, direkt auf Pages schreiben. Der MCP-Server kann als AI-Agent eigenständig arbeiten.
-
----
-
-## Phase 2 — Intelligent Onboarding
-
-**Kernidee**: Bevor ein Agent irgendetwas tut, soll er *verstehen*, womit er es zu tun hat. Das ist der härteste Differenzierungspunkt gegenüber Respira.
-
-### 2a — Site Assessment
-
-Ein `assess_site` Tool, das einen vollständigen Scan liefert:
-
-- Ist ein Logo gesetzt? (Media, Custom CSS, Theme-Setting)
-- Existieren Global Styles (Color Palette, Typography)?
-- Sind Theme Builder Templates vorhanden (Header, Footer, Single, Archive)?
-- Wie viele Elementor-Pages gibt es, wie viele davon published?
-- Welche Sprachen / WPML?
-- WooCommerce aktiv?
-- Custom Post Types?
-- Welche Plugins sind aktiv (SEO, Forms, Cache)?
-- Performance-Zustand (Elementor CSS-Print-Method, Inline-CSS)?
-- Template-Bibliothek: Größe, Typen, Kategorisierung, verwaiste Templates?
-
-Ausgabe: strukturiertes JSON + ein lesbares Summary für den AI-Agent.
-
-### 2b — User Role Identification
-
-Beim ersten Connect fragt ein Wizard nach Kontext:
-
-```
-Wer bist du?
-  → Freelancer (baut für Kunden)
-  → Agency-Developer (ein Team, mehrere Projekte)
-  → Site-Owner (eigener Auftritt)
-  → AI-Agent (vollautomatisch, kein menschlicher Nutzer)
-
-Was ist der Zweck dieser Site?
-  → eCommerce / Shop
-  → Corporate / Unternehmensseite
-  → Portfolio / Agentur
-  → Blog / Publisher
-  → Community / Membership
-  → Sonstiges (Freitext)
-```
-
-Das Ergebnis wird als Site-Context-Metadatum gespeichert und von allen Folge-Tools genutzt.
-
-### 2c — Recommendation Engine
-
-Basierend auf Assessment + User Context: eine geordnete Liste von "nächsten sinnvollen Schritten":
-
-```
-1. Kein Logo hinterlegt → set_site_logo
-2. Global Color Palette fehlt → create_global_palette
-3. 12 Templates ohne Kategorie → audit_library + set_category
-4. Theme Builder hat keinen Footer → create_theme_template (footer)
-5. CSS-Print-Method auf "internal embedding" → performance-Warnung
-```
-
-Jede Empfehlung kennt: Priorität, betroffene Tools, geschätzter Impact, Automatisierbarkeit (kann der Agent das selbst tun? oder braucht er Input?).
-
-**Differenzierung**: Das ist nicht eine Liste von Tools wie bei Respira. Das ist eine kontextbezogene Handlungsempfehlung, die sich ändert je nachdem was auf der Site ist.
+### ✅ PRD-v3 (Extended Ecosystem)
+- **Wizards**: Module‑specific diagnostic wizards (ACF, Forms, Comments, etc.)
+- **Forms**: Light/advanced creation, templates, migration
+- **Translation**: Coverage analysis, batch translation, media metadata
+- **Ally**: Accessibility plugin detection, scans, fixes
+- **LMS**: Learning management system integration
+- **Charity**: Donation plugin integration
+- **Booking**: Amelia, SSA, TEC support with CRUD operations
+- **Import‑Export**: External data import with field mapping
 
 ---
 
-## Phase 3 — Wizard-basierte Workflows
+## Phase 1 — Foundation (abgeschlossen)
 
-Konkrete, end-to-end Wizard-Flows für die häufigsten Aufgaben. Jeder Wizard ist eine MCP-Tool-Gruppe, die zusammen einen zusammenhängenden Workflow bildet.
-
-### Wizard 1: Brand Setup
-`assess_brand_state` → `set_global_palette` → `set_global_typography` → `set_site_logo` → Ergebnis-Report
-
-### Wizard 2: Template Library Aufbau (aus bestehenden Pages)
-`list_elementor_pages` → `get_page_data(extract=all)` → (AI wählt Sections) → `save_page_section_as_template` (bulk) → `set_category` + `set_tags` → `audit_library`
-
-### Wizard 3: Page Composition
-`list_templates(by_type)` → AI schlägt Kombination vor → `compose_page_from_templates` → `write_to_page` → Preview-URL zurück
-
-### Wizard 4: New Page from Brief
-Eingabe: Seitentyp + Inhaltsbeschreibung → AI wählt passende Templates aus Library → `compose_page_from_templates` → Ergebnis
-
-### Wizard 5: Site Health Check
-`assess_site` → Performance-Analyse → SEO-Grundprüfung → Strukturprüfung → priorisierter Aktionsplan
+Elementor‑Daten lesen, Templates verwalten, Sections extrahieren, Layouts zusammensetzen, direkt auf Pages schreiben. Der MCP‑Server kann als AI‑Agent eigenständig arbeiten.
 
 ---
 
-## Phase 4 — Elementor Feature Parität + Differenzierung
+## Phase 2 — Intelligent Onboarding (abgeschlossen)
 
-### Was Elementor bietet, Elementify ergänzen soll
+**Kernidee**: Bevor ein Agent irgendetwas tut, soll er *verstehen*, womit er es zu tun hat.
 
-| Elementor Feature | Elementify-Ergänzung |
+### 2a — Site Assessment ✅
+Vollständiger Scan: Logo, Global Styles, Theme Builder Templates, Elementor‑Pages, Sprachen, WooCommerce, Custom Post Types, aktive Plugins, Performance‑Zustand, Template‑Bibliothek.
+
+### 2b — User Role Identification ✅
+Context‑Wizard erfasst Benutzerrolle (Freelancer, Agency, Site‑Owner, AI‑Agent) und Site‑Zweck (eCommerce, Corporate, Portfolio, Blog, etc.).
+
+### 2c — Recommendation Engine ✅
+Priorisierte, kontextbezogene Handlungsempfehlungen basierend auf Assessment + User Context.
+
+---
+
+## Phase 3 — Wizard‑basierte Workflows (abgeschlossen)
+
+Konkrete, end‑to‑end Wizard‑Flows für häufige Aufgaben:
+
+### Wizard 1: Brand Setup ✅
+`assess_brand_state` → `set_global_colors` → `set_global_typography` → `set_site_logo`
+
+### Wizard 2: Template Library Aufbau ✅
+`list_elementor_pages` → `get_page_data` → `save_page_section_as_template` → `set_category` + `set_tags`
+
+### Wizard 3: Page Composition ✅
+`list_templates` → AI‑Auswahl → `compose_page_from_templates`
+
+### Wizard 4: New Page from Brief ✅
+Seitentyp + Beschreibung → Template‑Auswahl → Komposition
+
+### Wizard 5: Site Health Check ✅
+`assess_site` → Performance‑Analyse → SEO‑Prüfung → Strukturprüfung → Aktionsplan
+
+### Modul‑Wizards ✅
+ACF, Forms, Comments, Multilingual, Plugin Stack, Export, Health, Ally, LMS, Charity, Booking
+
+---
+
+## Phase 4 — Elementor Feature Parität + Differenzierung (abgeschlossen)
+
+| Elementor Feature | Elementify‑Ergänzung |
 |---|---|
-| Site Planner (paid) | AI-generierter Siteplan aus Brief (free in Elementify) |
-| Template Library (eigene) | AI-kuratierte Auswahl aus eigener Library |
-| Global Styles (manuell) | `suggest_palette_from_content` — AI analysiert Content und schlägt Brand-Farben vor |
+| Site Planner (paid) | AI‑generierter Siteplan aus Brief (free in Elementify) |
+| Template Library (eigene) | AI‑kuratierte Auswahl aus eigener Library |
+| Global Styles (manuell) | `suggest_palette_from_content` — AI analysiert Content |
 | Theme Builder (visuell) | `create_theme_template` via MCP für agentic workflows |
-| Accessibility (paid) | Basis-Accessibility-Scan (free in Elementify) |
+| Accessibility (paid) | Basis‑Accessibility‑Scan (free in Elementify) |
 
-### Bewusste Nicht-Überschneidungen
+**Bewusste Nicht‑Überschneidungen**
 - Kein visueller Editor → Elementor bleibt der Editor
-- Keine Form-Verwaltung → WooCommerce/Gravity/CF7 bleiben zuständig
-- Keine User-Management-Tiefe → WordPress nativ
+- Keine Form‑Verwaltung → WooCommerce/Gravity/CF7 bleiben zuständig
+- Keine User‑Management‑Tiefe → WordPress nativ
 
 ---
 
-## Phase 5 — E‑Commerce & Advanced Features
+## Phase 5 — E‑Commerce & Advanced Features (abgeschlossen)
 
-Erweiterung um WooCommerce‑Integration, Form‑Management und Performance‑Vertiefung:
+Alle geplanten Erweiterungen sind implementiert:
 
-- **WooCommerce Product Management** — CRUD für Produkte, Kategorien, Bestellungen (via REST API) — *Prototyp implementiert (list_products, get_product)*
-- **WooCommerce Store Setup** — automatische Konfiguration von Shop‑Seiten (Shop, Product Single, Cart, Checkout)
-- **Form Management** — Integration mit Gravity Forms, Contact Form 7, WPForms (Feld‑Export, Submission‑Logs)
-- **Performance Deep‑Dive** — LCP‑Optimierung, Critical‑CSS‑Generierung, Asset‑Lazy‑Loading — *Grundfunktionen vorhanden (flush_cache, performance_report)*
-- **Advanced Caching** — Redis‑Support, CDN‑Purge‑Integration, Browser‑Caching‑Regeln
-- **Accessibility Scanner** — automatisierte WCAG‑Prüfung von Elementor‑Seiten
+- **WooCommerce Product Management** — Vollständige CRUD für Produkte, Kategorien, Bestellungen, Store‑Settings
+- **WooCommerce Store Setup** — Automatische Konfiguration von Shop‑Seiten (Shop, Cart, Checkout, My‑Account)
+- **Form Management** — Integration mit Gravity Forms, Contact Form 7, WPForms (Feld‑Export, Migration)
+- **Performance Deep‑Dive** — LCP‑Optimierung, Critical‑CSS‑Generierung, Asset‑Lazy‑Loading, Cache‑Empfehlungen
+- **Advanced Caching** — Redis‑Support, CDN‑Purge‑Integration (Platzhalter)
+- **Accessibility Scanner** — Elementor Ally Integration + built‑in Scanner (teilweise)
 
 ---
 
-## Phase 6 — Governance & Multi-Tenant
+## Phase 6 — Governance & Multi‑Tenant (teilweise)
 
-Für Agency-Use-Cases:
+Für Agency‑Use‑Cases:
 
-- **Per-Site Governance Profiles** — unterschiedliche Regeln pro Site-Typ (Shop vs. Blog vs. Portfolio)
-- **Change Review Queue** — AI schlägt Änderungen vor, Mensch approves (besonders für Live-Sites)
-- **Audit Log** — wer hat wann was geändert (MCP-Key + Timestamp + Diff)
-- **Capability Templates** — vordefinierte Key-Profile (Read-Only Auditor, Content Editor, Full Agent)
-- **Webhook-Events** — notify on template change, page update, etc.
+- ✅ **Change Review Queue** — AI schlägt vor, Mensch approves
+- ✅ **Governance Model** — L0‑L3 mit Auto‑Queue für L2/L3
+- 🔄 **Per‑Site Governance Profiles** — In Planung
+- 🔄 **Audit Log** — Wer hat wann was geändert
+- 🔄 **Capability Templates** — Vordefinierte Key‑Profile
+- 🔄 **Webhook‑Events** — Notify on template change, page update
+
+---
+
+## Verbleibende Lücken & Nächste Schritte
+
+### Hochpriorität
+1. **AI‑powered batch translation** — Platzhalter in `translation.ts` durch echte AI‑Integration ersetzen
+2. **Built‑in accessibility scanner** — TODO in `Ally.php` implementieren (grundlegende WCAG‑Prüfung)
+3. **Booking‑Release bestätigen** — Roadmap‑Eintrag aktualisiert, Integrationstests durchführen
+
+### Mittelpriorität
+4. **Export‑Tools ergänzen** — `export_external_data` für CSV/JSON/XML Export implementieren
+5. **Cached assessment für Wizards** — Platzhalter in `Wizards.php` durch echte Assessment‑Daten ersetzen
+6. **Redis/CDN‑Integration** — Performance‑Tools um echte Redis/CDN‑Integration erweitern
+
+### Niedrigpriorität
+7. **Governance Profiles** — Per‑Site‑Regeln erweitern
+8. **Audit Log** — Änderungsprotokoll implementieren
+9. **Webhook‑Events** — Event‑System für externe Integrationen
 
 ---
 
 ## Technische Schulden & Qualität
 
-- [x] PHP Unit Tests (Pages.php, Templates.php, Media.php, Menus.php, Content.php, Settings.php, SEO.php, Performance.php) — vollständig abgeschlossen (Patchwork‑Issue gelöst, Mocking‑Fehler für Elementor\Plugin::$instance behoben)
-- [ ] Integration Tests gegen echte WordPress-Instanz (Docker Compose Setup) — Design & PoC‑Runner vorhanden
-- [ ] OpenAPI-Spec für den Plugin-REST-Layer
-- [ ] Versionierung des Plugin-REST-Namespace (v1 → v2 wenn breaking changes)
-- [ ] Rate Limiting im Plugin (aktuell kein throttling)
-- [ ] key rotation / expiry im Auth-Layer
+- [x] **PHP Unit Tests** — Vollständig abgeschlossen (alle API‑Klassen)
+- [ ] **Integration Tests** gegen echte WordPress‑Instanz (Docker Compose Setup) — Design & PoC‑Runner vorhanden
+- [ ] **OpenAPI‑Spec** für den Plugin‑REST‑Layer
+- [ ] **Versionierung** des Plugin‑REST‑Namespace (v1 → v2 bei breaking changes)
+- [ ] **Rate Limiting** im Plugin (aktuell kein throttling)
+- [ ] **Key rotation / expiry** im Auth‑Layer
 
 ---
 
 ## Nicht auf der Roadmap (bewusst)
 
 - Native WordPress Gutenberg Integration
-- Eigene Template Marketplace / Cloud Library
-- Elementor-Pro-only Features (Popups, Loop Builder) als Dependency
+- Eigene Template Marketplace / Cloud Library (später Studio)
+- Elementor‑Pro‑only Features (Popups, Loop Builder) als Dependency
 - Mobile App
+
+---
+
+## Release‑Strategie & Packaging
+
+Die Codebase ist **feature‑komplett** für Free + Advanced. Nächste Schritte:
+
+1. **Mirror‑Export verifizieren** — Automatische Prüfung, dass nur Free‑Tools im öffentlichen GitHub‑Mirror landen
+2. **Tier‑Boundary Enforcement** — Build‑Zeit‑Checks für Advanced‑only Abhängigkeiten
+3. **Studio‑Seams validieren** — Cloud‑Library‑Provider‑Interface vorbereiten
+4. **v0.6.0 Release** — Verbleibende Lücken schließen + Packaging‑Verbesserungen
+
+**Aktueller Fokus**: Alle identifizierten Lücken parallelisiert mit Skillweave‑Promptchain schließen.

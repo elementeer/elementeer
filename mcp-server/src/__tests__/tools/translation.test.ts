@@ -162,48 +162,50 @@ describe('Translation tools (Advanced)', () => {
   }
 
   describe('batch_translate_strings', () => {
-    it('calls getUntranslatedStrings and returns placeholder output', async () => {
+    it('calls getUntranslatedStrings and returns output', async () => {
       const result = await callTool('batch_translate_strings', { target_language: 'de' });
       expect(client.getUntranslatedStrings).toHaveBeenCalledWith('de');
-      expect(result.content[0].text).toContain('# Batch String Translation (Preview)');
+      expect(result.content[0].text).toContain('# Batch String Translation');
       expect(result.content[0].text).toContain('**Target language**: de');
       expect(result.content[0].text).toContain('**Untranslated strings found**: 5');
       expect(result.content[0].text).toContain('## Untranslated Strings');
+      expect(result.content[0].text).toContain('OpenAI API key not configured');
     });
 
     it('handles empty untranslated strings', async () => {
       vi.mocked(client.getUntranslatedStrings).mockResolvedValueOnce(makeUntranslatedStrings({ strings: [] }));
       const result = await callTool('batch_translate_strings', { target_language: 'fr' });
-      expect(result.content[0].text).toContain('No untranslated strings found.');
+      expect(result.content[0].text).toContain('No untranslated strings to translate.');
     });
 
     it('handles errors gracefully', async () => {
       vi.mocked(client.getUntranslatedStrings).mockRejectedValueOnce(new Error('Strings error'));
       const result = await callTool('batch_translate_strings', { target_language: 'es' });
-      expect(result.content[0].text).toContain('❌ Error getting untranslated strings');
+      expect(result.content[0].text).toContain('❌ Error in batch translation');
     });
   });
 
   describe('translate_media_metadata', () => {
-    it('calls getUntranslatedMedia and returns placeholder output', async () => {
+    it('calls getUntranslatedMedia and returns output', async () => {
       const result = await callTool('translate_media_metadata', { target_language: 'fr' });
       expect(client.getUntranslatedMedia).toHaveBeenCalledWith('fr');
-      expect(result.content[0].text).toContain('# Media Metadata Translation (Preview)');
+      expect(result.content[0].text).toContain('# Media Metadata Translation');
       expect(result.content[0].text).toContain('**Target language**: fr');
       expect(result.content[0].text).toContain('**Untranslated media items found**: 3');
       expect(result.content[0].text).toContain('## Untranslated Media Items');
+      expect(result.content[0].text).toContain('OpenAI API key not configured');
     });
 
     it('handles empty untranslated media', async () => {
       vi.mocked(client.getUntranslatedMedia).mockResolvedValueOnce(makeUntranslatedMedia({ media: [] }));
       const result = await callTool('translate_media_metadata', { target_language: 'de' });
-      expect(result.content[0].text).toContain('No untranslated media metadata found.');
+      expect(result.content[0].text).toContain('No untranslated media metadata to translate.');
     });
 
     it('handles errors gracefully', async () => {
       vi.mocked(client.getUntranslatedMedia).mockRejectedValueOnce(new Error('Media error'));
       const result = await callTool('translate_media_metadata', { target_language: 'es' });
-      expect(result.content[0].text).toContain('❌ Error getting untranslated media');
+      expect(result.content[0].text).toContain('❌ Error in media metadata translation');
     });
   });
 });
