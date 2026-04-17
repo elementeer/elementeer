@@ -171,12 +171,276 @@ final class Ally {
 	}
 
 	/**
+	 * Get IDs of posts/pages built with Elementor.
+	 */
+	private function get_elementor_page_ids( int $limit = 100 ): array {
+		$query = new \WP_Query( [
+			'post_type'      => 'any',
+			'post_status'    => 'publish',
+			'posts_per_page' => $limit,
+			'fields'         => 'ids',
+			'meta_query'     => [
+				[
+					'key'   => '_elementor_edit_mode',
+					'value' => 'builder',
+				],
+			],
+		] );
+		return $query->posts ?? [];
+	}
+
+	/**
+	 * Scan a single Elementor page for accessibility violations.
+	 */
+	private function scan_elementor_page( int $page_id ): array {
+		$raw = \get_post_meta( $page_id, '_elementor_data', true );
+		$data = \is_array( $raw ) ? $raw : \json_decode( $raw ?: '[]', true );
+		$data = \is_array( $data ) ? $data : [];
+
+		$violations = [];
+		$context = [ 'headings' => [] ];
+		$this->traverse_elementor_data( $data, $violations, $page_id, $context );
+		$this->analyze_headings( $context['headings'], $violations, $page_id );
+		return $violations;
+	}
+
+	/**
+	 * Recursively traverse Elementor data to collect violations.
+	 */
+	private function traverse_elementor_data( array $elements, array &$violations, int $page_id, array &$context = [] ): void {
+		foreach ( $elements as $element ) {
+			if ( ! \is_array( $element ) ) {
+				continue;
+			}
+
+			$elType = $element['elType'] ?? null;
+			$widgetType = $element['widgetType'] ?? null;
+			$settings = $element['settings'] ?? [];
+			$element_id = $element['id'] ?? '';
+
+			// Check for violations based on element type
+			$this->check_violations( $elType, $widgetType, $settings, $violations, $page_id, $element_id, $context );
+
+			// Recursively process children
+			if ( ! empty( $element['elements'] ) && \is_array( $element['elements'] ) ) {
+				$this->traverse_elementor_data( $element['elements'], $violations, $page_id, $context );
+			}
+		}
+	}
+
+	/**
+	 * Check for specific accessibility violations.
+	 */
+	private function check_violations( ?string $elType, ?string $widgetType, array $settings, array &$violations, int $page_id, string $element_id, array &$context ): void {
+		// 1. Missing alt text on images
+		if ( $widgetType === 'image' || $widgetType === 'image-box' || $widgetType === 'image-gallery' ) {
+			$alt = $settings['alt'] ?? $settings['image_alt'] ?? '';
+			if ( empty( $alt ) ) {
+				$violations[] = [
+					'severity' => 'serious',
+					'element_type' => $widgetType,
+					'location' => [
+						'page_id' => $page_id,
+						'element_id' => $element_id,
+						'widget_type' => $widgetType,
+					],
+					'description' => 'Image missing alt text.',
+					'suggested_fix' => 'Add descriptive alt text for the image.',
+				];
+			}
+		}
+
+		// 2. Heading hierarchy
+		if ( $widgetType === 'heading' ) {
+			$header_size = $settings['header_size'] ?? 'h2';
+			// Track headings for later analysis
+			if ( ! isset( $context['headings'] ) ) {
+				$context['headings'] = [];
+			}
+			$context['headings'][] = [
+				'size' => $header_size,
+				'element_id' => $element_id,
+			];
+		}
+
+		// 3. Low color contrast (simplified)
+		if ( isset( $settings['color'] ) && isset( $settings['background_color'] ) ) {
+			$contrast = $this->calculate_color_contrast( $settings['color'], $settings['background_color'] );
+			if ( $contrast < 4.5 ) {
+				$violations[] = [
+					'severity' => 'serious',
+					'element_type' => $widgetType ?? $elType,
+					'location' => [
+						'page_id' => $page_id,
+						'element_id' => $element_id,
+					],
+					'description' => sprintf( 'Low color contrast (ratio: %.1f).', $contrast ),
+					'suggested_fix' => 'Increase contrast between text and background colors.',
+				];
+			}
+		}
+
+		// 4. Missing form labels
+		if ( $widgetType === 'form' ) {
+			$fields = $settings['form_fields'] ?? [];
+			foreach ( $fields as $index => $field ) {
+				$label = $field['field_label'] ?? '';
+				$placeholder = $field['placeholder'] ?? '';
+				if ( empty( $label ) && empty( $placeholder ) ) {
+					$violations[] = [
+						'severity' => 'serious',
+						'element_type' => 'form-field',
+						'location' => [
+							'page_id' => $page_id,
+							'element_id' => $element_id,
+							'field_index' => $index,
+						],
+						'description' => 'Form field missing label and placeholder.',
+						'suggested_fix' => 'Add a label or placeholder to identify the field.',
+					];
+				}
+			}
+		}
+
+		// 5. Empty link text
+		if ( $widgetType === 'button' || $widgetType === 'icon' || ( $elType === 'widget' && isset( $settings['link']['url'] ) ) ) {
+			$text = $settings['text'] ?? $settings['icon'] ?? '';
+			if ( empty( $text ) ) {
+				$violations[] = [
+					'severity' => 'moderate',
+					'element_type' => $widgetType,
+					'location' => [
+						'page_id' => $page_id,
+						'element_id' => $element_id,
+					],
+					'description' => 'Link or button has empty text.',
+					'suggested_fix' => 'Add visible text to the link or button.',
+				];
+			}
+		}
+	}
+
+	/**
+	 * Analyze heading hierarchy violations.
+	 */
+	private function analyze_headings( array $headings, array &$violations, int $page_id ): void {
+		if ( empty( $headings ) ) {
+			return;
+		}
+		// Check for missing H1
+		$has_h1 = false;
+		foreach ( $headings as $heading ) {
+			if ( $heading['size'] === 'h1' ) {
+				$has_h1 = true;
+				break;
+			}
+		}
+		if ( ! $has_h1 ) {
+			$violations[] = [
+				'severity' => 'moderate',
+				'element_type' => 'heading',
+				'location' => [
+					'page_id' => $page_id,
+				],
+				'description' => 'Page missing H1 heading.',
+				'suggested_fix' => 'Add at least one H1 heading to the page.',
+			];
+		}
+		// Check for skipped heading levels (simplified)
+		$previous_level = null;
+		foreach ( $headings as $heading ) {
+			$level = (int) \substr( $heading['size'], 1 ); // h2 -> 2
+			if ( $previous_level !== null && $level > $previous_level + 1 ) {
+				$violations[] = [
+					'severity' => 'minor',
+					'element_type' => 'heading',
+					'location' => [
+						'page_id' => $page_id,
+						'element_id' => $heading['element_id'],
+					],
+					'description' => sprintf( 'Heading level skipped from H%d to H%d.', $previous_level, $level ),
+					'suggested_fix' => 'Maintain sequential heading order.',
+				];
+			}
+			$previous_level = $level;
+		}
+	}
+
+	/**
+	 * Calculate approximate contrast ratio between two hex colors.
+	 */
+	private function calculate_color_contrast( string $color1, string $color2 ): float {
+		$l1 = $this->relative_luminance( $color1 );
+		$l2 = $this->relative_luminance( $color2 );
+		if ( $l1 > $l2 ) {
+			return ( $l1 + 0.05 ) / ( $l2 + 0.05 );
+		}
+		return ( $l2 + 0.05 ) / ( $l1 + 0.05 );
+	}
+
+	/**
+	 * Calculate relative luminance of a hex color.
+	 */
+	private function relative_luminance( string $hex ): float {
+		$hex = \ltrim( $hex, '#' );
+		if ( \strlen( $hex ) === 3 ) {
+			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+		}
+		$r = \hexdec( \substr( $hex, 0, 2 ) ) / 255;
+		$g = \hexdec( \substr( $hex, 2, 2 ) ) / 255;
+		$b = \hexdec( \substr( $hex, 4, 2 ) ) / 255;
+
+		$r = $r <= 0.03928 ? $r / 12.92 : \pow( ( $r + 0.055 ) / 1.055, 2.4 );
+		$g = $g <= 0.03928 ? $g / 12.92 : \pow( ( $g + 0.055 ) / 1.055, 2.4 );
+		$b = $b <= 0.03928 ? $b / 12.92 : \pow( ( $b + 0.055 ) / 1.055, 2.4 );
+
+		return 0.2126 * $r + 0.7152 * $g + 0.0722 * $b;
+	}
+
+	/**
+	 * Calculate a simple accessibility score based on violations.
+	 */
+	private function calculate_accessibility_score( array $violations ): int {
+		$severity_weights = [
+			'critical' => 10,
+			'serious' => 5,
+			'moderate' => 2,
+			'minor' => 1,
+		];
+		$score = 100;
+		foreach ( $violations as $violation ) {
+			$weight = $severity_weights[ $violation['severity'] ] ?? 1;
+			$score -= $weight;
+		}
+		return \max( 0, $score );
+	}
+
+	/**
 	 * Run built‑in accessibility scan (basic checks).
 	 */
 	private function run_builtin_accessibility_scan(): array {
-		// TODO: Implement basic A11Y scanner
-		// For now, return empty array
-		return [];
+		$page_ids = $this->get_elementor_page_ids( 50 );
+		$scans = [];
+
+		foreach ( $page_ids as $page_id ) {
+			$violations = $this->scan_elementor_page( $page_id );
+			if ( empty( $violations ) ) {
+				continue;
+			}
+
+			$post = \get_post( $page_id );
+			$scans[] = [
+				'id'           => $page_id,
+				'title'        => $post->post_title ?? 'Untitled',
+				'date'         => $post->post_modified ?? $post->post_date,
+				'issues_count' => \count( $violations ),
+				'score'        => $this->calculate_accessibility_score( $violations ),
+				'url'          => \get_permalink( $page_id ),
+				'source'       => 'builtin',
+			];
+		}
+
+		return $scans;
 	}
 
 	/**
@@ -390,5 +654,37 @@ final class Ally {
 			'fix_type' => $fix_type,
 			'ally_status' => $status,
 		], $fix_applied ? 200 : 202 );
+	}
+
+	// ------------------------------------------------------------------ //
+	// Built‑in accessibility scan (ALLY-004)
+	// ------------------------------------------------------------------ //
+
+	public function scan_accessibility( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$auth = $this->auth->authorize( $request, 'ally:read' );
+		if ( \is_wp_error( $auth ) ) {
+			return $auth;
+		}
+
+		$page_id = $request->get_param( 'page_id' );
+		$scan_type = $request->get_param( 'scan_type' ) ?? 'quick';
+
+		$violations = [];
+		if ( $page_id ) {
+			$violations = $this->scan_elementor_page( (int) $page_id );
+		} else {
+			$page_ids = $this->get_elementor_page_ids( $scan_type === 'full' ? 200 : 50 );
+			foreach ( $page_ids as $pid ) {
+				$violations = array_merge( $violations, $this->scan_elementor_page( $pid ) );
+			}
+		}
+
+		return new WP_REST_Response( [
+			'scanned_at' => gmdate( 'c' ),
+			'page_id'    => $page_id ? (int) $page_id : null,
+			'scan_type'  => $scan_type,
+			'violations' => $violations,
+			'count'      => count( $violations ),
+		], 200 );
 	}
 }

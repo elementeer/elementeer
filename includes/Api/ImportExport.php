@@ -362,10 +362,198 @@ final class ImportExport {
 
 		$duplicate_count = count( array_unique( $duplicates ) );
 
-		return [
+ 		return [
 			'count'    => $duplicate_count,
 			'values'   => $values,
 			'examples' => array_slice( array_unique( $duplicates ), 0, 10 ),
 		];
+	}
+
+	// ------------------------------------------------------------------ //
+	// Data export
+	// ------------------------------------------------------------------ //
+
+	public function export_data( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$auth = $this->auth->authorize( $request, 'library-operations:export' );
+		if ( \is_wp_error( $auth ) ) {
+			return $auth;
+		}
+
+		$params = $request->get_params();
+
+		$post_type = \sanitize_text_field( $params['post_type'] ?? 'post' );
+		$format = \sanitize_text_field( $params['format'] ?? 'json' );
+		$limit = isset( $params['limit'] ) ? \absint( $params['limit'] ) : 100;
+		$offset = isset( $params['offset'] ) ? \absint( $params['offset'] ) : 0;
+		$filters = $params['filters'] ?? [];
+
+		if ( ! \in_array( $format, [ 'csv', 'json' ], true ) ) {
+			return new WP_Error(
+				'elementify_invalid_param',
+				\__( 'Format must be csv or json.', 'elementify-mcp' ),
+				[ 'status' => 400 ]
+			);
+		}
+
+		// Build query args from filters
+		$query_args = [
+			'post_type'      => $post_type,
+			'post_status'    => $filters['status'] ?? 'any',
+			'posts_per_page' => $limit,
+			'offset'         => $offset,
+			'orderby'        => 'ID',
+			'order'          => 'ASC',
+		];
+
+		if ( isset( $filters['category'] ) ) {
+			if ( \is_numeric( $filters['category'] ) ) {
+				$query_args['cat'] = \absint( $filters['category'] );
+			} else {
+				$query_args['category_name'] = \sanitize_text_field( $filters['category'] );
+			}
+		}
+
+		if ( isset( $filters['author'] ) ) {
+			$query_args['author'] = \absint( $filters['author'] );
+		}
+
+		if ( isset( $filters['search'] ) ) {
+			$query_args['s'] = \sanitize_text_field( $filters['search'] );
+		}
+
+		if ( isset( $filters['date_range'] ) && \is_array( $filters['date_range'] ) ) {
+			if ( isset( $filters['date_range']['start'] ) ) {
+				$query_args['date_query']['after'] = \sanitize_text_field( $filters['date_range']['start'] );
+			}
+			if ( isset( $filters['date_range']['end'] ) ) {
+				$query_args['date_query']['before'] = \sanitize_text_field( $filters['date_range']['end'] );
+			}
+			$query_args['date_query']['inclusive'] = true;
+		}
+
+		$query = new \WP_Query( $query_args );
+		$posts = $query->posts;
+
+		$data = [];
+		foreach ( $posts as $post ) {
+			$post_data = [
+				'id'           => $post->ID,
+				'title'        => $post->post_title,
+				'content'      => $post->post_content,
+				'excerpt'      => $post->post_excerpt,
+				'slug'         => $post->post_name,
+				'status'       => $post->post_status,
+				'author'       => $post->post_author,
+				'date'         => $post->post_date,
+				'modified'     => $post->post_modified,
+				'post_type'    => $post->post_type,
+				'parent'       => $post->post_parent,
+				'menu_order'   => $post->menu_order,
+				'comment_count'=> $post->comment_count,
+				'guid'         => $post->guid,
+			];
+
+			// Add featured image URL if exists
+			$thumbnail_id = \get_post_thumbnail_id( $post->ID );
+			if ( $thumbnail_id ) {
+				$post_data['featured_image'] = \wp_get_attachment_url( $thumbnail_id );
+			}
+
+			// Add taxonomy terms
+			$taxonomies = \get_object_taxonomies( $post->post_type, 'names' );
+			foreach ( $taxonomies as $taxonomy ) {
+				$terms = \wp_get_post_terms( $post->ID, $taxonomy, [ 'fields' => 'names' ] );
+				if ( ! \is_wp_error( $terms ) ) {
+					$post_data[ 'taxonomy_' . $taxonomy ] = $terms;
+				}
+			}
+
+			// Add post meta
+			$meta = \get_post_meta( $post->ID );
+			$flattened_meta = [];
+			foreach ( $meta as $key => $values ) {
+				// Skip protected meta (starting with _)
+				if ( \substr( $key, 0, 1 ) === '_' ) {
+					continue;
+				}
+				$flattened_meta[ $key ] = \maybe_unserialize( $values[0] ?? '' );
+			}
+			$post_data['meta'] = $flattened_meta;
+
+			$data[] = $post_data;
+		}
+
+		$total = $query->found_posts;
+		$response_data = [
+			'exported' => true,
+			'total'    => $total,
+			'count'    => count( $data ),
+			'offset'   => $offset,
+			'limit'    => $limit,
+			'format'   => $format,
+			'data'     => $data,
+		];
+
+		if ( $format === 'csv' ) {
+			return $this->format_csv( $data );
+		}
+
+		return new WP_REST_Response( $response_data, 200 );
+	}
+
+	// ------------------------------------------------------------------ //
+	// CSV formatting
+	// ------------------------------------------------------------------ //
+
+	private function format_csv( array $data ): WP_REST_Response|WP_Error {
+		if ( empty( $data ) ) {
+			return new WP_REST_Response( [ 'exported' => true, 'total' => 0, 'count' => 0, 'csv' => '' ], 200 );
+		}
+
+		// Determine headers from first item (flatten nested arrays)
+		$headers = [];
+		foreach ( $data[0] as $key => $value ) {
+			if ( $key === 'meta' && \is_array( $value ) ) {
+				foreach ( $value as $meta_key => $meta_val ) {
+					$headers[] = 'meta_' . $meta_key;
+				}
+			} elseif ( \is_array( $value ) ) {
+				// Convert arrays to JSON strings
+				$headers[] = $key;
+			} else {
+				$headers[] = $key;
+			}
+		}
+
+		$output = fopen( 'php://temp', 'w+' );
+		fputcsv( $output, $headers );
+
+		foreach ( $data as $row ) {
+			$csv_row = [];
+			foreach ( $headers as $header ) {
+				if ( \strpos( $header, 'meta_' ) === 0 ) {
+					$meta_key = \substr( $header, 5 );
+					$value = $row['meta'][ $meta_key ] ?? '';
+				} elseif ( isset( $row[ $header ] ) ) {
+					$value = $row[ $header ];
+				} else {
+					$value = '';
+				}
+				if ( \is_array( $value ) ) {
+					$value = \json_encode( $value, JSON_UNESCAPED_UNICODE );
+				}
+				$csv_row[] = $value;
+			}
+			fputcsv( $output, $csv_row );
+		}
+
+		rewind( $output );
+		$csv_content = stream_get_contents( $output );
+		fclose( $output );
+
+		$response = new WP_REST_Response( $csv_content, 200 );
+		$response->header( 'Content-Type', 'text/csv' );
+		$response->header( 'Content-Disposition', 'attachment; filename="export.csv"' );
+		return $response;
 	}
 }
