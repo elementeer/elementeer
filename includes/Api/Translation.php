@@ -340,6 +340,117 @@ final class Translation {
 	}
 
 	// ------------------------------------------------------------------ //
+	// Helper: Get untranslated strings for a specific plugin
+	// ------------------------------------------------------------------ //
+
+	private function get_untranslated_strings_for_plugin( string $plugin, string $target_language ): array {
+		$strings = [];
+
+		if ( $plugin === 'WPML' && \function_exists( 'icl_get_string_translations' ) ) {
+			// Get all strings
+			global $wpdb;
+			$table_name = $wpdb->prefix . 'icl_strings';
+			if ( $wpdb->get_var( "SHOW TABLES LIKE '$table_name'" ) !== $table_name ) {
+				return [];
+			}
+
+			$all_strings = $wpdb->get_results(
+				$wpdb->prepare(
+					"SELECT id, language, context, value FROM {$table_name} WHERE status = %d",
+					1 // active strings
+				),
+				ARRAY_A
+			);
+
+			// Get translations for target language
+			$translations = \icl_get_string_translations();
+			foreach ( $all_strings as $str ) {
+				$string_id = $str['id'];
+				$source_language = $str['language'];
+				
+				// Check if translation exists for target language
+				$translated = false;
+				if ( isset( $translations[ $string_id ] ) ) {
+					foreach ( $translations[ $string_id ] as $lang => $trans ) {
+						if ( $lang === $target_language && $trans['status'] == 10 ) { // 10 = complete
+							$translated = true;
+							break;
+						}
+					}
+				}
+				
+				if ( ! $translated && $source_language !== $target_language ) {
+					$strings[] = [
+						'id' => (string) $string_id,
+						'text' => $str['value'],
+						'context' => $str['context'],
+						'source_language' => $source_language,
+					];
+				}
+			}
+		} elseif ( $plugin === 'Polylang' && \function_exists( 'pll_get_string_translations' ) ) {
+			// Polylang string translation logic
+			$registered_strings = \pll_get_string_translations();
+			foreach ( $registered_strings as $string_id => $translations ) {
+				if ( ! isset( $translations[ $target_language ] ) ) {
+					// Get string value - Polylang stores strings in options
+					$string_value = \pll_get_string( $string_id );
+					if ( $string_value ) {
+						$strings[] = [
+							'id' => (string) $string_id,
+							'text' => $string_value,
+							'context' => '',
+							'source_language' => \pll_default_language(),
+						];
+					}
+				}
+			}
+		} elseif ( $plugin === 'TranslatePress' ) {
+			// TranslatePress string translation logic (simplified)
+			// Would need to integrate with TranslatePress API
+		}
+
+		return $strings;
+	}
+
+	// ------------------------------------------------------------------ //
+	// Helper: Save translated strings for a specific plugin
+	// ------------------------------------------------------------------ //
+
+	private function save_translated_strings_for_plugin( string $plugin, string $target_language, array $translations ): int {
+		$saved = 0;
+
+		if ( $plugin === 'WPML' && \function_exists( 'icl_add_string_translation' ) ) {
+			foreach ( $translations as $trans ) {
+				$string_id = (int) $trans['id'];
+				$result = \icl_add_string_translation(
+					$string_id,
+					$target_language,
+					$trans['translated_text'],
+					ICL_TM_COMPLETE // translation complete
+				);
+				if ( $result ) {
+					$saved++;
+				}
+			}
+		} elseif ( $plugin === 'Polylang' && \function_exists( 'pll_save_string_translation' ) ) {
+			foreach ( $translations as $trans ) {
+				$string_id = (int) $trans['id'];
+				$result = \pll_save_string_translation(
+					$string_id,
+					$target_language,
+					$trans['translated_text']
+				);
+				if ( $result ) {
+					$saved++;
+				}
+			}
+		}
+
+		return $saved;
+	}
+
+	// ------------------------------------------------------------------ //
 	// String translation (LANG-004)
 	// ------------------------------------------------------------------ //
 
@@ -354,10 +465,19 @@ final class Translation {
 			return new WP_Error( 'missing_param', 'target_language is required', [ 'status' => 400 ] );
 		}
 
-		// Placeholder: return empty array for now
+		$plugin = $this->detect_multilingual_plugin();
+		if ( ! $plugin ) {
+			return new WP_REST_Response( [
+				'strings' => [],
+				'total'   => 0,
+			], 200 );
+		}
+
+		$strings = $this->get_untranslated_strings_for_plugin( $plugin, $target_language );
+
 		return new WP_REST_Response( [
-			'strings' => [],
-			'total'   => 0,
+			'strings' => $strings,
+			'total'   => count( $strings ),
 		], 200 );
 	}
 
@@ -375,9 +495,18 @@ final class Translation {
 			return new WP_Error( 'missing_param', 'target_language and strings array are required', [ 'status' => 400 ] );
 		}
 
-		// Placeholder: just return what was sent
+		$plugin = $this->detect_multilingual_plugin();
+		if ( ! $plugin ) {
+			return new WP_Error( 'no_plugin', 'No multilingual plugin active', [ 'status' => 400 ] );
+		}
+
+		$applied = 0;
+		if ( ! $preview ) {
+			$applied = $this->save_translated_strings_for_plugin( $plugin, $target_language, $strings );
+		}
+
 		return new WP_REST_Response( [
-			'applied'   => $preview ? 0 : \count( $strings ),
+			'applied'   => $applied,
 			'preview'   => $preview,
 			'strings'   => $strings,
 		], 200 );
