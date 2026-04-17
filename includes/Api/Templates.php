@@ -34,16 +34,16 @@ final class Templates {
 
     public function list_templates( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:read' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $page     = max( 1, (int) $request->get_param( 'page' ) );
         $per_page = min( 100, max( 1, (int) ( $request->get_param( 'per_page' ) ?: 20 ) ) );
-        $status   = sanitize_text_field( $request->get_param( 'status' ) ?: 'publish' );
-        $type     = sanitize_text_field( $request->get_param( 'type' ) ?: '' );
-        $search   = sanitize_text_field( $request->get_param( 'search' ) ?: '' );
-        $category = sanitize_text_field( $request->get_param( 'category' ) ?: '' );
+        $status   = \sanitize_text_field( $request->get_param( 'status' ) ?: 'publish' );
+        $type     = \sanitize_text_field( $request->get_param( 'type' ) ?: '' );
+        $search   = \sanitize_text_field( $request->get_param( 'search' ) ?: '' );
+        $category = \sanitize_text_field( $request->get_param( 'category' ) ?: '' );
 
         $query_args = [
             'post_type'      => 'elementor_library',
@@ -82,7 +82,7 @@ final class Templates {
 
         $query = new WP_Query( $query_args );
 
-        $templates = array_map( [ $this, 'format_template' ], $query->posts );
+        $templates = \array_map( [ $this, 'format_template' ], $query->posts );
 
         return new WP_REST_Response(
             [
@@ -100,17 +100,17 @@ final class Templates {
 
     public function get_template( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:read' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $id   = (int) $request->get_param( 'id' );
-        $post = get_post( $id );
+        $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
             return new WP_Error(
                 'not_found',
-                __( 'Template not found.', 'elementify-mcp' ),
+                \__( 'Template not found.', 'elementify-mcp' ),
                 [ 'status' => 404 ]
             );
         }
@@ -124,19 +124,19 @@ final class Templates {
 
     public function create_template( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:write' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $body   = $request->get_json_params() ?: [];
-        $title  = sanitize_text_field( $body['title'] ?? '' );
-        $type   = sanitize_text_field( $body['type'] ?? 'page' );
-        $status = sanitize_text_field( $body['status'] ?? 'draft' );
+        $title  = \sanitize_text_field( $body['title'] ?? '' );
+        $type   = \sanitize_text_field( $body['type'] ?? 'page' );
+        $status = \sanitize_text_field( $body['status'] ?? 'draft' );
 
         if ( empty( $title ) ) {
             return new WP_Error(
                 'missing_title',
-                __( 'Template title is required.', 'elementify-mcp' ),
+                \__( 'Template title is required.', 'elementify-mcp' ),
                 [ 'status' => 400 ]
             );
         }
@@ -144,12 +144,12 @@ final class Templates {
         if ( ! in_array( $type, self::ALLOWED_TEMPLATE_TYPES, true ) ) {
             return new WP_Error(
                 'template_type_unsupported',
-                sprintf( __( 'Unsupported template type: %s.', 'elementify-mcp' ), $type ),
+                sprintf( \__( 'Unsupported template type: %s.', 'elementify-mcp' ), $type ),
                 [ 'status' => 400 ]
             );
         }
 
-        $post_id = wp_insert_post(
+        $post_id = \wp_insert_post(
             [
                 'post_title'   => $title,
                 'post_type'    => 'elementor_library',
@@ -159,30 +159,30 @@ final class Templates {
             true
         );
 
-        if ( is_wp_error( $post_id ) ) {
+        if ( \is_wp_error( $post_id ) ) {
             return $post_id;
         }
 
-        update_post_meta( $post_id, '_elementor_template_type', $type );
-        update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
+        \update_post_meta( $post_id, '_elementor_template_type', $type );
+        \update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
 
         if ( ! empty( $body['elementor_data'] ) ) {
-            update_post_meta( $post_id, '_elementor_data', wp_slash( $body['elementor_data'] ) );
+            \update_post_meta( $post_id, '_elementor_data', \wp_slash( $body['elementor_data'] ) );
         } else {
-            update_post_meta( $post_id, '_elementor_data', wp_slash( '[]' ) );
+            \update_post_meta( $post_id, '_elementor_data', \wp_slash( '[]' ) );
         }
 
         // Assign categories
         if ( ! empty( $body['categories'] ) && is_array( $body['categories'] ) ) {
-            wp_set_object_terms( $post_id, array_map( 'sanitize_text_field', $body['categories'] ), 'elementor_library_category' );
+            \wp_set_object_terms( $post_id, \array_map( 'sanitize_text_field', $body['categories'] ), 'elementor_library_category' );
         }
 
         // Assign tags
         if ( ! empty( $body['tags'] ) && is_array( $body['tags'] ) ) {
-            wp_set_object_terms( $post_id, array_map( 'sanitize_text_field', $body['tags'] ), 'post_tag' );
+            \wp_set_object_terms( $post_id, \array_map( 'sanitize_text_field', $body['tags'] ), 'post_tag' );
         }
 
-        return new WP_REST_Response( $this->format_template( get_post( $post_id ) ), 201 );
+        return new WP_REST_Response( $this->format_template( \get_post( $post_id ) ), 201 );
     }
 
     // ------------------------------------------------------------------ //
@@ -191,21 +191,21 @@ final class Templates {
 
     public function import_library_asset( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:import' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $body = $request->get_json_params() ?: [];
 
-        $title  = sanitize_text_field( $body['title'] ?? '' );
-        $type   = sanitize_text_field( $body['type'] ?? 'page' );
-        $status = sanitize_text_field( $body['status'] ?? 'draft' );
+        $title  = \sanitize_text_field( $body['title'] ?? '' );
+        $type   = \sanitize_text_field( $body['type'] ?? 'page' );
+        $status = \sanitize_text_field( $body['status'] ?? 'draft' );
         $source = is_array( $body['source'] ?? null ) ? $body['source'] : [];
 
         if ( empty( $title ) ) {
             return new WP_Error(
                 'missing_title',
-                __( 'Template title is required.', 'elementify-mcp' ),
+                \__( 'Template title is required.', 'elementify-mcp' ),
                 [ 'status' => 400 ]
             );
         }
@@ -213,7 +213,7 @@ final class Templates {
         if ( ! in_array( $type, self::ALLOWED_TEMPLATE_TYPES, true ) ) {
             return new WP_Error(
                 'template_type_unsupported',
-                sprintf( __( 'Unsupported template type: %s.', 'elementify-mcp' ), $type ),
+                sprintf( \__( 'Unsupported template type: %s.', 'elementify-mcp' ), $type ),
                 [ 'status' => 400 ]
             );
         }
@@ -221,20 +221,20 @@ final class Templates {
         if ( ! isset( $body['elementor_data'] ) || ! is_array( $body['elementor_data'] ) ) {
             return new WP_Error(
                 'invalid_data',
-                __( 'elementor_data must be a JSON array.', 'elementify-mcp' ),
+                \__( 'elementor_data must be a JSON array.', 'elementify-mcp' ),
                 [ 'status' => 400 ]
             );
         }
 
-        $source_kind  = sanitize_text_field( $source['kind'] ?? '' );
-        $source_id    = sanitize_text_field( $source['asset_id'] ?? '' );
-        $source_title = sanitize_text_field( $source['asset_title'] ?? $title );
-        $source_ref   = sanitize_text_field( $source['reference'] ?? '' );
+        $source_kind  = \sanitize_text_field( $source['kind'] ?? '' );
+        $source_id    = \sanitize_text_field( $source['asset_id'] ?? '' );
+        $source_title = \sanitize_text_field( $source['asset_title'] ?? $title );
+        $source_ref   = \sanitize_text_field( $source['reference'] ?? '' );
 
         if ( empty( $source_kind ) || empty( $source_id ) ) {
             return new WP_Error(
                 'missing_source',
-                __( 'Library imports require a source.kind and source.asset_id.', 'elementify-mcp' ),
+                \__( 'Library imports require a source.kind and source.asset_id.', 'elementify-mcp' ),
                 [ 'status' => 400 ]
             );
         }
@@ -242,12 +242,12 @@ final class Templates {
         if ( ! in_array( $source_kind, self::ALLOWED_LIBRARY_SOURCE_KINDS, true ) ) {
             return new WP_Error(
                 'library_source_unsupported',
-                __( 'Cloud library imports are not supported on the plugin side.', 'elementify-mcp' ),
+                \__( 'Cloud library imports are not supported on the plugin side.', 'elementify-mcp' ),
                 [ 'status' => 400 ]
             );
         }
 
-        $post_id = wp_insert_post(
+        $post_id = \wp_insert_post(
             [
                 'post_title'   => $title,
                 'post_type'    => 'elementor_library',
@@ -257,25 +257,25 @@ final class Templates {
             true
         );
 
-        if ( is_wp_error( $post_id ) ) {
+        if ( \is_wp_error( $post_id ) ) {
             return $post_id;
         }
 
-        update_post_meta( $post_id, '_elementor_template_type', $type );
-        update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
-        update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $body['elementor_data'] ) ) );
+        \update_post_meta( $post_id, '_elementor_template_type', $type );
+        \update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
+        \update_post_meta( $post_id, '_elementor_data', \wp_slash( \wp_json_encode( $body['elementor_data'] ) ) );
 
-        update_post_meta( $post_id, '_elementify_library_source_kind', $source_kind );
-        update_post_meta( $post_id, '_elementify_library_source_asset_id', $source_id );
-        update_post_meta( $post_id, '_elementify_library_source_title', $source_title );
-        update_post_meta( $post_id, '_elementify_library_source_reference', $source_ref );
-        update_post_meta( $post_id, '_elementify_library_import_mode', 'manual-import' );
-        update_post_meta( $post_id, '_elementify_library_imported_at', gmdate( 'c' ) );
-        update_post_meta(
+        \update_post_meta( $post_id, '_elementify_library_source_kind', $source_kind );
+        \update_post_meta( $post_id, '_elementify_library_source_asset_id', $source_id );
+        \update_post_meta( $post_id, '_elementify_library_source_title', $source_title );
+        \update_post_meta( $post_id, '_elementify_library_source_reference', $source_ref );
+        \update_post_meta( $post_id, '_elementify_library_import_mode', 'manual-import' );
+        \update_post_meta( $post_id, '_elementify_library_imported_at', gmdate( 'c' ) );
+        \update_post_meta(
             $post_id,
             '_elementify_library_source',
-            wp_slash(
-                wp_json_encode(
+            \wp_slash(
+                \wp_json_encode(
                     [
                         'kind'       => $source_kind,
                         'asset_id'   => $source_id,
@@ -287,14 +287,14 @@ final class Templates {
         );
 
         if ( ! empty( $body['categories'] ) && is_array( $body['categories'] ) ) {
-            wp_set_object_terms( $post_id, array_map( 'sanitize_text_field', $body['categories'] ), 'elementor_library_category' );
+            \wp_set_object_terms( $post_id, \array_map( 'sanitize_text_field', $body['categories'] ), 'elementor_library_category' );
         }
 
         if ( ! empty( $body['tags'] ) && is_array( $body['tags'] ) ) {
-            wp_set_object_terms( $post_id, array_map( 'sanitize_text_field', $body['tags'] ), 'post_tag' );
+            \wp_set_object_terms( $post_id, \array_map( 'sanitize_text_field', $body['tags'] ), 'post_tag' );
         }
 
-        $template = $this->format_template( get_post( $post_id ) );
+        $template = $this->format_template( \get_post( $post_id ) );
 
         return new WP_REST_Response(
             [
@@ -318,43 +318,43 @@ final class Templates {
 
     public function update_template( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:write' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $id   = (int) $request->get_param( 'id' );
-        $post = get_post( $id );
+        $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', __( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
         }
 
         $body    = $request->get_json_params() ?: [];
         $to_save = [ 'ID' => $id ];
 
         if ( isset( $body['title'] ) ) {
-            $to_save['post_title'] = sanitize_text_field( $body['title'] );
+            $to_save['post_title'] = \sanitize_text_field( $body['title'] );
         }
         if ( isset( $body['status'] ) ) {
-            $to_save['post_status'] = sanitize_text_field( $body['status'] );
+            $to_save['post_status'] = \sanitize_text_field( $body['status'] );
         }
 
         if ( count( $to_save ) > 1 ) {
             $result = wp_update_post( $to_save, true );
-            if ( is_wp_error( $result ) ) {
+            if ( \is_wp_error( $result ) ) {
                 return $result;
             }
         }
 
         if ( isset( $body['categories'] ) && is_array( $body['categories'] ) ) {
-            wp_set_object_terms( $id, array_map( 'sanitize_text_field', $body['categories'] ), 'elementor_library_category' );
+            \wp_set_object_terms( $id, \array_map( 'sanitize_text_field', $body['categories'] ), 'elementor_library_category' );
         }
 
         if ( isset( $body['tags'] ) && is_array( $body['tags'] ) ) {
-            wp_set_object_terms( $id, array_map( 'sanitize_text_field', $body['tags'] ), 'post_tag' );
+            \wp_set_object_terms( $id, \array_map( 'sanitize_text_field', $body['tags'] ), 'post_tag' );
         }
 
-        return new WP_REST_Response( $this->format_template( get_post( $id ) ), 200 );
+        return new WP_REST_Response( $this->format_template( \get_post( $id ) ), 200 );
     }
 
     // ------------------------------------------------------------------ //
@@ -363,22 +363,22 @@ final class Templates {
 
     public function delete_template( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:write' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $id   = (int) $request->get_param( 'id' );
-        $post = get_post( $id );
+        $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', __( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
         }
 
         $deleted = wp_delete_post( $id, true ); // force delete, skip trash
         if ( ! $deleted ) {
             return new WP_Error(
                 'delete_failed',
-                __( 'Failed to delete template.', 'elementify-mcp' ),
+                \__( 'Failed to delete template.', 'elementify-mcp' ),
                 [ 'status' => 500 ]
             );
         }
@@ -392,23 +392,23 @@ final class Templates {
 
     public function duplicate_template( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:write' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $id   = (int) $request->get_param( 'id' );
-        $post = get_post( $id );
+        $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', __( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
         }
 
         $body      = $request->get_json_params() ?: [];
         $new_title = ! empty( $body['title'] )
-            ? sanitize_text_field( $body['title'] )
+            ? \sanitize_text_field( $body['title'] )
             : 'Copy of ' . $post->post_title;
 
-        $new_id = wp_insert_post(
+        $new_id = \wp_insert_post(
             [
                 'post_title'   => $new_title,
                 'post_type'    => 'elementor_library',
@@ -418,7 +418,7 @@ final class Templates {
             true
         );
 
-        if ( is_wp_error( $new_id ) ) {
+        if ( \is_wp_error( $new_id ) ) {
             return $new_id;
         }
 
@@ -427,22 +427,22 @@ final class Templates {
         foreach ( $meta_keys as $key ) {
             $value = get_post_meta( $id, $key, true );
             if ( '' !== $value ) {
-                update_post_meta( $new_id, $key, $value );
+                \update_post_meta( $new_id, $key, $value );
             }
         }
 
         // Copy categories and tags
         $cats = wp_get_object_terms( $id, 'elementor_library_category', [ 'fields' => 'slugs' ] );
-        if ( ! is_wp_error( $cats ) && ! empty( $cats ) ) {
-            wp_set_object_terms( $new_id, $cats, 'elementor_library_category' );
+        if ( ! \is_wp_error( $cats ) && ! empty( $cats ) ) {
+            \wp_set_object_terms( $new_id, $cats, 'elementor_library_category' );
         }
 
         $tags = wp_get_object_terms( $id, 'post_tag', [ 'fields' => 'slugs' ] );
-        if ( ! is_wp_error( $tags ) && ! empty( $tags ) ) {
-            wp_set_object_terms( $new_id, $tags, 'post_tag' );
+        if ( ! \is_wp_error( $tags ) && ! empty( $tags ) ) {
+            \wp_set_object_terms( $new_id, $tags, 'post_tag' );
         }
 
-        return new WP_REST_Response( $this->format_template( get_post( $new_id ) ), 201 );
+        return new WP_REST_Response( $this->format_template( \get_post( $new_id ) ), 201 );
     }
 
     // ------------------------------------------------------------------ //
@@ -451,15 +451,15 @@ final class Templates {
 
     public function get_template_data( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:read' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $id   = (int) $request->get_param( 'id' );
-        $post = get_post( $id );
+        $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', __( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
         }
 
         $raw  = get_post_meta( $id, '_elementor_data', true );
@@ -476,15 +476,15 @@ final class Templates {
 
     public function update_template_data( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:write' );
-        if ( is_wp_error( $auth ) ) {
+        if ( \is_wp_error( $auth ) ) {
             return $auth;
         }
 
         $id   = (int) $request->get_param( 'id' );
-        $post = get_post( $id );
+        $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', __( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
         }
 
         $body = $request->get_json_params() ?: [];
@@ -492,13 +492,13 @@ final class Templates {
         if ( ! isset( $body['elementor_data'] ) || ! is_array( $body['elementor_data'] ) ) {
             return new WP_Error(
                 'invalid_data',
-                __( 'elementor_data must be a JSON array.', 'elementify-mcp' ),
+                \__( 'elementor_data must be a JSON array.', 'elementify-mcp' ),
                 [ 'status' => 400 ]
             );
         }
 
-        $encoded = wp_json_encode( $body['elementor_data'] );
-        update_post_meta( $id, '_elementor_data', wp_slash( $encoded ) );
+        $encoded = \wp_json_encode( $body['elementor_data'] );
+        \update_post_meta( $id, '_elementor_data', \wp_slash( $encoded ) );
 
         // Clear Elementor's CSS cache for this post
         if ( class_exists( '\Elementor\Plugin' ) ) {
@@ -524,13 +524,13 @@ final class Templates {
 
         $categories = [];
         $terms      = wp_get_object_terms( $post->ID, 'elementor_library_category', [ 'fields' => 'slugs' ] );
-        if ( ! is_wp_error( $terms ) ) {
+        if ( ! \is_wp_error( $terms ) ) {
             $categories = $terms;
         }
 
         $tags      = [];
         $tag_terms = wp_get_object_terms( $post->ID, 'post_tag', [ 'fields' => 'slugs' ] );
-        if ( ! is_wp_error( $tag_terms ) ) {
+        if ( ! \is_wp_error( $tag_terms ) ) {
             $tags = $tag_terms;
         }
 

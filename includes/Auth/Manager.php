@@ -44,7 +44,7 @@ class Manager {
             );
         }
 
-        $keys    = get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys    = \get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
         $matched = null;
 
         foreach ( $keys as $stored ) {
@@ -138,19 +138,19 @@ class Manager {
     public function authorize( WP_REST_Request $request, string $capability ): array|WP_Error {
         // Step 1: authenticate
         $key_data = $this->authenticate( $request );
-        if ( is_wp_error( $key_data ) ) {
+        if ( \is_wp_error( $key_data ) ) {
             return $key_data;
         }
 
         // Step 2: check capability on the key
         $cap_check = $this->check_capability( $key_data, $capability );
-        if ( is_wp_error( $cap_check ) ) {
+        if ( \is_wp_error( $cap_check ) ) {
             return $cap_check;
         }
 
         // Step 3: governance
         $gov_check = $this->governance_allows( $capability );
-        if ( is_wp_error( $gov_check ) ) {
+        if ( \is_wp_error( $gov_check ) ) {
             return $gov_check;
         }
 
@@ -181,9 +181,9 @@ class Manager {
             'is_active'    => true,
         ];
 
-        $keys   = get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys   = \get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
         $keys[] = $record;
-        update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
+        \update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
 
         return $record;
     }
@@ -192,7 +192,7 @@ class Manager {
      * Revoke (deactivate) a key by its prefix value.
      */
     public function revoke_key( string $key_value ): bool {
-        $keys    = get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys    = \get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
         $updated = false;
 
         foreach ( $keys as &$record ) {
@@ -205,7 +205,7 @@ class Manager {
         unset( $record );
 
         if ( $updated ) {
-            update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
+            \update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
         }
 
         return $updated;
@@ -236,7 +236,7 @@ class Manager {
      * Update last_used for a key.
      */
     private function touch_key( string $key_value ): void {
-        $keys = get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys = \get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
         foreach ( $keys as &$record ) {
             if ( isset( $record['key'] ) && hash_equals( $record['key'], $key_value ) ) {
                 $record['last_used'] = gmdate( 'c' );
@@ -244,6 +244,6 @@ class Manager {
             }
         }
         unset( $record );
-        update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
+        \update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
     }
 }
