@@ -188,6 +188,223 @@ export interface ImportLibraryAssetResult {
   template: ElementifyTemplate;
 }
 
+export interface ImportExternalDataInput {
+  format: 'csv' | 'json' | 'xml';
+  data: string;
+  post_type?: string;
+  field_mapping?: Record<string, string>;
+  duplicate_detection?: 'title' | 'slug' | 'sku' | 'none';
+  dry_run?: boolean;
+}
+
+export interface ImportExternalDataResult {
+  imported: boolean;
+  imported_count: number;
+  skipped_count: number;
+  duplicate_count: number;
+  errors: Array<{ row: number; error: string }>;
+  summary: string;
+}
+
+export interface TranslationCoverageAnalysis {
+  multilingual_plugin: string | null;
+  configured_languages: string[];
+  coverage_matrix: Array<{
+    post_id: number;
+    post_title: string;
+    post_type: string;
+    post_language: string;
+    translations: Array<{
+      language: string;
+      status: 'translated' | 'missing' | 'outdated';
+      post_id?: number;
+      post_title?: string;
+      last_modified?: string;
+    }>;
+  }>;
+  summary: {
+    total_posts: number;
+    total_translated: number;
+    total_missing: number;
+    total_outdated: number;
+    coverage_percent: number;
+  };
+}
+
+export interface UntranslatedString {
+  id: string;
+  text: string;
+  context?: string;
+  source_language: string;
+}
+
+export interface UntranslatedStringsResponse {
+  strings: UntranslatedString[];
+  total: number;
+}
+
+export interface StringTranslationRequest {
+  id: string;
+  text: string;
+  translated_text: string;
+}
+
+export interface TranslateStringsResponse {
+  applied: number;
+  preview: boolean;
+  strings: StringTranslationRequest[];
+}
+
+export interface UntranslatedMediaItem {
+  media_id: number;
+  alt?: string;
+  caption?: string;
+  description?: string;
+  title?: string;
+  source_language: string;
+}
+
+export interface UntranslatedMediaResponse {
+  media: UntranslatedMediaItem[];
+  total: number;
+}
+
+export interface MediaTranslationRequest {
+  media_id: number;
+  alt?: string;
+  caption?: string;
+  description?: string;
+  title?: string;
+}
+
+export interface AllyStatus {
+  ally_available: boolean;
+  plugin: string | null;
+  version: string | null;
+  tier: 'free' | 'pro' | 'one' | null;
+  credits_remaining: number | null;
+  capabilities: {
+    scan: boolean;
+    report: boolean;
+    basic_fixes: boolean;
+    ai_fixes: boolean;
+    batch_scan: boolean;
+    scheduled_scans: boolean;
+    custom_rules: boolean;
+  };
+}
+
+export interface AllyScanResults {
+  scans: any[];
+  last_scan: string | null;
+  available_credits: number;
+  ally_status: AllyStatus;
+  message: string;
+}
+
+export interface AllyTriggerScanResponse {
+  triggered: boolean;
+  scan_id: string | null;
+  message: string;
+  credits_required: number;
+  credits_remaining: number;
+  ally_status: AllyStatus;
+}
+
+export interface AllyApplyFixResponse {
+  fixed: boolean;
+  message: string;
+  scan_id: string;
+  issue_id: string;
+  fix_type: string;
+  ally_status: AllyStatus;
+}
+
+export interface TranslateMediaResponse {
+  applied: number;
+  preview: boolean;
+  items: MediaTranslationRequest[];
+}
+
+export interface LmsStatus {
+  lms_available: boolean;
+  plugin: string | null;
+  version: string | null;
+  course_count: number;
+}
+
+export interface LmsCourseList {
+  courses: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    status: string;
+    url: string;
+    description?: string;
+    price?: string;
+    students_count?: number;
+  }>;
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+export interface LmsCourseStructure {
+  course_id: number;
+  title: string;
+  sections: Array<{
+    id: number;
+    title: string;
+    order: number;
+    lessons: Array<{
+      id: number;
+      title: string;
+      order: number;
+      content_type?: string;
+      duration?: string;
+      completed?: boolean;
+    }>;
+    quizzes?: Array<{
+      id: number;
+      title: string;
+      order: number;
+      question_count?: number;
+    }>;
+  }>;
+}
+
+export interface CharityStatus {
+  charity_available: boolean;
+  plugin: string | null;
+  version: string | null;
+  form_count: number;
+}
+
+export interface CharityFormList {
+  forms: Array<{
+    id: number;
+    title: string;
+    slug: string;
+    status: string;
+    url: string;
+    goal?: string;
+    raised?: string;
+    donor_count?: number;
+  }>;
+  total: number;
+  page: number;
+  per_page: number;
+  total_pages: number;
+}
+
+export interface CharityDonationStats {
+  total_raised: number;
+  donor_count: number;
+  average_donation: number;
+  total_donations: number;
+}
+
 export interface ListTemplatesParams {
   page?: number;
   per_page?: number;
@@ -341,6 +558,11 @@ export class ElementifyClient {
 
   async importLibraryAsset(input: ImportLibraryAssetInput): Promise<ImportLibraryAssetResult> {
     const res = await this.http.post<ImportLibraryAssetResult>('/library/import', input);
+    return res.data;
+  }
+
+  async importExternalData(input: ImportExternalDataInput): Promise<ImportExternalDataResult> {
+    const res = await this.http.post<ImportExternalDataResult>('/import/external', input);
     return res.data;
   }
 
@@ -499,6 +721,49 @@ export class ElementifyClient {
     cache_status: Record<string, string | null>;
     elementor_status: string | null;
     elementor_pro: boolean;
+    php_info: {
+      version: string;
+      memory_limit: string;
+      max_execution_time: string;
+      upload_max_filesize: string;
+      post_max_size: string;
+      opcache_enabled: boolean;
+      eol: boolean;
+    };
+    object_cache: {
+      enabled: boolean;
+      type: string;
+      redis: boolean;
+      memcached: boolean;
+      apc: boolean;
+    };
+    autoloaded_options: {
+      count: number;
+      size_bytes: number;
+      size_human: string;
+      note: string;
+    };
+    database_stats: {
+      total_size_bytes: number;
+      total_size_human: string;
+      data_size_bytes: number;
+      index_size_bytes: number;
+      table_count: number;
+      has_query_cache: boolean;
+      engine: string;
+    };
+    enqueued_assets: {
+      scripts: number;
+      styles: number;
+      external_scripts: number;
+      external_styles: number;
+      total: number;
+    };
+    render_blocking_resources: {
+      count: number;
+      resources: Array<{ type: string; handle: string; src: string }>;
+      note: string;
+    };
   }> {
     const res = await this.http.get('/site/performance/report');
     return res.data;
@@ -510,6 +775,236 @@ export class ElementifyClient {
     suggestions: string[];
   }> {
     const res = await this.http.post('/site/performance/optimize-assets');
+    return res.data;
+  }
+
+  async cleanDatabase(preview = true): Promise<{
+    cleaned: boolean;
+    preview: boolean;
+    stats: {
+      revisions: number;
+      transients: number;
+      spam_comments: number;
+      total: number;
+    };
+    message: string;
+  }> {
+    const res = await this.http.post('/site/performance/clean-database', { preview });
+    return res.data;
+  }
+
+  async getCacheRecommendation(): Promise<{
+    hosting: string;
+    server: string;
+    recommended_plugin: string | null;
+    should_install: boolean;
+    reason: string;
+    detected_server_software: string;
+  }> {
+    const res = await this.http.get('/site/performance/cache-recommendation');
+    return res.data;
+  }
+
+  async diagnoseIssue(symptom: 'slow_page' | 'white_screen' | '500_error' | 'plugin_conflict'): Promise<{
+    symptom: string;
+    title: string;
+    steps: Array<{
+      step: number;
+      action: string;
+      command: string;
+      expected: string;
+      risk?: string;
+    }>;
+    note: string;
+  }> {
+    const res = await this.http.post('/site/performance/diagnose-issue', { symptom });
+    return res.data;
+  }
+
+  async readErrorLog(lines = 50): Promise<{
+    exists: boolean;
+    message?: string;
+    total_lines: number;
+    recent_lines: number;
+    entries: string[];
+  }> {
+    const res = await this.http.get('/site/performance/error-log', { params: { lines } });
+    return res.data;
+  }
+
+  async testPluginConflict(pluginSlug: string, action: 'deactivate' | 'reactivate'): Promise<{
+    action: string;
+    plugin: string;
+    simulated: boolean;
+    message: string;
+    note: string;
+  }> {
+    const res = await this.http.post('/site/performance/test-plugin-conflict', {
+      plugin_slug: pluginSlug,
+      action,
+    });
+    return res.data;
+  }
+
+  async getWizard(wizardId: string): Promise<{
+    status: 'active' | 'inactive' | 'missing' | 'needs_configuration';
+    gaps: Array<{
+      id: string;
+      severity: 'critical' | 'warning' | 'info';
+      description: string;
+      data?: Record<string, unknown>;
+    }>;
+    recommendations: Array<{
+      id: string;
+      priority: 'high' | 'medium' | 'low';
+      title: string;
+      description: string;
+      action: string;
+      gap_id?: string;
+    }>;
+    suggested_tools: Array<{
+      tool: string;
+      purpose: string;
+      governance_level?: 'L0' | 'L1' | 'L2' | 'L3';
+    }>;
+    suggested_plugins: Array<{
+      slug: string;
+      name: string;
+      reason: string;
+      required_capability?: string;
+    }>;
+  }> {
+    const res = await this.http.get(`/site/wizards/${wizardId}`);
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Translation Coverage Analysis
+  // ------------------------------------------------------------------ //
+
+  async getTranslationCoverage(): Promise<TranslationCoverageAnalysis> {
+    const res = await this.http.get('/translation/coverage');
+    return res.data;
+  }
+
+  async getUntranslatedStrings(targetLanguage: string): Promise<UntranslatedStringsResponse> {
+    const res = await this.http.get('/translation/strings/untranslated', {
+      params: { target_language: targetLanguage },
+    });
+    return res.data;
+  }
+
+  async translateStrings(
+    targetLanguage: string,
+    strings: StringTranslationRequest[],
+    preview = true,
+  ): Promise<TranslateStringsResponse> {
+    const res = await this.http.post('/translation/strings/translate', {
+      target_language: targetLanguage,
+      strings,
+      preview,
+    });
+    return res.data;
+  }
+
+  async getUntranslatedMedia(targetLanguage: string): Promise<UntranslatedMediaResponse> {
+    const res = await this.http.get('/translation/media/untranslated', {
+      params: { target_language: targetLanguage },
+    });
+    return res.data;
+  }
+
+  async translateMediaMetadata(
+    targetLanguage: string,
+    items: MediaTranslationRequest[],
+    preview = true,
+  ): Promise<TranslateMediaResponse> {
+    const res = await this.http.post('/translation/media/translate', {
+      target_language: targetLanguage,
+      items,
+      preview,
+    });
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Ally Integration
+  // ------------------------------------------------------------------ //
+
+  async getAllyStatus(): Promise<AllyStatus> {
+    const res = await this.http.get('/ally/status');
+    return res.data;
+  }
+
+  async getAllyScanResults(): Promise<AllyScanResults> {
+    const res = await this.http.get('/ally/scan/results');
+    return res.data;
+  }
+
+  async triggerAllyScan(): Promise<AllyTriggerScanResponse> {
+    const res = await this.http.post('/ally/scan/trigger');
+    return res.data;
+  }
+
+  async applyAllyFix(params: { scan_id: string; issue_id: string; fix_type?: 'basic' | 'ai' }): Promise<AllyApplyFixResponse> {
+    const res = await this.http.post('/ally/fix/apply', params);
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // LMS Integration
+  // ------------------------------------------------------------------ //
+
+  async getLmsStatus(): Promise<LmsStatus> {
+    const res = await this.http.get('/lms/status');
+    return res.data;
+  }
+
+  async listLmsCourses(params: { page?: number; per_page?: number } = {}): Promise<LmsCourseList> {
+    const res = await this.http.get('/lms/courses', { params });
+    return res.data;
+  }
+
+  async getLmsCourseStructure(courseId: number): Promise<LmsCourseStructure> {
+    const res = await this.http.get(`/lms/courses/${courseId}/structure`);
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Charity Integration
+  // ------------------------------------------------------------------ //
+
+  async getCharityStatus(): Promise<CharityStatus> {
+    const res = await this.http.get('/charity/status');
+    return res.data;
+  }
+
+  async listCharityForms(params: { page?: number; per_page?: number } = {}): Promise<CharityFormList> {
+    const res = await this.http.get('/charity/forms', { params });
+    return res.data;
+  }
+
+  async getCharityStats(): Promise<CharityDonationStats> {
+    const res = await this.http.get('/charity/stats');
+    return res.data;
+  }
+
+  // ------------------------------------------------------------------ //
+  // Booking & Events Integration
+  // ------------------------------------------------------------------ //
+
+  async getBookingStatus(): Promise<any> {
+    const res = await this.http.get('/booking/status');
+    return res.data;
+  }
+
+  async listBookings(params: { page?: number; per_page?: number } = {}): Promise<any> {
+    const res = await this.http.get('/booking/list', { params });
+    return res.data;
+  }
+
+  async getBookingStats(): Promise<any> {
+    const res = await this.http.get('/booking/stats');
     return res.data;
   }
 

@@ -5,6 +5,7 @@ import type {
   GlobalColor,
   GlobalTypographyEntry,
 } from '../client.js';
+import { GOVERNANCE_LEVELS } from '../product-tiers.js';
 import type { ElementifyTemplate } from '@elementify/shared';
 
 export interface BrandSetupWizardInput {
@@ -329,9 +330,52 @@ export function registerWizardTools(
     {
       site_id:  z.string().optional(),
       media_id: z.number().int().positive().describe('ID of the image attachment in the WordPress media library'),
+      note: z.string().optional()
+           .describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent: z.boolean().optional()
+           .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
     },
-    async ({ site_id, media_id }) => {
+    async ({ site_id, media_id, note, consent }) => {
       const client = getClient(site_id);
+      const toolName = 'set_site_logo';
+      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
+      
+      // L3 requires explicit consent
+      if (level === 'L3' && consent !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+          }],
+        };
+      }
+      
+      // L2 always queues regardless of write_mode
+      if (level === 'L2' || level === 'L3') {
+        const change = await client.createChange({
+          operation: toolName,
+          params: { media_id },
+          note: note || `Auto-queued by governance level ${level}`,
+        });
+
+        const lines = [
+          `🟡 Change queued for review (governance level ${level})`,
+          `   ID: ${change.id}`,
+          `   Operation: ${toolName}`,
+          note ? `   Note: ${note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — execute it on the site',
+          '  Or: review_change(change_id, "reject") to discard.',
+          '',
+          'Use list_change_queue to see all pending changes.',
+        ].filter(Boolean);
+
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      }
+      
+      // L0/L1: Execute directly
       const result = await client.setLogo(media_id);
       return {
         content: [{

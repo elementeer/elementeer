@@ -95,6 +95,20 @@ describe('MCP server smoke tests', () => {
       {} as Record<string, number>,
     );
 
+    // Log duplicates for debugging
+    const duplicates = Object.entries(counts).filter(([_, count]) => count > 1);
+    if (duplicates.length > 0) {
+      console.log('Duplicate tool registrations:', duplicates);
+    }
+    const missing = EXPECTED_TOOLS.filter(name => !counts[name]);
+    if (missing.length > 0) {
+      console.log('Missing tools:', missing);
+    }
+    const extra = Object.keys(counts).filter(name => !(EXPECTED_TOOLS as readonly string[]).includes(name));
+    if (extra.length > 0) {
+      console.log('Extra tools not in EXPECTED_TOOLS:', extra);
+    }
+
     for (const name of EXPECTED_TOOLS) {
       expect(counts[name], `Tool "${name}" should be registered exactly once`).toBe(1);
     }

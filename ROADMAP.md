@@ -73,14 +73,34 @@ Einzelne Elementify-Module (Stock Images, AI Generation, Governance Pro, Multi-S
 | WordPress Core Settings | ✅ get_site_settings / update_site_settings |
 | SEO Management | ✅ get_seo_meta / update_seo_meta |
 | Performance & Cache | ✅ flush_elementor_cache / get_performance_report / optimize_elementor_assets |
+| Media Library Management | ✅ list_media / get_media / update_media / delete_media / audit_unused_media |
+| Content Management (Posts, CPT, Taxonomies) | ✅ create_page / create_post / update_post_meta / delete_post / list_taxonomies / manage_terms / list_post_types |
+| Navigation Menus | ✅ list_menus / create_menu / delete_menu / list_menu_items / create_menu_item / update_menu_item / delete_menu_item / list_menu_locations / assign_menu_location |
 | Brand Setup Wizard | ✅ wizard_brand_setup (dry-run + execute) |
 | Creator Mode | ✅ creator_mode (keyword matching + composition) |
 | Theme Builder Wizard | ✅ wizard_theme_builder (conditions, sections, source template, dry-run) |
 | Stock Images Integration | ✅ search_stock_images (Pexels/Unsplash), sideload_stock_image |
 | AI Image Generation | ✅ generate_ai_image (DALL-E 3 + Pollinations.ai free fallback) |
 | Change Review Queue | ✅ queue_change / list_change_queue / review_change / apply_change |
+| Forms Management | ✅ create_form_light / create_form_advanced / list_form_templates / migrate_form |
+| Translation Management | ✅ analyze_translation_coverage / batch_translate_strings / translate_media_metadata |
+| Site Health & Troubleshooting | ✅ clean_database / get_cache_recommendation / diagnose_issue / read_error_log / test_plugin_conflict |
+| LMS Integration | ✅ get_lms_status / list_lms_courses / get_lms_course_structure |
+| Charity/Donation Integration | ✅ get_charity_status / list_charity_forms / get_charity_stats |
+| Accessibility (Ally) Integration | ✅ get_ally_status / get_ally_scan_results / trigger_ally_scan / apply_ally_fix |
+| Governance Model | ✅ L0 (read) / L1 (safe writes) / L2 (auto-queue) / L3 (consent) |
 
 ---
+
+## Planned Integration: Booking & Events (Phase 3.5d)
+
+Based on PRD5 analysis, upcoming integration with popular booking & events plugins:
+- **Amelia** — appointment scheduling
+- **SSA (Simply Schedule Appointments)** — calendar booking
+- **The Events Calendar (TEC)** — event management
+- **Modern Events Calendar** — alternative events plugin
+
+Tools will include: `list_events`, `create_event`, `update_event`, `list_bookings`, `create_booking`, `sync_calendars`.
 
 ## Phase 1 — Foundation (jetzt fertig)
 
@@ -189,7 +209,20 @@ Eingabe: Seitentyp + Inhaltsbeschreibung → AI wählt passende Templates aus Li
 
 ---
 
-## Phase 5 — Governance & Multi-Tenant
+## Phase 5 — E‑Commerce & Advanced Features
+
+Erweiterung um WooCommerce‑Integration, Form‑Management und Performance‑Vertiefung:
+
+- **WooCommerce Product Management** — CRUD für Produkte, Kategorien, Bestellungen (via REST API) — *Prototyp implementiert (list_products, get_product)*
+- **WooCommerce Store Setup** — automatische Konfiguration von Shop‑Seiten (Shop, Product Single, Cart, Checkout)
+- **Form Management** — Integration mit Gravity Forms, Contact Form 7, WPForms (Feld‑Export, Submission‑Logs)
+- **Performance Deep‑Dive** — LCP‑Optimierung, Critical‑CSS‑Generierung, Asset‑Lazy‑Loading — *Grundfunktionen vorhanden (flush_cache, performance_report)*
+- **Advanced Caching** — Redis‑Support, CDN‑Purge‑Integration, Browser‑Caching‑Regeln
+- **Accessibility Scanner** — automatisierte WCAG‑Prüfung von Elementor‑Seiten
+
+---
+
+## Phase 6 — Governance & Multi-Tenant
 
 Für Agency-Use-Cases:
 
@@ -203,8 +236,8 @@ Für Agency-Use-Cases:
 
 ## Technische Schulden & Qualität
 
-- [ ] PHP Unit Tests (Pages.php, Templates.php) — momentan nur MCP-side getestet
-- [ ] Integration Tests gegen echte WordPress-Instanz (Docker Compose Setup)
+- [x] PHP Unit Tests (Pages.php, Templates.php, Media.php, Menus.php, Content.php, Settings.php, SEO.php, Performance.php) — vollständig abgeschlossen (Patchwork‑Issue gelöst, Mocking‑Fehler für Elementor\Plugin::$instance behoben)
+- [ ] Integration Tests gegen echte WordPress-Instanz (Docker Compose Setup) — Design & PoC‑Runner vorhanden
 - [ ] OpenAPI-Spec für den Plugin-REST-Layer
 - [ ] Versionierung des Plugin-REST-Namespace (v1 → v2 wenn breaking changes)
 - [ ] Rate Limiting im Plugin (aktuell kein throttling)

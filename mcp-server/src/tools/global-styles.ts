@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ElementifyClient, GlobalColor, GlobalTypographyEntry } from '../client.js';
+import { GOVERNANCE_LEVELS } from '../product-tiers.js';
 
 const colorSchema = z.object({
   id:    z.string().optional().describe('Stable ID for this color slot (e.g. "primary", "brand-blue"). Auto-generated from title if omitted.'),
@@ -89,9 +90,52 @@ export function registerGlobalStylesTools(
                  .describe('Color entries. Recommended system slot titles: Primary, Secondary, Text, Accent.'),
       slot:    z.enum(['system', 'custom']).optional().default('system')
                  .describe('"system" = main brand palette (Primary/Secondary/Text/Accent), "custom" = additional colors'),
+      note:    z.string().optional()
+                 .describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent: z.boolean().optional()
+                 .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
     },
-    async ({ site_id, colors, slot }) => {
+    async ({ site_id, colors, slot, note, consent }) => {
       const client = getClient(site_id);
+      const toolName = 'set_global_colors';
+      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
+      
+      // L3 requires explicit consent
+      if (level === 'L3' && consent !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+          }],
+        };
+      }
+      
+      // L2 always queues regardless of write_mode
+      if (level === 'L2' || level === 'L3') {
+        const change = await client.createChange({
+          operation: toolName,
+          params: { colors, slot },
+          note: note || `Auto-queued by governance level ${level}`,
+        });
+
+        const lines = [
+          `🟡 Change queued for review (governance level ${level})`,
+          `   ID: ${change.id}`,
+          `   Operation: ${toolName}`,
+          note ? `   Note: ${note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — execute it on the site',
+          '  Or: review_change(change_id, "reject") to discard.',
+          '',
+          'Use list_change_queue to see all pending changes.',
+        ].filter(Boolean);
+
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      }
+      
+      // L0/L1: Execute directly
       const result = await client.setGlobalColors(colors as GlobalColor[], slot ?? 'system');
 
       const lines = [
@@ -117,9 +161,52 @@ export function registerGlobalStylesTools(
       typography: z.array(typographySchema).min(1).max(20)
                    .describe('Typography entries. Recommended system titles: Primary, Secondary, Text, Accent.'),
       slot:       z.enum(['system', 'custom']).optional().default('system'),
+      note:       z.string().optional()
+                   .describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent:    z.boolean().optional()
+                   .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
     },
-    async ({ site_id, typography, slot }) => {
+    async ({ site_id, typography, slot, note, consent }) => {
       const client = getClient(site_id);
+      const toolName = 'set_global_typography';
+      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
+      
+      // L3 requires explicit consent
+      if (level === 'L3' && consent !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+          }],
+        };
+      }
+      
+      // L2 always queues regardless of write_mode
+      if (level === 'L2' || level === 'L3') {
+        const change = await client.createChange({
+          operation: toolName,
+          params: { typography, slot },
+          note: note || `Auto-queued by governance level ${level}`,
+        });
+
+        const lines = [
+          `🟡 Change queued for review (governance level ${level})`,
+          `   ID: ${change.id}`,
+          `   Operation: ${toolName}`,
+          note ? `   Note: ${note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — execute it on the site',
+          '  Or: review_change(change_id, "reject") to discard.',
+          '',
+          'Use list_change_queue to see all pending changes.',
+        ].filter(Boolean);
+
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      }
+      
+      // L0/L1: Execute directly
       const result = await client.setGlobalTypography(typography as GlobalTypographyEntry[], slot ?? 'system');
       const written = result.typography as Array<Record<string, unknown>>;
 

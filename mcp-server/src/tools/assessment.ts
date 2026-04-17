@@ -84,6 +84,35 @@ export function registerAssessmentTools(
       lines.push(`  FA4 shim: ${a.performance.load_fa4_shim ? 'yes ⚠' : 'no ✓'}`);
       lines.push('');
 
+      // Capabilities
+      try {
+        const siteInfo = await client.getSiteInfo();
+        if (siteInfo.capabilities && siteInfo.capabilities.length > 0) {
+          lines.push('## Capabilities');
+          // Group capabilities by category
+          const grouped: Record<string, string[]> = {};
+          for (const cap of siteInfo.capabilities) {
+            const [category] = cap.split(':');
+            if (!grouped[category]) grouped[category] = [];
+            grouped[category].push(cap);
+          }
+          const categories = Object.keys(grouped).sort();
+          for (const cat of categories) {
+            const caps = grouped[cat].sort();
+            lines.push(`  ${cat}: ${caps.join(', ')}`);
+          }
+          lines.push('');
+        } else {
+          lines.push('## Capabilities');
+          lines.push('  No capabilities detected');
+          lines.push('');
+        }
+      } catch (err: any) {
+        lines.push('## Capabilities');
+        lines.push(`  Error: ${err.message || 'Failed to fetch capabilities'}`);
+        lines.push('');
+      }
+
       // Plugins
       if (Object.keys(a.plugins.classified).length > 0) {
         lines.push('## Plugins (classified)');

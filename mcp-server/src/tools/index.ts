@@ -34,6 +34,14 @@ import { registerMediaTools } from './media.js';
 import { registerSettingsTools } from './settings.js';
 import { registerSeoTools } from './seo.js';
 import { registerPerformanceFreeTools, registerPerformanceAdvancedTools } from './performance.js';
+import { registerModuleWizards } from './wizards.js';
+import { registerFormFreeTools, registerFormAdvancedTools } from './forms.js';
+import { registerImportExportTools } from './import-export.js';
+import { registerTranslationFreeTools, registerTranslationAdvancedTools } from './translation.js';
+import { registerAllyTools } from './ally.js';
+import { registerLmsTools } from './lms.js';
+import { registerCharityTools } from './charity.js';
+import { registerBookingTools } from './booking.js';
 
 interface ToolRegistrationOptions {
   includeAdvanced?: boolean;
@@ -56,14 +64,22 @@ const FREE_TOOL_REGISTRARS = [
   registerIntentWizardTools,
   registerFreeRuntimeWizardTools,
   registerGlobalStylesTools,
+  registerFormFreeTools,
+  registerTranslationFreeTools,
+  registerAllyTools,
+  registerLmsTools,
+  registerCharityTools,
+  registerBookingTools,
   registerFreeWizardTools,
   registerFingerprintTools,
   registerDestinationTools,
   registerValidationTools,
+  registerModuleWizards,
 ] as const;
 
 const ADVANCED_TOOL_REGISTRARS = [
   registerStockImageTools,
+  registerImportExportTools,
   registerAdvancedMediaTools,
   registerChangeQueueTools,
   registerDesignTokenTools,
@@ -75,6 +91,8 @@ const ADVANCED_TOOL_REGISTRARS = [
   registerAdvancedWorkflowTools,
   registerAdvancedWizardTools,
   registerPerformanceAdvancedTools,
+  registerTranslationAdvancedTools,
+  registerFormAdvancedTools,
 ] as const;
 
 const STUDIO_FUTURE_TOOL_REGISTRARS = [

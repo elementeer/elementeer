@@ -13,6 +13,8 @@
 
 Elementor-native MCP bridge for the public Free surface. Exposes the full `elementor_library` post type over a typed REST API — no 401 surprises, no empty responses. Ships as a WordPress plugin + Node.js MCP server with fine-grained, governance-controlled API key permissions.
 
+With **111+ tools** and a granular governance model (L0‑L3), Elementify enables safe AI‑agent operation across brand setup, template composition, forms, translation, site health, LMS, charity, and accessibility workflows.
+
 ---
 
 ## Product Surfaces
@@ -126,6 +128,47 @@ For a compact public summary of what Free includes and excludes, see [docs/publi
 | `get_site_info` | WP version, Elementor version, activation mode, capabilities | `site-audit:read` |
 | `list_sites` | List all configured sites in `~/.elementify/config.json` | — |
 | `switch_site` | Change the default site | — |
+| `list_media` | List media attachments with pagination and filtering | `media-operations:read` |
+| `get_media` | Get details of a single media attachment | `media-operations:read` |
+| `update_media` | Update media metadata (alt text, title, caption) | `media-operations:write` |
+| `delete_media` | Delete a media attachment | `media-operations:write` |
+| `audit_unused_media` | Identify orphaned media files not referenced in posts/pages | `media-operations:read` |
+| `create_page` | Create a WordPress page | `content-operations:write` |
+| `create_post` | Create a WordPress post | `content-operations:write` |
+| `update_post_meta` | Update post/page metadata (slug, excerpt, featured image) | `content-operations:write` |
+| `delete_post` | Delete a post or page | `content-operations:write` |
+| `list_taxonomies` | List all registered taxonomies | `content-operations:read` |
+| `create_term` | Create a term in a taxonomy | `content-operations:write` |
+| `update_term` | Update a term | `content-operations:write` |
+| `delete_term` | Delete a term | `content-operations:write` |
+| `list_post_types` | List registered post types (including CPT plugins) | `content-operations:read` |
+| `list_menus` | List all navigation menus | `theme-structure:read` |
+| `create_menu` | Create a new navigation menu | `theme-structure:write` |
+| `delete_menu` | Delete a navigation menu | `theme-structure:write` |
+| `list_menu_items` | List all items in a menu | `theme-structure:read` |
+| `create_menu_item` | Create a new menu item | `theme-structure:write` |
+| `update_menu_item` | Update a menu item | `theme-structure:write` |
+| `delete_menu_item` | Delete a menu item | `theme-structure:write` |
+| `list_menu_locations` | List all theme menu locations | `theme-structure:read` |
+| `assign_menu_location` | Assign a menu to a theme location | `theme-structure:write` |
+| `get_site_settings` | Read WordPress core settings (title, tagline, homepage, permalinks) | `site-settings:read` |
+| `update_site_settings` | Update WordPress core settings | `site-settings:write` |
+| `get_seo_meta` | Read SEO meta (title, description, focus keyword) — auto-detects plugin | `seo-operations:read` |
+| `update_seo_meta` | Update SEO meta | `seo-operations:write` |
+| `flush_elementor_cache` | Flush Elementor CSS cache | `performance-operations:write` |
+| `get_performance_report` | Get Elementor performance metrics (CSS method, DOM size, assets) | `performance-operations:read` |
+| `assess_site` | Comprehensive site assessment (brand, templates, performance, plugins) | `site-audit:read` |
+| `get_recommendations` | Context-aware prioritized recommendations | `site-audit:read` |
+| `wizard_brand_setup` | Coordinated brand setup wizard (colors, typography, logo) | `design-system:write` |
+| `creator_mode` | Compose page from template library by section types | `content-structure:write` |
+| `wizard_theme_builder` | Create Theme Builder templates (header, footer, single, etc.) | `theme-structure:write` |
+| `search_stock_images` | Search free stock photos (Pexels/Unsplash) | `media-operations:read` |
+| `sideload_stock_image` | Download stock image to media library | `media-operations:write` |
+| `generate_ai_image` | Generate AI image using DALL-E 3 or Pollinations.ai | `media-operations:write` |
+| `queue_change` | Queue a write operation for human review | `governance:write` |
+| `list_change_queue` | List queued changes awaiting review | `governance:read` |
+| `review_change` | Approve or reject a queued change | `governance:review` |
+| `apply_change` | Execute an approved queued change | `governance:apply` |
 
 The public mirror keeps this surface aligned with the Free tier only. Advanced-only and Studio-future tools remain private in the Forgejo primary repository.
 
@@ -142,6 +185,17 @@ Elementify uses a two-layer permission model.
 The MCP server maps these server-side error codes to typed `ElementifyErrorCode` values so AI clients receive actionable, precise error information.
 
 ---
+
+## Governance Levels (L0-L3)
+
+Elementify introduces four governance levels for safe AI‑agent operation:
+
+- **L0 (Read‑only)** – Inspection tools (list, get, assess) – no consent needed.
+- **L1 (Safe writes)** – Non‑destructive writes (create, update metadata) – auto‑executed.
+- **L2 (Impactful writes)** – Layout changes, brand setup, form creation – auto‑queued for human review.
+- **L3 (High‑risk)** – Deletions, plugin conflict tests – require explicit consent.
+
+L2 tools automatically queue changes via `queue_change`; L3 tools block execution until `consent: true` is provided. This layered model ensures AI agents can propose meaningful changes while keeping site owners in control.
 
 ## Why not Respira?
 

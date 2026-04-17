@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ElementifyClient } from '../client.js';
+import { GOVERNANCE_LEVELS } from '../product-tiers.js';
 
 export function registerPageTools(
   server: McpServer,
@@ -12,7 +13,11 @@ export function registerPageTools(
     'list_elementor_pages',
     'List all pages/posts built with Elementor (have _elementor_edit_mode = builder). Use this to find pages you want to extract sections or components from.',
     {
-      site_id:   z.string().optional().describe('Site ID from config'),
+      site_id: z.string().optional().describe('Site ID from config'),
+      note:   z.string().optional()
+               .describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent: z.boolean().optional()
+               .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
       post_type: z.enum(['page', 'post']).optional().default('page').describe('Post type to list'),
       per_page:  z.number().int().min(1).max(100).optional().default(50),
       page:      z.number().int().min(1).optional().default(1),
@@ -84,15 +89,57 @@ export function registerPageTools(
       template_title: z.string().describe('Title for the new template (e.g. "SECTION_Hero", "COMP_Card_ValueProp")'),
       template_type: z.enum(['section', 'container', 'page', 'widget']).optional().default('container').describe('Elementor template type'),
       status:        z.enum(['publish', 'draft']).optional().default('publish'),
+      note:          z.string().optional()
+                     .describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent:       z.boolean().optional()
+                     .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
     },
-    async ({ site_id, page_id, section_index, template_title, template_type, status }) => {
+    async ({ site_id, page_id, section_index, template_title, template_type, status, note, consent }) => {
       const client = getClient(site_id);
-
+      const toolName = 'save_page_section_as_template';
+      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
+      
+      // L3 requires explicit consent
+      if (level === 'L3' && consent !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+          }],
+        };
+      }
+      
       // Step 1: extract the section
       const pageData = await client.getPageData({ id: page_id, extract: 'section', index: section_index });
       const element = pageData.element;
       if (!element) throw new Error(`No element at index ${section_index}`);
 
+      // For L2/L3, queue the creation
+      if (level === 'L2' || level === 'L3') {
+        const change = await client.createChange({
+          operation: toolName,
+          params: { page_id, section_index, template_title, template_type, status },
+          note: note || `Template "${template_title}" auto-queued by governance level ${level}`,
+        });
+
+        const lines = [
+          `🟡 Template creation queued for review (governance level ${level})`,
+          `   ID: ${change.id}`,
+          `   Operation: ${toolName}`,
+          `   Template title: ${template_title}`,
+          `   Source: page ${page_id}, section ${section_index}`,
+          note ? `   Note: ${note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — create the template',
+          '  Or: review_change(change_id, "reject") to discard.',
+        ].filter(Boolean);
+
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      }
+      
+      // L0/L1: Execute directly
       // Step 2: create new template
       const created = await client.createTemplate({
         title: template_title,
@@ -120,9 +167,52 @@ export function registerPageTools(
       site_id:        z.string().optional().describe('Site ID from config'),
       id:             z.number().int().describe('Page/post ID to update'),
       elementor_data: z.array(z.record(z.unknown())).describe('Full Elementor JSON — array of top-level containers/sections'),
+      note:           z.string().optional()
+                       .describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent:        z.boolean().optional()
+                       .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
     },
-    async ({ site_id, id, elementor_data }) => {
+    async ({ site_id, id, elementor_data, note, consent }) => {
       const client = getClient(site_id);
+      const toolName = 'update_page_data';
+      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
+      
+      // L3 requires explicit consent
+      if (level === 'L3' && consent !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+          }],
+        };
+      }
+      
+      // L2 always queues regardless of write_mode
+      if (level === 'L2' || level === 'L3') {
+        const change = await client.createChange({
+          operation: toolName,
+          params: { id, elementor_data },
+          note: note || `Auto-queued by governance level ${level}`,
+        });
+
+        const lines = [
+          `🟡 Change queued for review (governance level ${level})`,
+          `   ID: ${change.id}`,
+          `   Operation: ${toolName}`,
+          note ? `   Note: ${note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — execute it on the site',
+          '  Or: review_change(change_id, "reject") to discard.',
+          '',
+          'Use list_change_queue to see all pending changes.',
+        ].filter(Boolean);
+
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      }
+      
+      // L0/L1: Execute directly
       await client.updatePageData(id, elementor_data);
       return {
         content: [{ type: 'text', text: `✅ Page ${id} updated. Elementor cache cleared.` }],
@@ -160,7 +250,8 @@ export function registerPageTools(
         .optional()
         .describe('If provided, write the composed layout directly to this page'),
     },
-    async ({ site_id, sources, save_as_template, write_to_page }) => {
+    // @ts-ignore - note and consent are added to schema via edit
+    async ({ site_id, sources, save_as_template, write_to_page, note, consent }) => {
       if (!save_as_template && !write_to_page) {
         return {
           content: [{ type: 'text', text: 'Error: specify at least one of save_as_template or write_to_page.' }],
@@ -169,6 +260,44 @@ export function registerPageTools(
       }
 
       const client = getClient(site_id);
+      const toolName = 'compose_page_from_templates';
+      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
+      
+      // L3 requires explicit consent
+      if (level === 'L3' && consent !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+          }],
+        };
+      }
+      
+      // For L2/L3, queue the operation
+      if (level === 'L2' || level === 'L3') {
+        const change = await client.createChange({
+          operation: toolName,
+          params: { sources, save_as_template, write_to_page },
+          note: note || `Page composition auto-queued by governance level ${level}`,
+        });
+
+        const lines = [
+          `🟡 Page composition queued for review (governance level ${level})`,
+          `   ID: ${change.id}`,
+          `   Operation: ${toolName}`,
+          `   Sources: ${sources.length} template(s)`,
+          save_as_template ? `   Save as template: "${save_as_template.title}"` : '',
+          write_to_page ? `   Write to page: ${write_to_page.page_id}` : '',
+          note ? `   Note: ${note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — execute the composition',
+          '  Or: review_change(change_id, "reject") to discard.',
+        ].filter(Boolean);
+
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      }
 
       // Step 1: collect sections from all source templates
       const composed: unknown[] = [];
@@ -239,10 +368,52 @@ export function registerPageTools(
       page_id:        z.number().int().describe('Source page ID'),
       template_title: z.string().describe('Title for the new page template'),
       status:         z.enum(['publish', 'draft']).optional().default('publish'),
+      note:           z.string().optional()
+                     .describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent:        z.boolean().optional()
+                     .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
     },
-    async ({ site_id, page_id, template_title, status }) => {
+    async ({ site_id, page_id, template_title, status, note, consent }) => {
       const client = getClient(site_id);
+      const toolName = 'save_full_page_as_template';
+      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
+      
+      // L3 requires explicit consent
+      if (level === 'L3' && consent !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+          }],
+        };
+      }
+      
+      // For L2/L3, queue the creation
+      if (level === 'L2' || level === 'L3') {
+        const change = await client.createChange({
+          operation: toolName,
+          params: { page_id, template_title, status },
+          note: note || `Page template "${template_title}" auto-queued by governance level ${level}`,
+        });
 
+        const lines = [
+          `🟡 Page template creation queued for review (governance level ${level})`,
+          `   ID: ${change.id}`,
+          `   Operation: ${toolName}`,
+          `   Template title: ${template_title}`,
+          `   Source page: ${page_id}`,
+          note ? `   Note: ${note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — create the template',
+          '  Or: review_change(change_id, "reject") to discard.',
+        ].filter(Boolean);
+
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      }
+      
+      // L0/L1: Execute directly
       const pageData = await client.getPageData({ id: page_id });
       const created = await client.createTemplate({
         title: template_title,

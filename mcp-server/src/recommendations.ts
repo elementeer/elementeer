@@ -394,6 +394,13 @@ export function buildRecommendationReport(
       && !hasShopTemplate,
   );
 
+  // Add booking recommendations if present
+  if ((assessment as any).booking_recommendations) {
+    for (const rec of (assessment as any).booking_recommendations) {
+      recommendations.push(rec);
+    }
+  }
+
   return {
     destination: capabilityMatrix.destination,
     compatibilitySummary: capabilityMatrix.compatibilitySummary,

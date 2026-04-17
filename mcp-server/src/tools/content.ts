@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ElementifyClient } from '../client.js';
+import { GOVERNANCE_LEVELS } from '../product-tiers.js';
 
 export function registerContentTools(
   server: McpServer,
@@ -43,8 +44,12 @@ export function registerContentTools(
         .string()
         .describe('JSON-encoded Elementor data array (the full widget tree as a JSON string)'),
       site_id: z.string().optional().describe('Site ID from config'),
+      note: z.string().optional()
+        .describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent: z.boolean().optional()
+        .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
     },
-    async ({ id, elementor_data, site_id }) => {
+    async ({ id, elementor_data, site_id, note, consent }) => {
       let parsed: unknown[];
       try {
         parsed = JSON.parse(elementor_data) as unknown[];
@@ -73,6 +78,45 @@ export function registerContentTools(
       }
 
       const client = getClient(site_id);
+      const toolName = 'update_template_data';
+      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
+      
+      // L3 requires explicit consent
+      if (level === 'L3' && consent !== true) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+          }],
+        };
+      }
+      
+      // L2 always queues regardless of write_mode
+      if (level === 'L2' || level === 'L3') {
+        const change = await client.createChange({
+          operation: toolName,
+          params: { id, elementor_data },
+          note: note || `Auto-queued by governance level ${level}`,
+        });
+
+        const lines = [
+          `🟡 Change queued for review (governance level ${level})`,
+          `   ID: ${change.id}`,
+          `   Operation: ${toolName}`,
+          note ? `   Note: ${note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — execute it on the site',
+          '  Or: review_change(change_id, "reject") to discard.',
+          '',
+          'Use list_change_queue to see all pending changes.',
+        ].filter(Boolean);
+
+        return { content: [{ type: 'text', text: lines.join('\n') }] };
+      }
+      
+      // L0/L1: Execute directly
       await client.updateTemplateData(id, parsed);
 
       return {
