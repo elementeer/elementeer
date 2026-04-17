@@ -42,6 +42,7 @@ import { registerAllyTools } from './ally.js';
 import { registerLmsTools } from './lms.js';
 import { registerCharityTools } from './charity.js';
 import { registerBookingTools } from './booking.js';
+import { registerWooCommerceTools } from './woocommerce.js';
 
 interface ToolRegistrationOptions {
   includeAdvanced?: boolean;
@@ -93,6 +94,7 @@ const ADVANCED_TOOL_REGISTRARS = [
   registerPerformanceAdvancedTools,
   registerTranslationAdvancedTools,
   registerFormAdvancedTools,
+  registerWooCommerceTools,
 ] as const;
 
 const STUDIO_FUTURE_TOOL_REGISTRARS = [

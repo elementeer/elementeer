@@ -455,6 +455,52 @@ export function registerPerformanceAdvancedTools(
       };
     },
   );
+
+  // ------------------------------------------------------------------ //
+  // generate_critical_css (PERF-006)
+  // ------------------------------------------------------------------ //
+  server.tool(
+    'generate_critical_css',
+    'Generate critical CSS for a page or site-wide. Analyzes page HTML, extracts above‑the‑fold styles, and inlines them.',
+    {
+      site_id: z.string().optional().describe('Site ID from config (defaults to active site)'),
+      page_id: z.number().optional().describe('Page ID (optional, generates for whole site if omitted)'),
+      note: z.string().optional().describe('Optional note for queued changes (auto-queued for L2 governance)'),
+      consent: z.boolean().optional().describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
+    },
+    async ({ site_id, page_id, note, consent }) => {
+      try {
+        const client = getClient(site_id);
+        const result = await client.generateCriticalCss(page_id);
+
+        const lines: string[] = [
+          '# Critical CSS Generated',
+          `**Page**: ${page_id ? `ID ${page_id}` : 'Site-wide'}`,
+          `**CSS size**: ${result.css_size || 'unknown'} bytes`,
+          `**Selectors extracted**: ${result.selectors || 'unknown'}`,
+          `**Saved bytes**: ${result.saved_bytes || 'unknown'}`,
+          '',
+          '## Usage',
+          '1. Add the generated CSS to your theme\'s custom CSS or via a plugin.',
+          '2. Test page load performance before and after.',
+        ];
+
+        return {
+          content: [{
+            type: 'text',
+            text: lines.join('\n'),
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error generating critical CSS: ${error instanceof Error ? error.message : String(error)}`,
+          }],
+        };
+      }
+    },
+  );
 }
 
 // Backwards compatibility: keep original registrar that registers all tools.

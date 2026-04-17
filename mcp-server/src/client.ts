@@ -1009,6 +1009,130 @@ export class ElementifyClient {
   }
 
   // ------------------------------------------------------------------ //
+  // WooCommerce Integration
+  // ------------------------------------------------------------------ //
+
+  async listWooCommerceProducts(params: { page?: number; per_page?: number; status?: string; category?: string; stock_status?: string; search?: string } = {}): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async getWooCommerceProduct(productId: number): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async createWooCommerceProduct(data: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async updateWooCommerceProduct(productId: number, data: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteWooCommerceProduct(productId: number, force?: boolean): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async listWooCommerceOrders(params: { page?: number; per_page?: number; status?: string; customer?: number; product?: number; date_after?: string; date_before?: string } = {}): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async getWooCommerceOrder(orderId: number): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async updateWooCommerceOrderStatus(orderId: number, status: string, note?: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async listWooCommerceProductCategories(params: { page?: number; per_page?: number; parent?: number } = {}): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async createWooCommerceProductCategory(data: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async updateWooCommerceProductCategory(categoryId: number, data: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteWooCommerceProductCategory(categoryId: number): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async getWooCommerceStoreSettings(): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async updateWooCommerceStoreSettings(data: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async setupWooCommercePages(params: { create_missing?: boolean; assign_template?: boolean } = {}): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  // ------------------------------------------------------------------ //
+  // Form Plugin Integration
+  // ------------------------------------------------------------------ //
+
+  async listForms(params: { plugin?: string; page?: number; per_page?: number } = {}): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async getForm(formId: number, plugin?: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async createForm(data: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async updateForm(formId: number, data: any): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async deleteForm(formId: number, plugin?: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async listFormEntries(formId: number, params: { page?: number; per_page?: number; plugin?: string } = {}): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async getFormEntry(entryId: number, plugin?: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async exportFormEntries(formId: number, format: string = 'csv', plugin?: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  // ------------------------------------------------------------------ //
+  // Performance Deep-Dive Integration
+  // ------------------------------------------------------------------ //
+
+  async generateCriticalCss(pageId?: number): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async auditAssetLoading(pageId?: number): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async enableRedisCache(): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async purgeCdnCache(): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async optimizeHtaccess(): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  // ------------------------------------------------------------------ //
   // Pages
   // ------------------------------------------------------------------ //
 

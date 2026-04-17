@@ -593,48 +593,59 @@ export function registerFormTools(
   );
 
   // ------------------------------------------------------------------ //
-  // create_form_advanced (FORM-005)
+  // list_forms (FORM-008)
   // ------------------------------------------------------------------ //
   server.tool(
-    'create_form_advanced',
-    'Generate advanced Elementor Form widget JSON with multi-step support, conditional logic, and marketing integrations. Advanced tier form creation.',
+    'list_forms',
+    'List forms across active form plugins (Gravity Forms, Contact Form 7, WPForms, Ninja Forms).',
     {
-      site_id: z.string().optional(),
-      fields: z.array(formFieldSchema).min(1).max(20)
-                .describe('Form field specifications (supports file, hidden, acceptance types)'),
-      form_name: z.string().optional().default('Advanced Form')
-                .describe('Form name for identification'),
-      email_to: z.string().email().optional()
-                .describe('Email address to send submissions to (optional)'),
-      redirect_url: z.string().url().optional()
-                .describe('URL to redirect after submission (optional)'),
-      success_message: z.string().optional()
-                .describe('Custom success message (optional)'),
-      steps: z.array(stepSchema).optional()
-                .describe('Multi-step form steps (optional)'),
-      conditional_logic: z.array(conditionalLogicSchema).optional()
-                .describe('Conditional logic rules (optional)'),
-      marketing_integrations: z.array(marketingIntegrationSchema).optional()
-                .describe('Marketing integrations (Mailchimp, HubSpot, webhook)'),
-      note: z.string().optional()
-                .describe('Optional note for queued changes (auto-queued for L2 governance)'),
-      consent: z.boolean().optional()
-                .describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
+      site_id: z.string().optional().describe('Site ID from config (defaults to active site)'),
+      plugin: z.enum(['gravityforms', 'contact-form-7', 'wpforms', 'ninja-forms', 'all']).optional().default('all').describe('Specific plugin to list forms from'),
+      page: z.number().optional().default(1).describe('Page number'),
+      per_page: z.number().optional().default(20).describe('Items per page'),
     },
-    async ({ site_id, fields, form_name, email_to, redirect_url, success_message, steps, conditional_logic, marketing_integrations, note, consent }) => {
-      const client = getClient(site_id);
-      const toolName = 'create_form_advanced';
-      const level = GOVERNANCE_LEVELS[toolName] || 'L0';
-      
-      // L3 requires explicit consent
-      if (level === 'L3' && consent !== true) {
+    async ({ site_id, plugin, page, per_page }) => {
+      try {
+        const client = getClient(site_id);
+        const forms = await client.listForms({ plugin: plugin === 'all' ? undefined : plugin, page, per_page });
+
+        const lines: string[] = [
+          '# Forms',
+          `**Plugin**: ${plugin}`,
+          `**Total forms**: ${forms.total || forms.length}`,
+        ];
+
+        if (forms.forms && forms.forms.length > 0) {
+          lines.push('\n## Forms');
+          lines.push('| ID | Title | Fields | Entries | Shortcode |');
+          lines.push('|----|-------|--------|---------|-----------|');
+          for (const form of forms.forms.slice(0, 20)) {
+            lines.push(`| ${form.id} | ${form.title} | ${form.field_count || '—'} | ${form.entry_count || '—'} | ${form.shortcode || '—'} |`);
+          }
+          if (forms.forms.length > 20) {
+            lines.push(`| … ${forms.forms.length - 20} more … |`);
+          }
+        } else {
+          lines.push('\nNo forms found.');
+        }
+
         return {
           content: [{
             type: 'text',
-            text: `Operation "${toolName}" requires explicit consent (governance level L3). Please provide consent: true to proceed.`,
+            text: lines.join('\n'),
+          }],
+        };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text',
+            text: `❌ Error listing forms: ${error instanceof Error ? error.message : String(error)}`,
           }],
         };
       }
+    },
+  );
+}
       
       // Generate the advanced form widget JSON
       const formWidget = generateAdvancedFormWidget(fields, {
