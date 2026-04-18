@@ -220,7 +220,7 @@ export function registerChangeQueueTools(
       }
 
       const level = GOVERNANCE_LEVELS[operation] || 'L0';
-      if (level === 'L3' && consent !== true) {
+      if (level === 'L3' && _consent !== true) {
         return {
           content: [{
             type: 'text' as const,
@@ -229,14 +229,14 @@ export function registerChangeQueueTools(
         };
       }
 
-      const client = getClient(site_id);
-      const change = await client.createChange({ operation, params, note, before_state });
+      const client = getClient(_site_id);
+      const change = await client.createChange({ operation, params: _params, note: _note, before_state });
 
       const lines = [
         `🟡 Change queued for review`,
         `   ID: ${change.id}`,
         `   Operation: ${change.operation}`,
-        note ? `   Note: ${note}` : '',
+        _note ? `   Note: ${_note}` : '',
         '',
         'Next steps:',
         '  1. review_change(change_id, "approve") — approve it',
@@ -307,7 +307,7 @@ export function registerChangeQueueTools(
       site_id:   z.string().optional(),
     },
     async ({ change_id, action, reason, site_id }) => {
-      const client    = getClient(site_id);
+      const client = getClient(site_id);
       const newStatus = action === 'approve' ? 'approved' : 'rejected';
       const change    = await client.updateChangeStatus(change_id, newStatus, reason);
 
