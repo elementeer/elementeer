@@ -3,7 +3,7 @@
         'name' => 'vamerli/elementify-mcp-plugin',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => 'b8328f29204f0b0833b058814bde5cc06e35db8f',
+        'reference' => '09c1ba7f255fb4d450912b1cc0ef8d5110a1729d',
         'type' => 'wordpress-plugin',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -301,7 +301,7 @@
         'vamerli/elementify-mcp-plugin' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => 'b8328f29204f0b0833b058814bde5cc06e35db8f',
+            'reference' => '09c1ba7f255fb4d450912b1cc0ef8d5110a1729d',
             'type' => 'wordpress-plugin',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
