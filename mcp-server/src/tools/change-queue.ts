@@ -209,7 +209,7 @@ export function registerChangeQueueTools(
       consent:      z.boolean().optional()
                      .describe('Explicit consent required for L3 operations. Must be true if governance level is L3.'),
     },
-    async ({ operation, params, note, before_state, site_id, consent }) => {
+    async ({ operation, params: _params, note: _note, before_state, site_id: _site_id, consent: _consent }) => {
       if (!OPERATION_EXECUTORS[operation]) {
         return {
           content: [{

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ElementifyClient } from '../client.js';
@@ -259,7 +260,8 @@ function generateAdvancedFormWidget(
   }));
   
   // Extract basic settings without submit_actions to avoid type conflict
-  const { submit_actions: _, ...basicSettings } = basicWidget.settings;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { submit_actions: _submitActions, ...basicSettings } = basicWidget.settings;
   
   return {
     ...basicWidget,
@@ -606,8 +608,8 @@ export function registerFormTools(
     },
     async ({ site_id, plugin, page, per_page }) => {
       try {
-        const client = getClient(site_id);
-        const forms = await client.listForms({ plugin: plugin === 'all' ? undefined : plugin, page, per_page });
+      const _client = getClient(site_id);
+        const forms = await _client.listForms({ plugin: plugin === 'all' ? undefined : plugin, page, per_page });
 
         const lines: string[] = [
           '# Forms',
@@ -659,7 +661,8 @@ export function registerFormTools(
                 .describe('Filter templates by category'),
     },
     async ({ site_id, category }) => {
-      const client = getClient(site_id);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _client = getClient(site_id);
       
       // Define form templates (7 minimum as per FORM-007)
       const formTemplates = [
@@ -1069,162 +1072,6 @@ export function registerFormFreeTools(
   // ------------------------------------------------------------------ //
 
   // ------------------------------------------------------------------ //
-  server.tool(
-    'list_form_templates',
-    'List pre-built Elementor form templates: Contact, Newsletter Signup, Quote Request, Booking Inquiry, Event Registration, Survey, Feedback. Each template is optimized for conversion and uses Global Typography/Colors.',
-    {
-      site_id: z.string().optional(),
-      category: z.enum(['all', 'contact', 'lead-generation', 'feedback', 'registration']).optional().default('all')
-                .describe('Filter templates by category'),
-    },
-    async ({ site_id, category }) => {
-      const client = getClient(site_id);
-      
-      // Define form templates (7 minimum as per FORM-007)
-      const formTemplates = [
-        {
-          id: 'contact-form',
-          title: 'Contact Form',
-          description: 'Standard contact form with name, email, message, and optional phone number',
-          category: 'contact',
-          fields: [
-            { type: 'text', label: 'Name', required: true, placeholder: 'Your name' },
-            { type: 'email', label: 'Email', required: true, placeholder: 'your@email.com' },
-            { type: 'tel', label: 'Phone', required: false, placeholder: 'Your phone number' },
-            { type: 'textarea', label: 'Message', required: true, placeholder: 'How can we help you?' },
-          ],
-          recommended_email_to: '{site_admin_email}',
-          recommended_success_message: 'Thank you! We\'ll get back to you soon.',
-        },
-        {
-          id: 'newsletter-signup',
-          title: 'Newsletter Signup',
-          description: 'Simple newsletter subscription form with email and optional name',
-          category: 'lead-generation',
-          fields: [
-            { type: 'text', label: 'First Name', required: false, placeholder: 'First name' },
-            { type: 'text', label: 'Last Name', required: false, placeholder: 'Last name' },
-            { type: 'email', label: 'Email', required: true, placeholder: 'your@email.com' },
-            { type: 'checkbox', label: 'Interests', required: false, options: ['Technology', 'Marketing', 'Design', 'Business'] },
-          ],
-          recommended_email_to: '{site_admin_email}',
-          recommended_success_message: 'Thank you for subscribing!',
-        },
-        {
-          id: 'quote-request',
-          title: 'Quote Request',
-          description: 'Detailed quote request form for service businesses',
-          category: 'lead-generation',
-          fields: [
-            { type: 'text', label: 'Company Name', required: true, placeholder: 'Your company' },
-            { type: 'text', label: 'Contact Person', required: true, placeholder: 'Your name' },
-            { type: 'email', label: 'Email', required: true, placeholder: 'your@email.com' },
-            { type: 'tel', label: 'Phone', required: true, placeholder: 'Your phone number' },
-            { type: 'select', label: 'Service Type', required: true, options: ['Web Design', 'Development', 'Consulting', 'Maintenance', 'Other'] },
-            { type: 'textarea', label: 'Project Details', required: true, placeholder: 'Tell us about your project...' },
-            { type: 'date', label: 'Desired Start Date', required: false },
-          ],
-          recommended_email_to: '{site_admin_email}',
-          recommended_success_message: 'Thank you! We\'ll send you a quote within 24 hours.',
-        },
-        {
-          id: 'booking-inquiry',
-          title: 'Booking Inquiry',
-          description: 'Appointment or booking request form',
-          category: 'registration',
-          fields: [
-            { type: 'text', label: 'Name', required: true, placeholder: 'Your name' },
-            { type: 'email', label: 'Email', required: true, placeholder: 'your@email.com' },
-            { type: 'tel', label: 'Phone', required: true, placeholder: 'Your phone number' },
-            { type: 'date', label: 'Preferred Date', required: true },
-            { type: 'select', label: 'Preferred Time', required: true, options: ['Morning (9-12)', 'Afternoon (12-5)', 'Evening (5-8)'] },
-            { type: 'select', label: 'Service', required: true, options: ['Consultation', 'Demo', 'Training', 'Support'] },
-            { type: 'textarea', label: 'Additional Notes', required: false, placeholder: 'Any special requirements?' },
-          ],
-          recommended_email_to: '{site_admin_email}',
-          recommended_success_message: 'Booking request received! We\'ll confirm shortly.',
-        },
-        {
-          id: 'event-registration',
-          title: 'Event Registration',
-          description: 'Event registration form with attendee details',
-          category: 'registration',
-          fields: [
-            { type: 'text', label: 'Full Name', required: true, placeholder: 'Your full name' },
-            { type: 'email', label: 'Email', required: true, placeholder: 'your@email.com' },
-            { type: 'text', label: 'Job Title', required: false, placeholder: 'Your position' },
-            { type: 'text', label: 'Company', required: false, placeholder: 'Your company' },
-            { type: 'select', label: 'Ticket Type', required: true, options: ['General Admission', 'VIP', 'Student', 'Group (5+)'] },
-            { type: 'number', label: 'Number of Tickets', required: true, placeholder: '1' },
-            { type: 'checkbox', label: 'Dietary Requirements', required: false, options: ['Vegetarian', 'Vegan', 'Gluten-free', 'Other'] },
-          ],
-          recommended_email_to: '{site_admin_email}',
-          recommended_success_message: 'Registration confirmed! Check your email for details.',
-        },
-        {
-          id: 'survey-form',
-          title: 'Survey Form',
-          description: 'Customer feedback or survey form',
-          category: 'feedback',
-          fields: [
-            { type: 'text', label: 'Name', required: false, placeholder: 'Optional' },
-            { type: 'email', label: 'Email', required: false, placeholder: 'Optional' },
-            { type: 'select', label: 'Overall Satisfaction', required: true, options: ['Very Satisfied', 'Satisfied', 'Neutral', 'Dissatisfied', 'Very Dissatisfied'] },
-            { type: 'radio', label: 'Would you recommend us?', required: true, options: ['Yes', 'No', 'Maybe'] },
-            { type: 'textarea', label: 'What could we improve?', required: false, placeholder: 'Your suggestions...' },
-            { type: 'textarea', label: 'Additional Comments', required: false, placeholder: 'Any other feedback?' },
-          ],
-          recommended_email_to: '{site_admin_email}',
-          recommended_success_message: 'Thank you for your feedback!',
-        },
-        {
-          id: 'feedback-form',
-          title: 'Feedback Form',
-          description: 'General feedback form for products or services',
-          category: 'feedback',
-          fields: [
-            { type: 'text', label: 'Name', required: false, placeholder: 'Optional' },
-            { type: 'email', label: 'Email', required: false, placeholder: 'Optional' },
-            { type: 'select', label: 'Feedback Type', required: true, options: ['Bug Report', 'Feature Request', 'General Feedback', 'Complaint'] },
-            { type: 'textarea', label: 'Feedback', required: true, placeholder: 'Please describe your feedback...' },
-            { type: 'checkbox', label: 'Follow-up Options', required: false, options: ['Email me updates', 'Contact me for more details', 'Add me to beta testing'] },
-          ],
-          recommended_email_to: '{site_admin_email}',
-          recommended_success_message: 'Thank you for your feedback!',
-        },
-      ];
-
-      // Filter by category if specified
-      const filteredTemplates = category === 'all' 
-        ? formTemplates 
-        : formTemplates.filter(t => t.category === category);
-
-      // Generate output
-      const lines = [
-        `Form Template Library (${filteredTemplates.length} templates)`,
-        '',
-        ...filteredTemplates.map(t => [
-          `### ${t.title}`,
-          `  ID: ${t.id}`,
-          `  Category: ${t.category}`,
-          `  Description: ${t.description}`,
-          `  Fields: ${t.fields.length} field(s)`,
-          `  Recommended email: ${t.recommended_email_to}`,
-          '',
-          '  **Usage:**',
-          `  create_form_light(fields: ${JSON.stringify(t.fields)}, form_name: "${t.title}", email_to: "${t.recommended_email_to}", success_message: "${t.recommended_success_message}")`,
-          '',
-        ].join('\n')),
-        '',
-        '**How to use:**',
-        '1. Copy the create_form_light command for your chosen template',
-        '2. Run it to generate Elementor form widget JSON',
-        '3. Use update_page_data to insert into a page, or create_template to save as reusable template',
-      ];
-
-       return { content: [{ type: 'text', text: lines.join('\n') }] };
-    },
-  );
 
   // ------------------------------------------------------------------ //
   // migrate_form (FORM-006)

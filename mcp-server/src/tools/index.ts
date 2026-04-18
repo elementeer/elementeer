@@ -12,7 +12,6 @@ import { registerGlobalStylesTools } from './global-styles.js';
 import {
   registerAdvancedWizardTools,
   registerFreeWizardTools,
-  registerWizardTools,
 } from './wizard.js';
 import { registerStockImageTools } from './stock-images.js';
 import { registerChangeQueueTools } from './change-queue.js';

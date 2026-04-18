@@ -250,7 +250,7 @@ export function registerPageTools(
         .optional()
         .describe('If provided, write the composed layout directly to this page'),
     },
-    // @ts-ignore - note and consent are added to schema via edit
+    // @ts-expect-error - note and consent are added to schema via edit
     async ({ site_id, sources, save_as_template, write_to_page, note, consent }) => {
       if (!save_as_template && !write_to_page) {
         return {

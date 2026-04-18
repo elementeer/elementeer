@@ -26,5 +26,79 @@
     "terminalReason": "finished",
     "exitCode": 0,
     "stoppedAt": "2026-04-17T18:12:48.827Z"
+  },
+  {
+    "id": "proc_2026-04-18T0023_ef7ccb",
+    "workspaceId": "mo381n7o",
+    "title": "Understand Dashboard",
+    "command": "npm run dev -- --port 5174",
+    "cwd": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+    "status": "stopped",
+    "pid": 32787,
+    "startedAt": "2026-04-18T00:23:01.252Z",
+    "outputSizeBytes": 681,
+    "notify": {
+      "sessionID": "ses_27b7a2296ffeh7cbecTdBJ2WHV",
+      "directory": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+      "sentAt": "2026-04-18T00:23:28.395Z"
+    },
+    "terminalReason": "user_stopped",
+    "exitCode": 15,
+    "stoppedAt": "2026-04-18T00:23:28.313Z"
+  },
+  {
+    "id": "proc_2026-04-18T0024_5a3255",
+    "workspaceId": "mo381n7o",
+    "title": "Understand Dashboard",
+    "command": "GRAPH_DIR=\"/Users/andrelange/Documents/repositories/github/elementify-mcp\" npx vite --host 127.0.0.1 --open",
+    "cwd": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+    "status": "stopped",
+    "pid": 33328,
+    "startedAt": "2026-04-18T00:24:35.128Z",
+    "outputSizeBytes": 281,
+    "notify": {
+      "sessionID": "ses_27b7a2296ffeh7cbecTdBJ2WHV",
+      "directory": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+      "sentAt": "2026-04-18T00:27:34.057Z"
+    },
+    "terminalReason": "user_stopped",
+    "stoppedAt": "2026-04-18T00:27:33.803Z"
+  },
+  {
+    "id": "proc_2026-04-18T0030_d0bdf3",
+    "workspaceId": "mo381n7o",
+    "title": "Understand Dashboard v2",
+    "command": "GRAPH_DIR=\"/Users/andrelange/Documents/repositories/github/elementify-mcp\" npx vite --host 127.0.0.1",
+    "cwd": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+    "status": "stopped",
+    "pid": 34702,
+    "startedAt": "2026-04-18T00:30:45.220Z",
+    "outputSizeBytes": 74,
+    "notify": {
+      "sessionID": "ses_27b7a2296ffeh7cbecTdBJ2WHV",
+      "directory": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+      "sentAt": "2026-04-18T00:31:57.361Z"
+    },
+    "terminalReason": "user_stopped",
+    "stoppedAt": "2026-04-18T00:31:56.400Z"
+  },
+  {
+    "id": "proc_2026-04-18T0033_781d4b",
+    "workspaceId": "mo381n7o",
+    "title": "Understand Dashboard dev",
+    "command": "GRAPH_DIR=\"/Users/andrelange/Documents/repositories/github/elementify-mcp\" npm run dev",
+    "cwd": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+    "status": "stopped",
+    "pid": 35265,
+    "startedAt": "2026-04-18T00:33:36.091Z",
+    "outputSizeBytes": 497,
+    "notify": {
+      "sessionID": "ses_27b7a2296ffeh7cbecTdBJ2WHV",
+      "directory": "/Users/andrelange/Documents/repositories/github/elementify-mcp",
+      "sentAt": "2026-04-18T00:34:48.154Z"
+    },
+    "terminalReason": "user_stopped",
+    "exitCode": 15,
+    "stoppedAt": "2026-04-18T00:34:47.920Z"
   }
 ]

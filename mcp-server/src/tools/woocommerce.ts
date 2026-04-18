@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { z } from 'zod';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ElementifyClient } from '../client.js';
@@ -413,7 +414,8 @@ export function registerWooCommerceTools(
     async ({ site_id, order_id, status, note }) => {
       try {
         const client = getClient(site_id);
-        const order = await client.updateWooCommerceOrderStatus(order_id, status, note);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _order = await client.updateWooCommerceOrderStatus(order_id, status, note);
 
         return {
           content: [{

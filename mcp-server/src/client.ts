@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import type {
   ElementifyTemplate,

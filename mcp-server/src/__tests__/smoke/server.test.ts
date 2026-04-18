@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 /**
  * Smoke tests: MCP server initializes and registers all expected tools.
  */

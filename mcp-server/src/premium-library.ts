@@ -577,17 +577,7 @@ function formatUseCases(useCases: string[]): string {
   return useCases.join(', ');
 }
 
-function groupAssetsByCollection(assets: PremiumLibraryAssetSummary[]): PremiumLibraryAssetSummary[][] {
-  const groups = new Map<PremiumLibraryAssetCollection, PremiumLibraryAssetSummary[]>();
 
-  for (const asset of assets) {
-    const bucket = groups.get(asset.collection) ?? [];
-    bucket.push(asset);
-    groups.set(asset.collection, bucket);
-  }
-
-  return Array.from(groups.values());
-}
 
 function summarizeAsset(asset: PremiumLibraryAssetDetail): PremiumLibraryAssetSummary {
   return {

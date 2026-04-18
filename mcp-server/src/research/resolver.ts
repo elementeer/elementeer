@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import type { Capability, CapabilityId, CapabilityMatrix } from '../client.js';
 import {
   findRegistryEntriesForCapability,

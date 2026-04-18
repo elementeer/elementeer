@@ -137,7 +137,8 @@ export async function runBrandSetupWizard(
     steps.push({
       label: `Set homepage → Page ID: ${homepage_page_id}`,
       fn: async () => {
-        const r = await client.updateSiteSettings({ homepage: homepage_page_id });
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _r = await client.updateSiteSettings({ homepage: homepage_page_id });
         return `✅ Homepage set to page ID: ${homepage_page_id}`;
       },
     });

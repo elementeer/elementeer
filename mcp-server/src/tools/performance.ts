@@ -468,7 +468,7 @@ export function registerPerformanceAdvancedTools(
       note: z.string().optional().describe('Optional note for queued changes (auto-queued for L2 governance)'),
       consent: z.boolean().optional().describe('Explicit consent required for L3 operations (not needed for L2 auto-queue)'),
     },
-    async ({ site_id, page_id, note, consent }) => {
+    async ({ site_id, page_id, note: _note, consent: _consent }) => {
       try {
         const client = getClient(site_id);
         const result = await client.generateCriticalCss(page_id);

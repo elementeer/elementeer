@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { ElementifyClient } from './client.js';
 import { GOVERNANCE_LEVELS } from './product-tiers.js';
 

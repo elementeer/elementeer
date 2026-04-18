@@ -197,11 +197,17 @@ Elementify introduces four governance levels for safe AI‑agent operation:
 
 L2 tools automatically queue changes via `queue_change`; L3 tools block execution until `consent: true` is provided. This layered model ensures AI agents can propose meaningful changes while keeping site owners in control.
 
-## Why not Respira?
+## What Makes Elementify Unique
 
-- **`elementor_library` access**: Respira uses the default WordPress REST API for posts, which conflicts with Elementor's own REST modifications and returns 401 or empty results for template library requests. Elementify queries `elementor_library` directly via `WP_Query`.
-- **Permission error clarity**: Respira maps both "wrong key" and "insufficient capability" to the same generic auth error. Elementify distinguishes `auth_invalid_key` from `auth_insufficient_scope`, so AI clients can tell users exactly what to fix.
-- **Elementor-native focus**: Elementify is purpose-built for Elementor template management with Elementor-specific data structures, template types, and shortcode support. Respira is a general WordPress MCP tool.
+Elementify is the **first and only MCP server purpose-built for Elementor** — not a generic WordPress tool. Its unique architecture enables AI agents to work safely and effectively with Elementor templates, layouts, and workflows:
+
+- **`elementor_library` native access**: Direct querying of Elementor's template library via `WP_Query`, bypassing Elementor's REST API limitations that cause 401 errors and empty responses for template requests.
+- **Granular capability system**: Clear distinction between authentication failures (`auth_invalid_key`) and permission issues (`auth_insufficient_scope`), allowing AI clients to provide specific guidance to users.
+- **Elementor-specific data structures**: Full support for Elementor template types (section, page, header, footer), nested containers, and shortcode processing.
+- **Governance-controlled operations**: Four-tier governance model (L0-L3) ensures safe AI agent operation with appropriate human oversight.
+- **Multi-surface product strategy**: Clean separation between Free (public), Advanced (private), and Studio (future) features ensures sustainable open-source development.
+
+Unlike general-purpose WordPress MCP tools, Elementify understands Elementor's architecture, template lifecycle, and workflow patterns — enabling truly intelligent AI-assisted Elementor development.
 
 ---
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { z } from 'zod';
 import axios from 'axios';
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';

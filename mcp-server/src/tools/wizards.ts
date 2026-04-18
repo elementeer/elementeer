@@ -63,7 +63,8 @@ export function registerModuleWizard(
   getClient: (siteId?: string) => ElementifyClient,
   options: WizardRegistrationOptions,
 ): void {
-  const { id, label, description, requiredCapability, governanceLevel = 'L0' } = options;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { id, label, description, requiredCapability: _requiredCapability, governanceLevel: _governanceLevel = 'L0' } = options;
 
   server.tool(
     `wizard_${id}`,

@@ -4,16 +4,10 @@ import type {
   ElementifyClient,
   ProjectProfile,
 } from '../client.js';
-import type {
-  Recommendation,
-  RecommendationCategory,
-} from '@elementify/shared';
+
 import { buildCapabilityMatrix } from '../destination.js';
 import { buildSiteFingerprint } from '../fingerprint.js';
-import {
-  buildRecommendationReport,
-  buildRecommendations,
-} from '../recommendations.js';
+
 
 export type { Recommendation, RecommendationCategory } from '@elementify/shared';
 export { buildRecommendationReport, buildRecommendations } from '../recommendations.js';
