@@ -105,7 +105,7 @@ export const REGISTERED_TOOL_NAMES = [
   'update_site_settings',
   'create_form_light',
   'create_form_advanced',
-  'list_form_templates',
+
   'migrate_form',
   'analyze_translation_coverage',
   'batch_translate_strings',
@@ -1060,14 +1060,7 @@ export const TOOL_TIER_ASSIGNMENTS: ProductSurfaceAssignment[] = [
     kind: 'tool',
     rationale: 'Advanced tier should support multi-step forms, conditional logic, and marketing integrations (Mailchimp, HubSpot, webhooks).',
   },
-  {
-    id: 'list_form_templates',
-    label: 'Form Template Library',
-    tier: 'free',
-    visibility: 'public',
-    kind: 'tool',
-    rationale: 'Free should provide a library of pre-built form templates (Contact, Newsletter, Quote, etc.) optimized for conversion.',
-  },
+
   {
     id: 'migrate_form',
     label: 'Cross-Plugin Form Migration',
