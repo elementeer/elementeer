@@ -1,9 +1,9 @@
-=== Elementify MCP Plugin ===
+=== Elementify ===
 Contributors: elementify
 Tags: elementor, mcp, ai, rest-api, template-management
 Requires at least: 6.0
 Tested up to: 6.5
-Stable tag: 0.5.1
+Stable tag: 2.0.1
 Requires PHP: 8.0
 License: MIT
 License URI: https://opensource.org/licenses/MIT
@@ -30,7 +30,7 @@ The default `/wp-json/wp/v2/elementor_library` endpoint returns 401 or empty res
 
 == Installation ==
 
-1. Upload the plugin files to `/wp-content/plugins/elementify-mcp/`, or install the plugin through the WordPress Plugins screen.
+1. Upload the plugin files to `/wp-content/plugins/elementify/`, or install the plugin through the WordPress Plugins screen.
 2. Click "Activate Plugin".
 3. Ensure Elementor is installed and active (the plugin will display an error notice if not).
 4. Go to **Settings → Elementify MCP** to generate your first API key.
@@ -73,6 +73,17 @@ Yes. When Vamerli Studio is active alongside this plugin, the activation mode sw
 
 == Changelog ==
 
+= 2.0.1 =
+* Complete parallel development of five advanced feature domains
+* Media operations enhancement: AI alt‑text generation, stock image search
+* Addon ecosystem expansion: addon‑specific analysis, widget usage tracking, overlap detection
+* Performance analysis enhancement: Core Web Vitals, critical CSS generation, comprehensive reporting
+* Accessibility enhancement: WCAG compliance scanning, auto‑fixes, Ally integration
+* Snapshot & versioning implementation: template snapshots, version history, comparisons, auto‑versioning
+* Authentication fixes: wildcard capability support, Elementor compatibility improvements
+* Plugin naming standardization: renamed to "Elementify" (no "MCP" in plugin name)
+* ReleaseChain integration: comprehensive testing workflow for SkillWeave ReleaseChain
+
 = 0.2.0 =
 * Adds page data routes for reading and updating Elementor-built pages
 * Adds theme builder, site context, media sideload, assessment, and change queue routes
@@ -88,6 +99,9 @@ Yes. When Vamerli Studio is active alongside this plugin, the activation mode sw
 * Admin UI
 
 == Upgrade Notice ==
+
+= 2.0.1 =
+Recommended update. Adds five advanced feature domains, improves Elementor compatibility, and includes comprehensive testing workflow for ReleaseChain.
 
 = 0.2.0 =
 Recommended update. Adds the page and workflow routes required for the newer Elementify Free and Advanced flows.

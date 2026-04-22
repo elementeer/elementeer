@@ -27,8 +27,8 @@ final class Settings {
         $auth = $this->auth->authorize( $request, 'site-settings:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
-        $page_on_front = (int) get_option( 'page_on_front', 0 );
-        $page_for_posts = (int) get_option( 'page_for_posts', 0 );
+        $page_on_front = (int) \get_option( 'page_on_front', 0 );
+        $page_for_posts = (int) \get_option( 'page_for_posts', 0 );
 
         $homepage = $page_on_front ? [
             'id'   => $page_on_front,
@@ -43,15 +43,15 @@ final class Settings {
         ] : null;
 
         return new WP_REST_Response( [
-            'blogname'        => get_option( 'blogname', '' ),
-            'description'     => get_option( 'blogdescription', '' ),
+            'blogname'        => \get_option( 'blogname', '' ),
+            'description'     => \get_option( 'blogdescription', '' ),
             'homepage'        => $homepage,
             'posts_page'      => $posts_page,
-            'permalink'       => get_option( 'permalink_structure', '' ),
+            'permalink'       => \get_option( 'permalink_structure', '' ),
             'timezone'        => wp_timezone_string(),
-            'date_format'     => get_option( 'date_format' ),
-            'time_format'     => get_option( 'time_format' ),
-            'start_of_week'   => (int) get_option( 'start_of_week', 0 ),
+            'date_format'     => \get_option( 'date_format' ),
+            'time_format'     => \get_option( 'time_format' ),
+            'start_of_week'   => (int) \get_option( 'start_of_week', 0 ),
         ], 200 );
     }
 

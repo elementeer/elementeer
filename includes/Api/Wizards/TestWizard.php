@@ -54,8 +54,8 @@ final class TestWizard extends BaseWizard {
 			],
 			'suggested_plugins' => [
 				[
-					'slug' => 'elementify-mcp/elementify-mcp.php',
-					'name' => 'Elementify MCP',
+					'slug' => 'elementify/elementify.php',
+					'name' => 'Elementify',
 					'reason' => 'Already installed and active',
 					'required_capability' => 'plugin-stack-context:read',
 				],

@@ -36,7 +36,7 @@ final class Settings {
      * @return array{allowed_capabilities: string[], require_approval: bool, audit_log_enabled: bool, max_keys: int}
      */
     public function get(): array {
-        $stored = get_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, [] );
+        $stored = \get_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, [] );
         $settings = array_merge( self::DEFAULTS, is_array( $stored ) ? $stored : [] );
 
         if ( isset( $settings['allowed_capabilities'] ) ) {
@@ -66,7 +66,7 @@ final class Settings {
             $current['allowed_capabilities'] = Capabilities::filter( (array) $current['allowed_capabilities'] );
         }
 
-        update_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, $current );
+        \update_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, $current );
     }
 
     /**

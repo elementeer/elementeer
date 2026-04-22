@@ -52,12 +52,100 @@ final class Router {
                         'default' => 20,
                         'minimum' => 1,
                         'maximum' => 100,
-                    ],
+                ],
                 ],
             ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // Add‑ons detection
+        // ------------------------------------------------------------------ //
+        $addons = new Addons();
+        register_rest_route( self::NAMESPACE, '/addons', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $addons, 'list_addons' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/addons/detailed', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $addons, 'list_detailed' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // Add‑on‑specific operations
+        // ------------------------------------------------------------------ //
+        $addon_specific = new AddonSpecific();
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $addon_specific, 'get_addon' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'plugin_slug' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/widgets', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $addon_specific, 'get_addon_widgets' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'plugin_slug' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/post-types', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $addon_specific, 'get_addon_post_types' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'plugin_slug' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/capabilities', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $addon_specific, 'get_addon_capabilities' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'plugin_slug' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/widgets/(?P<widget_id>[a-zA-Z0-9_-]+)/toggle', [
             [
                 'methods'             => 'POST',
-                'callback'            => [ $templates, 'create_template' ],
+                'callback'            => [ $addon_specific, 'toggle_widget' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'plugin_slug' => [ 'type' => 'string', 'required' => true ],
+                    'widget_id'   => [ 'type' => 'string', 'required' => true ],
+                    'enable'      => [ 'type' => 'boolean' ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/usage', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $addon_specific, 'analyze_addon_usage' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'plugin_slug' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/addons/analyze-overlap', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $addon_specific, 'analyze_addon_overlap' ],
                 'permission_callback' => '__return_true',
             ],
         ] );
@@ -407,11 +495,61 @@ final class Router {
                         'type'     => 'string',
                         'required' => true,
                     ],
-                    'fix_type' => [
+                     'fix_type' => [
+                         'required' => false,
+                         'default'  => 'basic',
+                         'enum'     => [ 'basic', 'ai' ],
+                     ],
+                 ],
+             ],
+         ] );
+
+        // ------------------------------------------------------------------ //
+        // WCAG compliance scanning
+        // ------------------------------------------------------------------ //
+        register_rest_route( self::NAMESPACE, '/ally/wcag-scan', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $ally, 'wcag_scan' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page_id' => [
+                        'type'     => 'integer',
+                        'required' => false,
+                    ],
+                    'level' => [
                         'type'     => 'string',
                         'required' => false,
-                        'default'  => 'basic',
-                        'enum'     => [ 'basic', 'ai' ],
+                        'default'  => 'AA',
+                        'enum'     => [ 'A', 'AA', 'AAA' ],
+                    ],
+                    'version' => [
+                        'type'     => 'string',
+                        'required' => false,
+                        'default'  => '2.1',
+                        'enum'     => [ '2.0', '2.1', '2.2' ],
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/ally/wcag-auto-fix', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $ally, 'wcag_auto_fix' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page_id' => [
+                        'type'     => 'integer',
+                        'required' => false,
+                    ],
+                    'fix_types' => [
+                        'type'     => 'array',
+                        'required' => false,
+                        'default'  => [ 'alt_text', 'heading_order', 'color_contrast' ],
+                        'items'    => [
+                            'type' => 'string',
+                            'enum' => [ 'alt_text', 'heading_order', 'color_contrast', 'form_labels', 'link_purpose' ],
+                        ],
                     ],
                 ],
             ],
@@ -803,10 +941,68 @@ final class Router {
                         'required'          => true,
                         'sanitize_callback' => 'sanitize_text_field',
                     ],
-                    'action' => [
+                     'action' => [
+                         'type'              => 'string',
+                         'required'          => true,
+                         'enum'              => [ 'deactivate', 'reactivate' ],
+                         'sanitize_callback' => 'sanitize_text_field',
+                     ],
+                 ],
+             ],
+         ] );
+
+        // ------------------------------------------------------------------ //
+        // Core Web Vitals & advanced performance analysis
+        // ------------------------------------------------------------------ //
+        register_rest_route( self::NAMESPACE, '/site/performance/core-web-vitals', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $performance, 'get_core_web_vitals' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page_id' => [
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'url' => [
                         'type'              => 'string',
-                        'required'          => true,
-                        'enum'              => [ 'deactivate', 'reactivate' ],
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/site/performance/generate-critical-css', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $performance, 'generate_critical_css' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page_id' => [
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'force' => [
+                        'type'              => 'boolean',
+                        'default'           => false,
+                        'sanitize_callback' => 'rest_sanitize_boolean',
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/site/performance/analyze', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $performance, 'analyze_performance' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page_id' => [
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'depth' => [
+                        'type'              => 'string',
+                        'enum'              => [ 'quick', 'standard', 'deep' ],
+                        'default'           => 'standard',
                         'sanitize_callback' => 'sanitize_text_field',
                     ],
                 ],
@@ -889,6 +1085,15 @@ final class Router {
                 'permission_callback' => '__return_true',
             ],
         ] );
+
+        register_rest_route( self::NAMESPACE, '/changes/queue/stats', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $cq, 'get_queue_stats' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
         register_rest_route( self::NAMESPACE, '/changes/(?P<id>[a-zA-Z0-9_]+)/status', [
             [
                 'methods'             => 'PUT',
@@ -1185,6 +1390,398 @@ final class Router {
         ] );
 
         // ------------------------------------------------------------------ //
+        // Media AI operations
+        // ------------------------------------------------------------------ //
+        
+        // Generate alt text for a single image
+        register_rest_route( self::NAMESPACE, '/media/(?P<id>\d+)/generate-alt-text', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $media, 'generate_alt_text' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
+        
+        // Batch generate alt text for multiple images
+        register_rest_route( self::NAMESPACE, '/media/batch-generate-alt-text', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $media, 'batch_generate_alt_text' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'attachment_ids' => [
+                        'type'              => 'array',
+                        'items'             => [ 'type' => 'integer' ],
+                        'default'           => [],
+                        'sanitize_callback' => function( $value ) {
+                            return \is_array( $value ) ? $value : [];
+                        },
+                    ],
+                    'limit' => [
+                        'type'              => 'integer',
+                        'default'           => 10,
+                        'minimum'           => 1,
+                        'maximum'           => 50,
+                        'sanitize_callback' => 'absint',
+                    ],
+                ],
+            ],
+        ] );
+        
+        // Search stock images
+        register_rest_route( self::NAMESPACE, '/media/search-stock', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $media, 'search_stock_images' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'query' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'per_page' => [
+                        'type'              => 'integer',
+                        'default'           => 10,
+                        'minimum'           => 1,
+                        'maximum'           => 30,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'page' => [
+                        'type'              => 'integer',
+                        'default'           => 1,
+                        'minimum'           => 1,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'source' => [
+                        'type'              => 'string',
+                        'default'           => 'unsplash',
+                        'enum'              => [ 'unsplash', 'pexels', 'pixabay' ],
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // Snapshots & Versioning
+        // ------------------------------------------------------------------ //
+        $snapshots = new Snapshots();
+        register_rest_route( self::NAMESPACE, '/snapshots', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $snapshots, 'list_snapshots' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'post_id'   => [
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'post_type' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'limit'     => [
+                        'type'              => 'integer',
+                        'default'           => 20,
+                        'minimum'           => 1,
+                        'maximum'           => 100,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'offset'    => [
+                        'type'              => 'integer',
+                        'default'           => 0,
+                        'minimum'           => 0,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'tag'       => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $snapshots, 'create_snapshot' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'post_id'     => [
+                        'type'              => 'integer',
+                        'required'          => true,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'post_type'   => [
+                        'type'              => 'string',
+                        'default'           => 'page',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'description' => [
+                        'type'              => 'string',
+                        'default'           => 'Manual snapshot',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'tags'        => [
+                        'type'              => 'array',
+                        'default'           => [],
+                        'sanitize_callback' => function( $value ) {
+                            return \is_array( $value ) ? $value : [];
+                        },
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/snapshots/(?P<snapshot_id>[a-zA-Z0-9_]+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $snapshots, 'get_snapshot' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'snapshot_id' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/snapshots/(?P<snapshot_id>[a-zA-Z0-9_]+)/data', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $snapshots, 'get_snapshot_data' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'snapshot_id' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/snapshots/(?P<snapshot_id>[a-zA-Z0-9_]+)/restore', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $snapshots, 'restore_snapshot' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'snapshot_id'     => [ 'type' => 'string', 'required' => true ],
+                    'target_post_id'  => [ 'type' => 'integer', 'sanitize_callback' => 'absint' ],
+                    'mode'            => [
+                        'type'              => 'string',
+                        'default'           => 'full',
+                        'enum'              => [ 'full', 'elementor-only', 'content-only' ],
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/snapshots/compare', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $snapshots, 'compare_snapshots' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'left_id'  => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'right_id' => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'post_id'  => [
+                        'type'              => 'integer',
+                        'sanitize_callback' => 'absint',
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/snapshots/auto-versioning', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $snapshots, 'configure_auto_versioning' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'post_type'    => [
+                        'type'              => 'string',
+                        'default'           => 'page',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'enabled'      => [
+                        'type'              => 'boolean',
+                        'default'           => true,
+                        'sanitize_callback' => 'rest_sanitize_boolean',
+                    ],
+                    'max_versions' => [
+                        'type'              => 'integer',
+                        'default'           => 10,
+                        'minimum'           => 1,
+                        'maximum'           => 100,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'triggers'     => [
+                        'type'              => 'array',
+                        'default'           => [ 'publish', 'major_change' ],
+                        'sanitize_callback' => function( $value ) {
+                            return \is_array( $value ) ? $value : [];
+                        },
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/snapshots/cleanup', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $snapshots, 'cleanup_snapshots' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'max_age_days' => [
+                        'type'              => 'integer',
+                        'default'           => 90,
+                        'minimum'           => 1,
+                        'maximum'           => 3650,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'keep_minimum' => [
+                        'type'              => 'integer',
+                        'default'           => 5,
+                        'minimum'           => 0,
+                        'maximum'           => 1000,
+                        'sanitize_callback' => 'absint',
+                    ],
+                    'dry_run'      => [
+                        'type'              => 'boolean',
+                        'default'           => true,
+                        'sanitize_callback' => 'rest_sanitize_boolean',
+                    ],
+                ],
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // Stack Bootstrap
+        // ------------------------------------------------------------------ //
+        $stackBootstrap = new StackBootstrap();
+        register_rest_route( self::NAMESPACE, '/stack-bootstrap', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $stackBootstrap, 'get_status' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/stack-bootstrap/plan', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $stackBootstrap, 'create_plan' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/stack-bootstrap/execute', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $stackBootstrap, 'execute_plan' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // Diagnostics
+        // ------------------------------------------------------------------ //
+        $diagnostics = new Diagnostics();
+        register_rest_route( self::NAMESPACE, '/diagnostics/system-status', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $diagnostics, 'get_system_status' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/diagnostics/run-scan', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $diagnostics, 'run_diagnostic_scan' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/diagnostics/system', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $diagnostics, 'get_system' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/diagnostics/debug', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $diagnostics, 'get_debug' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/diagnostics/logs', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $diagnostics, 'get_logs' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/diagnostics/test', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $diagnostics, 'run_test' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // Workflow Orchestration
+        // ------------------------------------------------------------------ //
+        $workflowOrchestration = new WorkflowOrchestration();
+        register_rest_route( self::NAMESPACE, '/workflows', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $workflowOrchestration, 'list_workflows' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/workflows/plan', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $workflowOrchestration, 'create_workflow_plan' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/workflows/execute', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $workflowOrchestration, 'execute_workflow_plan' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // Plugin Stack Context
+        // ------------------------------------------------------------------ //
+        $pluginStackContext = new PluginStackContext();
+        register_rest_route( self::NAMESPACE, '/plugin-stack-context', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $pluginStackContext, 'get_context' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/plugin-stack-context/plan', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $pluginStackContext, 'create_plan' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/plugin-stack-context/execute', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $pluginStackContext, 'execute_plan' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
         // WooCommerce
         // ------------------------------------------------------------------ //
         $woocommerce = new WooCommerce();
@@ -1201,6 +1798,23 @@ final class Router {
                     'search'   => [ 'type' => 'string' ],
                 ],
             ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $woocommerce, 'create_product' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'name'           => [ 'type' => 'string', 'required' => true ],
+                    'type'           => [ 'type' => 'string', 'default' => 'simple' ],
+                    'status'         => [ 'type' => 'string', 'default' => 'draft' ],
+                    'regular_price'  => [ 'type' => 'string' ],
+                    'sale_price'     => [ 'type' => 'string' ],
+                    'description'    => [ 'type' => 'string' ],
+                    'short_description' => [ 'type' => 'string' ],
+                    'sku'            => [ 'type' => 'string' ],
+                    'manage_stock'   => [ 'type' => 'boolean', 'default' => false ],
+                    'stock_quantity' => [ 'type' => 'integer' ],
+                ],
+            ],
         ] );
         register_rest_route( self::NAMESPACE, '/woocommerce/products/(?P<id>\d+)', [
             [
@@ -1209,6 +1823,134 @@ final class Router {
                 'permission_callback' => '__return_true',
                 'args'                => [
                     'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $woocommerce, 'update_product' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [ $woocommerce, 'delete_product' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // WooCommerce Orders
+        // ------------------------------------------------------------------ //
+        register_rest_route( self::NAMESPACE, '/woocommerce/orders', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $woocommerce, 'list_orders' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page'     => [ 'type' => 'integer', 'default' => 1, 'minimum' => 1 ],
+                    'per_page' => [ 'type' => 'integer', 'default' => 20, 'minimum' => 1, 'maximum' => 100 ],
+                    'status'   => [ 'type' => 'string' ],
+                    'customer' => [ 'type' => 'integer' ],
+                    'product'  => [ 'type' => 'integer' ],
+                ],
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/woocommerce/orders/(?P<id>\d+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $woocommerce, 'get_order' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/woocommerce/orders/(?P<id>\d+)/status', [
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $woocommerce, 'update_order_status' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id'     => [ 'type' => 'integer', 'required' => true ],
+                    'status' => [ 'type' => 'string', 'required' => true ],
+                    'note'   => [ 'type' => 'string' ],
+                ],
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // WooCommerce Product Categories
+        // ------------------------------------------------------------------ //
+        register_rest_route( self::NAMESPACE, '/woocommerce/product-categories', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $woocommerce, 'list_product_categories' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'page'     => [ 'type' => 'integer', 'default' => 1, 'minimum' => 1 ],
+                    'per_page' => [ 'type' => 'integer', 'default' => 50, 'minimum' => 1, 'maximum' => 100 ],
+                    'parent'   => [ 'type' => 'integer' ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/woocommerce/product-categories/manage', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $woocommerce, 'manage_product_category' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'action' => [ 'type' => 'string', 'required' => true ],
+                    'id'     => [ 'type' => 'integer' ],
+                    'name'   => [ 'type' => 'string' ],
+                    'slug'   => [ 'type' => 'string' ],
+                    'parent' => [ 'type' => 'integer' ],
+                    'description' => [ 'type' => 'string' ],
+                ],
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // WooCommerce Store Settings
+        // ------------------------------------------------------------------ //
+        register_rest_route( self::NAMESPACE, '/woocommerce/store-settings', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $woocommerce, 'get_store_settings' ],
+                'permission_callback' => '__return_true',
+            ],
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $woocommerce, 'update_store_settings' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'currency'             => [ 'type' => 'string' ],
+                    'currency_position'    => [ 'type' => 'string' ],
+                    'thousand_separator'   => [ 'type' => 'string' ],
+                    'decimal_separator'    => [ 'type' => 'string' ],
+                    'number_of_decimals'   => [ 'type' => 'integer' ],
+                    'weight_unit'          => [ 'type' => 'string' ],
+                    'dimension_unit'       => [ 'type' => 'string' ],
+                    'enable_taxes'         => [ 'type' => 'boolean' ],
+                    'tax_based_on'         => [ 'type' => 'string' ],
+                    'shipping_calculation' => [ 'type' => 'string' ],
+                    'coupons_enabled'      => [ 'type' => 'boolean' ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/woocommerce/pages/setup', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $woocommerce, 'setup_woocommerce_pages' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'create_missing'  => [ 'type' => 'boolean', 'default' => true ],
+                    'assign_template' => [ 'type' => 'boolean', 'default' => true ],
                 ],
             ],
         ] );

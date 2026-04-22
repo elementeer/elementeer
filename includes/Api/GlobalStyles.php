@@ -180,7 +180,7 @@ final class GlobalStyles {
     // ------------------------------------------------------------------ //
 
     private function get_active_kit_id(): int {
-        return (int) get_option( 'elementor_active_kit', 0 );
+        return (int) \get_option( 'elementor_active_kit', 0 );
     }
 
     private function get_kit_settings( int $kit_id ): array {

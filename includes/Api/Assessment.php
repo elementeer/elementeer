@@ -9,6 +9,7 @@ use WP_REST_Response;
 use WP_Error;
 use Elementify\MCP\Auth\Manager as Auth;
 use Elementify\MCP\Api\Wizards\BookingWizard;
+use Elementify\MCP\Api\Adapters\AddonRegistry;
 
 /**
  * REST controller for the site assessment endpoint.
@@ -281,7 +282,19 @@ final class Assessment {
         ];
 
         // ------------------------------------------------------------------ //
-        // 9a. Booking gaps & recommendations (if booking plugin detected)
+        // 9. Elementor add‑ons (via adapter framework)
+        // ------------------------------------------------------------------ //
+        $addons = AddonRegistry::get_instance()->get_active_addons();
+        $addons_detailed = AddonRegistry::get_instance()->get_all_info();
+
+        $elementor_addons = [
+            'active_count' => count( $addons ),
+            'addons'       => $addons,
+            'detailed'     => $addons_detailed,
+        ];
+
+        // ------------------------------------------------------------------ //
+        // 10a. Booking gaps & recommendations (if booking plugin detected)
         // ------------------------------------------------------------------ //
         $booking_recommendations = [];
         if ( ! empty( $plugins_classified['booking'] ) ) {
@@ -324,7 +337,7 @@ final class Assessment {
         }
 
         // ------------------------------------------------------------------ //
-        // 10. Capabilities (Elementify plugin)
+        // 11. Capabilities (Elementify plugin)
         // ------------------------------------------------------------------ //
         $seo_plugin = null;
         if ( ! empty( $plugins_classified['seo'] ) ) {
@@ -340,7 +353,7 @@ final class Assessment {
         ];
 
         // ------------------------------------------------------------------ //
-        // 11. Custom Post Types
+        // 12. Custom Post Types
         // ------------------------------------------------------------------ //
         $cpt_objects = \get_post_types( [ 'public' => true, '_builtin' => false ], 'objects' );
         $custom_post_types = array_values( array_map( function ( $cpt ) {
@@ -352,7 +365,7 @@ final class Assessment {
         }, $cpt_objects ) );
 
         // ------------------------------------------------------------------ //
-        // 12. User roles
+        // 13. User roles
         // ------------------------------------------------------------------ //
         $roles = array_keys( wp_roles()->roles );
 
@@ -369,6 +382,7 @@ final class Assessment {
             'pages'            => $pages,
             'performance'      => $performance,
             'plugins'          => $plugins,
+            'elementor_addons' => $elementor_addons,
             'capabilities'     => $capabilities,
             'custom_post_types' => $custom_post_types,
             'user_roles'       => $roles,

@@ -42,7 +42,7 @@ final class ImportExport {
 		if ( empty( $data ) ) {
 			return new WP_Error(
 				'elementify_missing_param',
-				\__( 'Data field is required.', 'elementify-mcp' ),
+				\__( 'Data field is required.', 'elementify' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -50,7 +50,7 @@ final class ImportExport {
 		if ( ! \in_array( $format, [ 'csv', 'json', 'xml' ], true ) ) {
 			return new WP_Error(
 				'elementify_invalid_param',
-				\__( 'Format must be csv, json, or xml.', 'elementify-mcp' ),
+				\__( 'Format must be csv, json, or xml.', 'elementify' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -65,7 +65,7 @@ final class ImportExport {
 		if ( ! \is_array( $parsed ) || empty( $parsed ) ) {
 			return new WP_Error(
 				'elementify_invalid_data',
-				\__( 'Parsed data is empty or not an array.', 'elementify-mcp' ),
+				\__( 'Parsed data is empty or not an array.', 'elementify' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -95,7 +95,7 @@ final class ImportExport {
 			default:
 				return new WP_Error(
 					'elementify_internal_error',
-					\__( 'Unsupported format.', 'elementify-mcp' ),
+					\__( 'Unsupported format.', 'elementify' ),
 					[ 'status' => 500 ]
 				);
 		}
@@ -127,7 +127,7 @@ final class ImportExport {
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			return new WP_Error(
 				'elementify_invalid_json',
-				sprintf( \__( 'Invalid JSON: %s', 'elementify-mcp' ), json_last_error_msg() ),
+				sprintf( \__( 'Invalid JSON: %s', 'elementify' ), json_last_error_msg() ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -135,7 +135,7 @@ final class ImportExport {
 		if ( ! \is_array( $decoded ) ) {
 			return new WP_Error(
 				'elementify_invalid_json',
-				\__( 'JSON must decode to an array.', 'elementify-mcp' ),
+				\__( 'JSON must decode to an array.', 'elementify' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -147,7 +147,7 @@ final class ImportExport {
 		if ( ! class_exists( 'SimpleXMLElement' ) ) {
 			return new WP_Error(
 				'elementify_missing_extension',
-				\__( 'XML parsing requires SimpleXML extension.', 'elementify-mcp' ),
+				\__( 'XML parsing requires SimpleXML extension.', 'elementify' ),
 				[ 'status' => 500 ]
 			);
 		}
@@ -159,7 +159,7 @@ final class ImportExport {
 			libxml_clear_errors();
 			return new WP_Error(
 				'elementify_invalid_xml',
-				\__( 'Invalid XML structure.', 'elementify-mcp' ),
+				\__( 'Invalid XML structure.', 'elementify' ),
 				[ 'status' => 400, 'details' => $errors ]
 			);
 		}
@@ -390,7 +390,7 @@ final class ImportExport {
 		if ( ! \in_array( $format, [ 'csv', 'json' ], true ) ) {
 			return new WP_Error(
 				'elementify_invalid_param',
-				\__( 'Format must be csv or json.', 'elementify-mcp' ),
+				\__( 'Format must be csv or json.', 'elementify' ),
 				[ 'status' => 400 ]
 			);
 		}
