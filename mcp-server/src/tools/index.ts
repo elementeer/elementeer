@@ -1,7 +1,21 @@
 import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import type { ElementifyClient } from '../client.js';
 import { registerLibraryTools } from './library.js';
+import { registerTemplateManagementTools } from './template-management.js';
+import { registerWorkflowStagingTools } from './workflow-staging.js';
+import { registerIntelligenceCompositionTools } from './intelligence-composition.js';
+import { registerPermissionsManagementTools } from './permissions-management.js';
 import { registerContentTools } from './content.js';
+import { registerAddonTools } from './addons.js';
+import { registerEssentialAddonsFreeTools, registerEssentialAddonsAdvancedTools } from './essential-addons.js';
+import { registerUltimateAddonsFreeTools, registerUltimateAddonsAdvancedTools } from './ultimate-addons.js';
+import { registerCrocoblockFreeTools, registerCrocoblockAdvancedTools } from './crocoblock.js';
+import { registerPowerPackFreeTools, registerPowerPackAdvancedTools } from './powerpack.js';
+import { registerHappyAddonsFreeTools, registerHappyAddonsAdvancedTools } from './happy-addons.js';
+import { registerElementsKitFreeTools, registerElementsKitAdvancedTools } from './elementskit.js';
+import { registerPremiumAddonsFreeTools, registerPremiumAddonsAdvancedTools } from './premium-addons.js';
+import { registerThePlusAddonsFreeTools, registerThePlusAddonsAdvancedTools } from './the-plus-addons.js';
+import { registerAddonEcosystemTools } from './addon-ecosystem.js';
 import { registerOrganizationTools } from './organization.js';
 import { registerSiteTools } from './site.js';
 import { registerPageTools } from './pages.js';
@@ -15,6 +29,7 @@ import {
 } from './wizard.js';
 import { registerStockImageTools } from './stock-images.js';
 import { registerChangeQueueTools } from './change-queue.js';
+import { registerEnvironmentTools } from './environment-tools.js';
 import { registerFingerprintTools } from './fingerprint.js';
 import { registerDestinationTools } from './destination.js';
 import { registerValidationTools } from './validation.js';
@@ -53,6 +68,15 @@ const FREE_TOOL_REGISTRARS = [
   registerContentTools,
   registerOrganizationTools,
   registerSiteTools,
+  registerAddonTools,
+  registerEssentialAddonsFreeTools,
+  registerUltimateAddonsFreeTools,
+  registerCrocoblockFreeTools,
+  registerPowerPackFreeTools,
+  registerHappyAddonsFreeTools,
+  registerElementsKitFreeTools,
+  registerPremiumAddonsFreeTools,
+  registerThePlusAddonsFreeTools,
   registerPageTools,
   registerMenuTools,
   registerMediaTools,
@@ -82,6 +106,11 @@ const ADVANCED_TOOL_REGISTRARS = [
   registerImportExportTools,
   registerAdvancedMediaTools,
   registerChangeQueueTools,
+  registerEnvironmentTools,
+  registerTemplateManagementTools,
+  registerWorkflowStagingTools,
+  registerIntelligenceCompositionTools,
+  registerPermissionsManagementTools,
   registerDesignTokenTools,
   registerBrandAdaptationTools,
   registerAdvancedRecommendationTools,
@@ -93,6 +122,15 @@ const ADVANCED_TOOL_REGISTRARS = [
   registerPerformanceAdvancedTools,
   registerTranslationAdvancedTools,
   registerFormAdvancedTools,
+  registerEssentialAddonsAdvancedTools,
+  registerUltimateAddonsAdvancedTools,
+  registerCrocoblockAdvancedTools,
+  registerPowerPackAdvancedTools,
+  registerHappyAddonsAdvancedTools,
+  registerElementsKitAdvancedTools,
+  registerPremiumAddonsAdvancedTools,
+  registerThePlusAddonsAdvancedTools,
+  registerAddonEcosystemTools,
   registerWooCommerceTools,
   registerBookingAdvancedTools,
 ] as const;

@@ -1,7 +1,7 @@
 # Phase 5 Foundation – COMPLETED ✅
 ## WooCommerce, Forms, Performance – Fully Implemented
 
-**Status:** All Phase 5 features are now **production‑ready** and shipped in Elementify v0.5.0+.
+**Status:** All Phase 5 features are now **production‑ready** and shipped in Elementify v1.0.0+. PRD v4 (Addon Ecosystem) complete.
 
 ---
 

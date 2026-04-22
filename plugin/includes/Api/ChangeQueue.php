@@ -172,11 +172,40 @@ final class ChangeQueue {
     }
 
     // ------------------------------------------------------------------ //
+    // GET /changes/queue/stats
+    // ------------------------------------------------------------------ //
+    public function get_queue_stats( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'governance:queue' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $queue = $this->load_queue();
+        $stats = [
+            'total' => count( $queue ),
+            'pending' => count( array_filter( $queue, fn( $c ) => $c['status'] === 'pending' ) ),
+            'approved' => count( array_filter( $queue, fn( $c ) => $c['status'] === 'approved' ) ),
+            'rejected' => count( array_filter( $queue, fn( $c ) => $c['status'] === 'rejected' ) ),
+            'applied' => count( array_filter( $queue, fn( $c ) => $c['status'] === 'applied' ) ),
+            'oldest_pending' => null,
+            'newest_pending' => null,
+        ];
+
+        // Find oldest and newest pending
+        $pending = array_filter( $queue, fn( $c ) => $c['status'] === 'pending' );
+        if ( ! empty( $pending ) ) {
+            usort( $pending, fn( $a, $b ) => strcmp( $a['created_at'], $b['created_at'] ) );
+            $stats['oldest_pending'] = $pending[0]['created_at'];
+            $stats['newest_pending'] = $pending[ count( $pending ) - 1 ]['created_at'];
+        }
+
+        return new WP_REST_Response( $stats, 200 );
+    }
+
+    // ------------------------------------------------------------------ //
     // Helpers
     // ------------------------------------------------------------------ //
 
     private function load_queue(): array {
-        $raw  = get_option( self::OPTION_KEY, '[]' );
+        $raw  = \get_option( self::OPTION_KEY, '[]' );
         $data = json_decode( is_string( $raw ) ? $raw : '[]', true );
         return is_array( $data ) ? $data : [];
     }

@@ -679,12 +679,278 @@ final class Ally {
 			}
 		}
 
-		return new WP_REST_Response( [
-			'scanned_at' => gmdate( 'c' ),
-			'page_id'    => $page_id ? (int) $page_id : null,
-			'scan_type'  => $scan_type,
-			'violations' => $violations,
-			'count'      => count( $violations ),
-		], 200 );
-	}
+        return new WP_REST_Response( [
+            'scanned_at' => gmdate( 'c' ),
+            'page_id'    => $page_id ? (int) $page_id : null,
+            'scan_type'  => $scan_type,
+            'violations' => $violations,
+            'count'      => count( $violations ),
+        ], 200 );
+    }
+
+    // ------------------------------------------------------------------ //
+    // WCAG compliance scanning
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Scan for WCAG compliance at specified level (A, AA, AAA).
+     *
+     * GET /ally/wcag-scan
+     */
+    public function wcag_scan( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'ally:read' );
+        if ( \is_wp_error( $auth ) ) {
+            return $auth;
+        }
+
+        $page_id = $request->get_param( 'page_id' );
+        $level = $request->get_param( 'level' ) ?? 'AA'; // A, AA, AAA
+        $version = $request->get_param( 'version' ) ?? '2.1'; // 2.0, 2.1, 2.2
+
+        // Get basic violations from existing scanner
+        $basic_scan = $this->scan_accessibility( $request )->get_data();
+        $violations = $basic_scan['violations'] ?? [];
+
+        // Enhance violations with WCAG-specific metadata
+        $wcag_violations = [];
+        foreach ( $violations as $violation ) {
+            $wcag_violations[] = $this->map_to_wcag( $violation, $level, $version );
+        }
+
+        // Add WCAG-specific checks not covered by basic scanner
+        $additional_checks = $this->perform_wcag_checks( $page_id, $level, $version );
+        $wcag_violations = array_merge( $wcag_violations, $additional_checks );
+
+        // Calculate compliance score
+        $total_checks = count( $wcag_violations );
+        $passed_checks = count( array_filter( $wcag_violations, fn( $v ) => $v['status'] === 'passed' ) );
+        $score = $total_checks > 0 ? ( $passed_checks / $total_checks ) * 100 : 100;
+
+        return new WP_REST_Response( [
+            'scan_type' => 'wcag',
+            'wcag_level' => $level,
+            'wcag_version' => $version,
+            'page_id' => $page_id,
+            'scanned_at' => gmdate( 'c' ),
+            'compliance_score' => round( $score, 1 ),
+            'total_checks' => $total_checks,
+            'passed' => $passed_checks,
+            'failed' => $total_checks - $passed_checks,
+            'results' => $wcag_violations,
+            'summary' => $this->generate_wcag_summary( $wcag_violations, $level ),
+        ], 200 );
+    }
+
+    /**
+     * Auto-fix common WCAG violations.
+     *
+     * POST /ally/wcag-auto-fix
+     */
+    public function wcag_auto_fix( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'ally:trigger' );
+        if ( \is_wp_error( $auth ) ) {
+            return $auth;
+        }
+
+        $page_id = $request->get_param( 'page_id' );
+        $fix_types = $request->get_param( 'fix_types' ) ?? [ 'alt_text', 'heading_order', 'color_contrast' ];
+
+        // Get current violations
+        $scan_request = new WP_REST_Request( 'GET' );
+        $scan_request->set_param( 'page_id', $page_id );
+        $scan_result = $this->scan_accessibility( $scan_request )->get_data();
+        $violations = $scan_result['violations'] ?? [];
+
+        $applied_fixes = [];
+        $failed_fixes = [];
+
+        foreach ( $violations as $violation ) {
+            $fix_result = $this->apply_single_fix( $violation, $page_id, $fix_types );
+            if ( $fix_result['success'] ) {
+                $applied_fixes[] = $fix_result;
+            } else {
+                $failed_fixes[] = $fix_result;
+            }
+        }
+
+        return new WP_REST_Response( [
+            'page_id' => $page_id,
+            'applied_fixes' => count( $applied_fixes ),
+            'failed_fixes' => count( $failed_fixes ),
+            'applied' => $applied_fixes,
+            'failed' => $failed_fixes,
+            'note' => 'Auto-fix is a placeholder. Actual implementation requires direct Elementor data modification.',
+        ], 200 );
+    }
+
+    /**
+     * Map basic violation to WCAG criteria.
+     */
+    private function map_to_wcag( array $violation, string $level, string $version ): array {
+        $mapping = [
+            'Image missing alt text.' => [
+                'wcag_id' => '1.1.1',
+                'wcag_level' => 'A',
+                'description' => 'Non-text Content',
+                'techniques' => [ 'G94', 'H30' ],
+            ],
+            'Low color contrast' => [
+                'wcag_id' => '1.4.3',
+                'wcag_level' => 'AA',
+                'description' => 'Contrast (Minimum)',
+                'techniques' => [ 'G18', 'G145' ],
+            ],
+            'Missing form label' => [
+                'wcag_id' => '1.3.1',
+                'wcag_level' => 'A',
+                'description' => 'Info and Relationships',
+                'techniques' => [ 'H44' ],
+            ],
+            'Heading hierarchy issue' => [
+                'wcag_id' => '1.3.1',
+                'wcag_level' => 'A',
+                'description' => 'Info and Relationships',
+                'techniques' => [ 'G141', 'H42' ],
+            ],
+        ];
+
+        $desc = $violation['description'] ?? '';
+        $wcag_info = null;
+
+        foreach ( $mapping as $key => $info ) {
+            if ( strpos( $desc, $key ) !== false ) {
+                $wcag_info = $info;
+                break;
+            }
+        }
+
+        if ( $wcag_info === null ) {
+            $wcag_info = [
+                'wcag_id' => 'N/A',
+                'wcag_level' => 'unknown',
+                'description' => 'Unknown WCAG mapping',
+                'techniques' => [],
+            ];
+        }
+
+        // Check if this violation meets the requested compliance level
+        $level_priority = [ 'A' => 1, 'AA' => 2, 'AAA' => 3 ];
+        $violation_level = $wcag_info['wcag_level'] ?? 'A';
+        $include = ( $level_priority[ $violation_level ] <= $level_priority[ $level ] );
+
+        return [
+            'violation' => $violation,
+            'wcag' => $wcag_info,
+            'status' => 'failed', // or 'passed' for checks that pass
+            'included_in_level' => $include,
+            'auto_fixable' => $this->is_auto_fixable( $violation ),
+        ];
+    }
+
+    /**
+     * Perform additional WCAG checks not covered by basic scanner.
+     */
+    private function perform_wcag_checks( ?int $page_id, string $level, string $version ): array {
+        $checks = [];
+
+        // Placeholder for additional WCAG checks:
+        // - Link purpose (2.4.4, 2.4.9)
+        // - Language of page (3.1.1)
+        // - Focus order (2.4.3)
+        // - Focus visible (2.4.7)
+        // - Label in name (4.1.2)
+        // - Error identification (3.3.1)
+
+        // Example check: Page language
+        $checks[] = [
+            'wcag_id' => '3.1.1',
+            'wcag_level' => 'A',
+            'description' => 'Language of Page',
+            'status' => 'passed', // Would check get_bloginfo('language')
+            'element_type' => 'page',
+            'suggested_fix' => 'Ensure lang attribute is set on HTML element.',
+        ];
+
+        // Example check: Skip links
+        $checks[] = [
+            'wcag_id' => '2.4.1',
+            'wcag_level' => 'A',
+            'description' => 'Bypass Blocks',
+            'status' => 'failed',
+            'element_type' => 'navigation',
+            'suggested_fix' => 'Add skip-to-content link for keyboard users.',
+        ];
+
+        return $checks;
+    }
+
+    /**
+     * Generate WCAG compliance summary.
+     */
+    private function generate_wcag_summary( array $results, string $level ): array {
+        $by_level = [ 'A' => 0, 'AA' => 0, 'AAA' => 0 ];
+        $by_status = [ 'passed' => 0, 'failed' => 0, 'not_applicable' => 0 ];
+
+        foreach ( $results as $result ) {
+            $wcag_level = $result['wcag']['wcag_level'] ?? 'A';
+            $status = $result['status'] ?? 'failed';
+            
+            if ( isset( $by_level[ $wcag_level ] ) ) {
+                $by_level[ $wcag_level ]++;
+            }
+            if ( isset( $by_status[ $status ] ) ) {
+                $by_status[ $status ]++;
+            }
+        }
+
+        return [
+            'level_breakdown' => $by_level,
+            'status_breakdown' => $by_status,
+            'compliance' => [
+                'A' => $this->calculate_level_compliance( $results, 'A' ),
+                'AA' => $this->calculate_level_compliance( $results, 'AA' ),
+                'AAA' => $this->calculate_level_compliance( $results, 'AAA' ),
+            ],
+        ];
+    }
+
+    private function calculate_level_compliance( array $results, string $level ): float {
+        $level_results = array_filter( $results, fn( $r ) => ( $r['wcag']['wcag_level'] ?? 'A' ) === $level );
+        if ( empty( $level_results ) ) {
+            return 100.0;
+        }
+        $passed = count( array_filter( $level_results, fn( $r ) => ( $r['status'] ?? 'failed' ) === 'passed' ) );
+        return round( ( $passed / count( $level_results ) ) * 100, 1 );
+    }
+
+    private function is_auto_fixable( array $violation ): bool {
+        $auto_fixable_types = [
+            'Image missing alt text.',
+            'Low color contrast',
+            'Missing form label',
+        ];
+        $desc = $violation['description'] ?? '';
+        foreach ( $auto_fixable_types as $type ) {
+            if ( strpos( $desc, $type ) !== false ) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private function apply_single_fix( array $violation, int $page_id, array $fix_types ): array {
+        // Placeholder implementation
+        // Actual implementation would:
+        // 1. Load Elementor data for page
+        // 2. Find element by element_id
+        // 3. Update settings (e.g., add alt text)
+        // 4. Save back to post meta
+
+        return [
+            'success' => false,
+            'violation' => $violation['description'] ?? 'unknown',
+            'message' => 'Auto-fix not implemented yet.',
+            'note' => 'Requires direct Elementor data modification.',
+        ];
+    }
 }

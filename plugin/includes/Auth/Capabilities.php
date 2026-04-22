@@ -254,6 +254,10 @@ final class Capabilities {
         $normalized = [];
 
         foreach ( $capabilities as $capability ) {
+            // Skip wildcard '*', it's handled in matches_granted
+            if ( $capability === '*' ) {
+                continue;
+            }
             foreach ( self::normalize( (string) $capability ) as $resolved ) {
                 $normalized[] = $resolved;
             }
@@ -263,6 +267,11 @@ final class Capabilities {
     }
 
     public static function matches_granted( array $granted_capabilities, string $required_capability ): bool {
+        // Wildcard '*' grants all capabilities
+        if ( in_array( '*', $granted_capabilities, true ) ) {
+            return true;
+        }
+        
         $granted  = self::normalize_many( $granted_capabilities );
         $required = self::normalize( $required_capability );
 

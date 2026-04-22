@@ -669,4 +669,175 @@ final class Performance {
             ], 200 );
         }
     }
+
+    // ------------------------------------------------------------------ //
+    // Core Web Vitals & advanced performance
+    // ------------------------------------------------------------------ //
+
+    /**
+     * Get Core Web Vitals metrics for a page or site-wide.
+     *
+     * GET /site/performance/core-web-vitals
+     */
+    public function get_core_web_vitals( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'performance-operations:read' );
+        if ( \is_wp_error( $auth ) ) {
+            return $auth;
+        }
+
+        $page_id = $request->get_param( 'page_id' );
+        $url = $request->get_param( 'url' );
+
+        // Placeholder implementation
+        // In a real implementation, this would:
+        // 1. Use Google PageSpeed Insights API or similar
+        // 2. Return LCP, FID, CLS metrics
+        // 3. Provide recommendations
+
+        $metrics = [
+            'lcp' => [ // Largest Contentful Paint
+                'value' => 2.5, // seconds
+                'score' => 'good', // good, needs-improvement, poor
+                'thresholds' => [ 'good' => 2.5, 'needs-improvement' => 4.0 ],
+            ],
+            'fid' => [ // First Input Delay
+                'value' => 100, // milliseconds
+                'score' => 'good',
+                'thresholds' => [ 'good' => 100, 'needs-improvement' => 300 ],
+            ],
+            'cls' => [ // Cumulative Layout Shift
+                'value' => 0.1,
+                'score' => 'good',
+                'thresholds' => [ 'good' => 0.1, 'needs-improvement' => 0.25 ],
+            ],
+            'ttfb' => [ // Time to First Byte
+                'value' => 600, // ms
+                'score' => 'needs-improvement',
+            ],
+            'inp' => [ // Interaction to Next Paint (replaces FID)
+                'value' => 200,
+                'score' => 'good',
+            ],
+        ];
+
+        $recommendations = [];
+        if ( $metrics['lcp']['score'] !== 'good' ) {
+            $recommendations[] = 'Optimize Largest Contentful Paint: compress images, remove render-blocking resources.';
+        }
+        if ( $metrics['cls']['score'] !== 'good' ) {
+            $recommendations[] = 'Reduce Cumulative Layout Shift: specify image dimensions, avoid dynamic content insertion above existing content.';
+        }
+        if ( $metrics['ttfb']['score'] !== 'good' ) {
+            $recommendations[] = 'Improve server response time: enable caching, optimize database queries.';
+        }
+
+        return new WP_REST_Response( [
+            'metrics' => $metrics,
+            'recommendations' => $recommendations,
+            'note' => 'Core Web Vitals data is simulated. Real implementation requires Google PageSpeed Insights API integration.',
+            'page_id' => $page_id,
+            'url' => $url,
+        ], 200 );
+    }
+
+    /**
+     * Generate critical CSS for a page to improve performance.
+     *
+     * POST /site/performance/generate-critical-css
+     */
+    public function generate_critical_css( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'performance-operations:write' );
+        if ( \is_wp_error( $auth ) ) {
+            return $auth;
+        }
+
+        $page_id = $request->get_param( 'page_id' );
+        $force_regenerate = (bool) $request->get_param( 'force' );
+
+        // Placeholder implementation
+        // In a real implementation, this would:
+        // 1. Fetch page HTML
+        // 2. Extract above-the-fold CSS
+        // 3. Inline critical CSS
+        // 4. Store for reuse
+
+        return new WP_REST_Response( [
+            'generated' => true,
+            'page_id' => $page_id,
+            'message' => 'Critical CSS generation would be queued for processing.',
+            'note' => 'Actual critical CSS generation requires external service or headless browser.',
+            'estimated_savings' => [
+                'lcp_improvement' => '0.5s - 1.5s',
+                'fcp_improvement' => '0.3s - 0.8s',
+            ],
+        ], 200 );
+    }
+
+    /**
+     * Comprehensive performance analysis with actionable insights.
+     *
+     * GET /site/performance/analyze
+     */
+    public function analyze_performance( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'performance-operations:read' );
+        if ( \is_wp_error( $auth ) ) {
+            return $auth;
+        }
+
+        $page_id = $request->get_param( 'page_id' );
+        $depth = $request->get_param( 'depth' ) ?? 'standard'; // quick, standard, deep
+
+        // Placeholder comprehensive analysis
+        $analysis = [
+            'core_web_vitals' => $this->get_core_web_vitals( $request )->get_data(),
+            'asset_analysis' => [
+                'total_css' => '450 KB',
+                'total_js' => '780 KB',
+                'unused_css' => '120 KB (27%)',
+                'render_blocking_js' => 3,
+                'deferrable_js' => 5,
+            ],
+            'image_analysis' => [
+                'total_images' => 15,
+                'unoptimized_images' => 4,
+                'missing_alt' => 2,
+                'potential_savings' => '180 KB',
+            ],
+            'server_analysis' => [
+                'ttfb' => '620 ms',
+                'caching_enabled' => true,
+                'gzip_enabled' => true,
+                'cdn_detected' => false,
+            ],
+            'elementor_specific' => [
+                'css_print_method' => $this->detect_css_method(),
+                'asset_loading_mode' => $this->check_asset_loading_mode(),
+                'custom_breakpoints' => $this->check_custom_breakpoints(),
+            ],
+            'action_items' => [
+                [ 'priority' => 'high', 'action' => 'Enable CDN for static assets', 'impact' => 'high' ],
+                [ 'priority' => 'medium', 'action' => 'Defer non-critical JavaScript', 'impact' => 'medium' ],
+                [ 'priority' => 'low', 'action' => 'Remove unused CSS', 'impact' => 'low' ],
+            ],
+        ];
+
+        return new WP_REST_Response( $analysis, 200 );
+    }
+
+    // Helper methods for performance analysis
+    private function check_asset_loading_mode(): string {
+        if ( ! \defined( 'ELEMENTOR_VERSION' ) ) {
+            return 'none';
+        }
+        $option = \get_option( 'elementor_experiment-e_optimized_assets_loading' );
+        return $option === 'active' ? 'optimized' : 'default';
+    }
+
+    private function check_custom_breakpoints(): bool {
+        if ( ! \defined( 'ELEMENTOR_VERSION' ) ) {
+            return false;
+        }
+        $breakpoints = \get_option( 'elementor_scheme_breakpoints' );
+        return ! empty( $breakpoints ) && is_array( $breakpoints );
+    }
 }

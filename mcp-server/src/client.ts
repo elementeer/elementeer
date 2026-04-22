@@ -586,45 +586,53 @@ export class ElementifyClient {
     return res.data;
   }
 
-  async getTemplate(id: number): Promise<ElementifyTemplate> {
-    const res = await this.http.get<ElementifyTemplate>(`/templates/${id}`);
+  async getTemplate(id: number): Promise<any> {
+    const res = await this.http.get<any>(`/templates/${id}`);
     return res.data;
   }
 
-  async createTemplate(input: CreateTemplateInput): Promise<ElementifyTemplate> {
-    const res = await this.http.post<ElementifyTemplate>('/templates', input);
+  async createTemplate(params: any): Promise<any> {
+    const res = await this.http.post<any>('/templates', params);
     return res.data;
   }
 
-  async updateTemplate(id: number, input: UpdateTemplateInput): Promise<ElementifyTemplate> {
-    const res = await this.http.patch<ElementifyTemplate>(`/templates/${id}`, input);
+  async updateTemplate(id: number, updates: any): Promise<any> {
+    const res = await this.http.put<any>(`/templates/${id}`, updates);
     return res.data;
   }
 
-  async deleteTemplate(id: number): Promise<{ deleted: true; id: number }> {
-    const res = await this.http.delete<{ deleted: true; id: number }>(`/templates/${id}`);
+  async deleteTemplate(id: number): Promise<{ deleted: boolean; id: number }> {
+    const res = await this.http.delete<{ deleted: boolean; id: number }>(`/templates/${id}`);
     return res.data;
   }
 
-  async duplicateTemplate(id: number, newTitle?: string): Promise<ElementifyTemplate> {
-    const res = await this.http.post<ElementifyTemplate>(`/templates/${id}/duplicate`, {
-      title: newTitle,
-    });
+  async duplicateTemplate(id: number, title?: string): Promise<any> {
+    const res = await this.http.post<any>(`/templates/${id}/duplicate`, { title });
     return res.data;
   }
 
-  async importLibraryAsset(input: ImportLibraryAssetInput): Promise<ImportLibraryAssetResult> {
-    const res = await this.http.post<ImportLibraryAssetResult>('/library/import', input);
+  async importLibraryAsset(params: any): Promise<any> {
+    const res = await this.http.post<any>('/library/import', params);
     return res.data;
   }
 
-  async importExternalData(input: ImportExternalDataInput): Promise<ImportExternalDataResult> {
-    const res = await this.http.post<ImportExternalDataResult>('/import/external', input);
+  async listActiveAddons(): Promise<Array<{active: boolean, version: string|null, tier: string|null, plugin_name: string, plugin_slug: string}>> {
+    const res = await this.http.get('/addons');
     return res.data;
   }
 
-  async exportData(params: ExportDataParams): Promise<ExportDataResponse> {
-    const res = await this.http.post<ExportDataResponse>('/export/data', params);
+  async listActiveAddonsDetailed(): Promise<Array<{
+    active: boolean;
+    version: string | null;
+    tier: string | null;
+    plugin_name: string;
+    plugin_slug: string;
+    widgets: Array<{ id: string; title: string; active: boolean }>;
+    post_types: Array<{ slug: string; label: string }>;
+    capabilities: string[];
+    elementor_widget_types: string[];
+  }>> {
+    const res = await this.http.get('/addons/detailed');
     return res.data;
   }
 
@@ -1747,6 +1755,10 @@ export class ElementifyClient {
     message: string;
   }> {
     const res = await this.http.delete(`/media/${id}`, { params: { force } });
+    return res.data;
+  }
+  async importExternalData(params: any): Promise<any> {
+    const res = await this.http.post<any>('/import/external', params);
     return res.data;
   }
 }

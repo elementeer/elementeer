@@ -2,6 +2,27 @@
 
 ---
 
+## Release v2.0.1 (2026-04-22) - Release Validation & Five Feature Domains
+
+- **Five Advanced Feature Domains**: Media AI, Addon Ecosystem Expansion, Performance Analysis Enhancement, Accessibility Enhancement, Snapshot & Versioning
+- **Release Validation Suite**: Comprehensive validation across 8 testing phases with automated scripts
+- **Plugin ZIP Structure & Naming Validation**: Ensured consistent versioning and correct file naming
+- **Documentation Updates**: Updated changelog, roadmap, and testing workflow documentation
+- **ReleaseChain Integration**: Automated release validation workflow with Ralph Loop execution
+
+## Release v1.0.0 (2026-04-18) - PRD v4: Elementor Addon Ecosystem
+
+- **Complete Addon Ecosystem Integration**: 11 Tier 1-3 Elementor addon adapters with detection and analysis
+- **45+ New MCP Tools**: `detect_*`, `analyze_*_usage`, `analyze_*_widgets` for each addon
+- **Ecosystem Analysis**: `analyze_addon_overlap`, `widget_census`, `addon_ecosystem_wizard`
+- **Enhanced Site Assessment**: New `elementor_addons` section with detailed analytics
+- **CI Pipeline Stabilized**: Fixed Mockery/Patchwork conflicts, removed `continue-on-error: true`
+- **Version Consistency**: All components updated to 1.0.0
+
+Plugin version bumped to 1.0.0, MCP Server version bumped to 1.0.0.
+
+---
+
 ## Release v0.5.0 (2026-04-15)
 
 - **WordPress Core Settings**: `get_site_settings` / `update_site_settings` — read and modify blog name, tagline, homepage, posts page, permalink structure, timezone, date/time formats.

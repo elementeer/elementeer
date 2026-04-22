@@ -52,7 +52,7 @@ final class SiteContext {
         $auth = $this->auth->authorize( $request, 'site-foundation:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
-        $stored = get_option( self::OPTION_KEY, [] );
+        $stored = \get_option( self::OPTION_KEY, [] );
         $ctx    = array_merge( self::DEFAULTS, is_array( $stored ) ? $stored : [] );
 
         return new WP_REST_Response( $ctx, 200 );

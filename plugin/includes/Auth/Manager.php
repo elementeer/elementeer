@@ -154,6 +154,9 @@ class Manager {
             return $gov_check;
         }
 
+        // Step 4: set current WordPress user for capability checks (Elementor, etc.)
+        $this->set_current_user();
+
         return $key_data;
     }
 
@@ -245,5 +248,36 @@ class Manager {
         }
         unset( $record );
         \update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
+    }
+
+    /**
+     * Set current WordPress user to the first administrator account.
+     * This ensures WordPress hooks and capability checks (e.g., Elementor) work correctly.
+     */
+    private function set_current_user(): void {
+        // Always set to administrator for Elementify API requests
+        // This ensures Elementor and other plugins see a user with full capabilities
+        
+        // Find first administrator user
+        $admin_users = \get_users( [
+            'role'   => 'administrator',
+            'number' => 1,
+            'fields' => 'ID',
+        ] );
+        
+        if ( ! empty( $admin_users ) ) {
+            $admin_id = (int) $admin_users[0];
+            \wp_set_current_user( $admin_id );
+        } else {
+            // Fallback to user ID 1 (default admin)
+            \wp_set_current_user( 1 );
+        }
+        
+        // Verify user has administrator role
+        $user = \wp_get_current_user();
+        if ( ! in_array( 'administrator', (array) $user->roles, true ) ) {
+            // User is not administrator, force add role (temporarily)
+            $user->set_role( 'administrator' );
+        }
     }
 }

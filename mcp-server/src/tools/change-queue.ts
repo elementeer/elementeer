@@ -9,6 +9,7 @@ import type {
   SiteContext,
 } from '../client.js';
 import { GOVERNANCE_LEVELS } from '../product-tiers.js';
+import { QueueV2 } from '../queue-v2.js';
 
 // ------------------------------------------------------------------ //
 // Operation executor map
@@ -209,7 +210,7 @@ export function registerChangeQueueTools(
       consent:      z.boolean().optional()
                      .describe('Explicit consent required for L3 operations. Must be true if governance level is L3.'),
     },
-    async ({ operation, params: _params, note: _note, before_state, site_id: _site_id, consent: _consent }) => {
+    async ({ operation, params: _params, note: _note, before_state: _before_state, site_id: _site_id, consent: _consent }) => {
       if (!OPERATION_EXECUTORS[operation]) {
         return {
           content: [{
@@ -230,23 +231,49 @@ export function registerChangeQueueTools(
       }
 
       const client = getClient(_site_id);
-      const change = await client.createChange({ operation, params: _params, note: _note, before_state });
+      
+      // Use QueueV2 for processing with auto-approval logic
+      const queueV2 = new QueueV2(client, _site_id);
+      const result = await queueV2.processChange(operation, _params, client, _note, _site_id);
+      
+      if (result.queued) {
+        // Change was queued for manual review
+        const lines = [
+          `🟡 Change queued for review`,
+          `   ID: ${result.change?.id}`,
+          `   Operation: ${operation}`,
+          _note ? `   Note: ${_note}` : '',
+          '',
+          'Next steps:',
+          '  1. review_change(change_id, "approve") — approve it',
+          '  2. apply_change(change_id)             — execute it on the site',
+          '  Or: review_change(change_id, "reject") to discard.',
+          '',
+          'Use list_change_queue to see all pending changes.',
+        ].filter(Boolean);
 
-      const lines = [
-        `🟡 Change queued for review`,
-        `   ID: ${change.id}`,
-        `   Operation: ${change.operation}`,
-        _note ? `   Note: ${_note}` : '',
-        '',
-        'Next steps:',
-        '  1. review_change(change_id, "approve") — approve it',
-        '  2. apply_change(change_id)             — execute it on the site',
-        '  Or: review_change(change_id, "reject") to discard.',
-        '',
-        'Use list_change_queue to see all pending changes.',
-      ].filter(Boolean);
+        return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+      } else if (result.autoApproved) {
+        // Change was auto-approved and executed
+        const lines = [
+          `✅ Change auto-approved and executed`,
+          `   Operation: ${operation}`,
+          `   Message: ${result.message}`,
+          '',
+          'The change was automatically approved based on risk level and governance rules.',
+          'No manual review required.',
+        ].filter(Boolean);
 
-      return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+        return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+      } else {
+        // Error occurred
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `❌ Error processing change: ${result.message}`,
+          }],
+        };
+      }
     },
   );
 
@@ -389,6 +416,93 @@ export function registerChangeQueueTools(
       ];
 
       return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+    },
+  );
+
+  // ---------------------------------------------------------------- //
+  // queue_stats
+  // ---------------------------------------------------------------- //
+  server.tool(
+    'queue_stats',
+    'Get Queue 2.0 statistics including auto-approval rates, review times, and cleanup metrics.',
+    {
+      site_id: z.string().optional(),
+    },
+    async ({ site_id }) => {
+      const client = getClient(site_id);
+      const queueV2 = new QueueV2(client, site_id);
+      
+      try {
+        const stats = await queueV2.getStats(client);
+        
+        const lines = [
+          '📊 Queue 2.0 Statistics',
+          '======================',
+          `Total Changes: ${stats.totalChanges}`,
+          `Auto-Approved: ${stats.autoApproved} (${Math.round((stats.autoApproved / stats.totalChanges) * 100)}%)`,
+          `Manually Approved: ${stats.manuallyApproved}`,
+          `Rejected: ${stats.rejected}`,
+          `Pending: ${stats.pending}`,
+          `Error Rate: ${Math.round(stats.errorRate * 100)}%`,
+          `Average Review Time: ${stats.averageReviewTime.toFixed(2)} hours`,
+          '',
+          'Auto-approval rules are configured based on:',
+          '  • Risk level (low/medium/high)',
+          '  • Governance level (L0-L3)',
+          '  • Operation patterns',
+          '  • Time restrictions and daily limits',
+        ];
+
+        return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `❌ Error getting queue statistics: ${error}`,
+          }],
+        };
+      }
+    },
+  );
+
+  // ---------------------------------------------------------------- //
+  // queue_cleanup
+  // ---------------------------------------------------------------- //
+  server.tool(
+    'queue_cleanup',
+    'Clean up old changes based on retention policy (approved: 30 days, rejected: 7 days, applied: 90 days).',
+    {
+      site_id: z.string().optional(),
+    },
+    async ({ site_id }) => {
+      const client = getClient(site_id);
+      const queueV2 = new QueueV2(client, site_id);
+      
+      try {
+        const result = await queueV2.cleanupOldChanges(client);
+        
+        const lines = [
+          '🧹 Queue Cleanup Complete',
+          '========================',
+          `Deleted: ${result.deleted} old changes`,
+          `Errors: ${result.errors}`,
+          '',
+          'Retention policy applied:',
+          '  • Approved changes: 30 days',
+          '  • Rejected changes: 7 days',
+          '  • Applied changes: 90 days',
+          '  • Pending changes: never deleted',
+        ];
+
+        return { content: [{ type: 'text' as const, text: lines.join('\n') }] };
+      } catch (error) {
+        return {
+          content: [{
+            type: 'text' as const,
+            text: `❌ Error cleaning up queue: ${error}`,
+          }],
+        };
+      }
     },
   );
 }
