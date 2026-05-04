@@ -1,4 +1,12 @@
 name: Release
+#
+# CONVENTIONS (must-follow):
+#   • Tag format:          vX.Y.Z  (semantic version, e.g. v2.0.3)
+#   • Release title:       Elementify vX.Y.Z
+#   • Branch naming:       release/X.Y.Z-{descriptor}  (e.g. release/2.0.3-hotfix)
+#   • Plugin ZIP:          elementify.X.Y.Z.zip
+#   • Release description: free-form, keep title clean
+#
 on:
   push:
     tags:

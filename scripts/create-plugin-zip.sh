@@ -1,7 +1,13 @@
 #!/bin/bash
 
 # Create Elementify Plugin ZIP file for distribution
-# Naming Convention (Non-Negotiable): elementify.X.Y.Z.zip
+#
+# CONVENTIONS (non-negotiable — enforced by this script):
+#   • ZIP name:   elementify.X.Y.Z.zip
+#   • SHA256:     elementify.X.Y.Z.sha256
+#   • Version:    auto-extracted from plugin/elementify.php Version header
+#   • Release:    GitHub Release title must be "Elementify vX.Y.Z"
+#   • Tag:        vX.Y.Z  (semantic version, triggers .github/workflows/release.yml)
 
 set -e
 
