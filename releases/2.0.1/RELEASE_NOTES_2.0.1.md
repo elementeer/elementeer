@@ -114,7 +114,7 @@ All eight validation tasks from the ReleaseChain PRD (`release-validation-2.0.1.
 ## Release Artifacts
 
 ### Plugin ZIP
-- **File**: `elementify-2.0.1.zip`
+- **File**: `elementify.2.0.1.zip`
 - **Size**: 201.6 KB
 - **Structure**: `elementify/` folder with proper main file
 - **SHA256**: `b64640a9e1251272ca63944ce3941ca298a99c4f75eeae8a843a60a7dc91f664`
@@ -133,14 +133,14 @@ All eight validation tasks from the ReleaseChain PRD (`release-validation-2.0.1.
 ## Installation & Upgrade
 
 ### New Installation
-1. Upload `elementify-2.0.1.zip` via WordPress admin
+1. Upload `elementify.2.0.1.zip` via WordPress admin
 2. Activate the plugin
 3. Generate API key from Elementify → Dashboard
 4. Configure permissions and capabilities as needed
 
 ### Upgrade from 2.0.0
 1. Deactivate current version (optional but recommended)
-2. Upload and overwrite with `elementify-2.0.1.zip`
+2. Upload and overwrite with `elementify.2.0.1.zip`
 3. Reactivate plugin
 4. Verify all five feature domains are functional
 

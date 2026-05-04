@@ -635,6 +635,65 @@ final class Router {
             ],
         ] );
 
+        // Voxel integration (VOXEL-001 through VOXEL-006)
+        $voxel = new \Elementify\MCP\Api\Voxel();
+        register_rest_route( self::NAMESPACE, '/voxel/status', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $voxel, 'get_voxel_status' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/voxel/post-types', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $voxel, 'list_post_types' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/voxel/post-types/(?P<post_type>[a-z0-9_-]+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $voxel, 'get_post_type' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'post_type' => [
+                        'type'        => 'string',
+                        'required'    => true,
+                        'sanitize_callback' => 'sanitize_key',
+                    ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/voxel/taxonomies', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $voxel, 'list_taxonomies' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/voxel/product-types', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $voxel, 'list_product_types' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/voxel/settings', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $voxel, 'get_settings' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/voxel/health', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $voxel, 'get_health' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
         // Booking & Events integration (BOOK-001, BOOK-002)
         $booking = new \Elementify\MCP\Api\Booking();
         register_rest_route( self::NAMESPACE, '/booking/status', [

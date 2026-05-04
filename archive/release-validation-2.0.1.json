@@ -1,0 +1,166 @@
+{
+  "projectName": "Elementify Plugin 2.0.1 Release Validation",
+  "version": "2.0.1",
+  "status": "validated",
+  "execution_recommendation": {
+    "mode": "complex",
+    "reason": "Comprehensive release validation across 8 testing phases",
+    "suggested_workflow": "ralph-loop-attended",
+    "estimated_iterations": 8,
+    "parallel_opportunities": 2
+  },
+  "tasks": [
+    {
+      "id": "RELEASE-VAL-001",
+      "title": "Plugin Installation & Activation Validation",
+      "description": "Validate plugin installation from ZIP, activation, and basic WordPress integration. Check for PHP errors and conflicts with Elementor.",
+      "acceptanceCriteria": [
+        "Plugin ZIP can be uploaded via WordPress admin",
+        "Plugin activates without PHP errors",
+        "No conflicts with Elementor/other plugins",
+        "Admin menu appears (Elementify → Dashboard)",
+        "REST API endpoints registered (check wp-json/elementify/v1/)"
+      ],
+      "priority": "critical",
+      "estimatedEffort": "1",
+      "dependsOn": [],
+      "type": "validation",
+      "passes": true,
+      "capabilities": ["testing", "infrastructure"]
+    },
+    {
+      "id": "RELEASE-VAL-002",
+      "title": "Core API Endpoint Validation",
+      "description": "Validate all core API endpoints return correct HTTP status codes and data structures.",
+      "acceptanceCriteria": [
+        "GET / returns API version info (200 OK)",
+        "GET /site returns site information (200 OK)",
+        "GET /templates returns template listing (200 OK)",
+        "GET /media returns media listing (200 OK)",
+        "GET /site/performance/report returns performance data (200 OK)"
+      ],
+      "priority": "critical",
+      "estimatedEffort": "1",
+      "dependsOn": ["RELEASE-VAL-001"],
+      "type": "validation",
+      "passes": true,
+      "capabilities": ["testing", "automation"]
+    },
+    {
+      "id": "RELEASE-VAL-003",
+      "title": "Five New Feature Domains Validation",
+      "description": "Validate all five advanced feature domains: Media AI, Addon Ecosystem, Performance, Accessibility, and Snapshots.",
+      "acceptanceCriteria": [
+        "Media AI: GET /media/search-stock returns stock images (200 OK)",
+        "Addon Ecosystem: GET /addons returns installed addons (200 OK)",
+        "Performance: GET /site/performance/core-web-vitals returns metrics (200 OK)",
+        "Accessibility: GET /ally/scan/accessibility returns scan results (200 OK)",
+        "Snapshots: GET /snapshots returns snapshot list (200 OK)"
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": ["RELEASE-VAL-002"],
+      "type": "validation",
+      "passes": true,
+      "capabilities": ["testing", "code_generation"]
+    },
+    {
+      "id": "RELEASE-VAL-004",
+      "title": "Authentication & Elementor Compatibility Validation",
+      "description": "Validate authentication fixes and Elementor compatibility. Ensure no 'Access denied' errors in debug log.",
+      "acceptanceCriteria": [
+        "Wildcard (*) capability support works correctly",
+        "Elementor permission errors eliminated from debug log",
+        "Site settings can be updated via PUT /site/settings",
+        "Authentication with API key works for all endpoints",
+        "set_current_user() method ensures administrator access"
+      ],
+      "priority": "high",
+      "estimatedEffort": "1",
+      "dependsOn": ["RELEASE-VAL-002"],
+      "type": "validation",
+      "passes": true,
+      "capabilities": ["testing", "integration"]
+    },
+    {
+      "id": "RELEASE-VAL-005",
+      "title": "Plugin ZIP Structure & Naming Validation",
+      "description": "Validate plugin ZIP structure, naming conventions, and version consistency.",
+      "acceptanceCriteria": [
+        "ZIP file named elementify-2.0.1.zip",
+        "Main plugin file is elementify.php (not elementify-mcp.php)",
+        "Plugin header shows version 2.0.1",
+        "Folder structure is elementify/ (not elementify-mcp/)",
+        "Readme.txt updated with 2.0.1 changelog"
+      ],
+      "priority": "high",
+      "estimatedEffort": "1",
+      "dependsOn": [],
+      "type": "validation",
+      "passes": true,
+      "capabilities": ["testing", "automation"]
+    },
+    {
+      "id": "RELEASE-VAL-006",
+      "title": "Documentation & Changelog Validation",
+      "description": "Validate all documentation is updated including changelog, roadmap, and testing workflow.",
+      "acceptanceCriteria": [
+        "Changelog includes 2.0.1 release notes",
+        "Roadmap.md updated to reflect 2.0.1 completion",
+        "Testing workflow document is comprehensive",
+        "All five feature domains documented",
+        "ReleaseChain integration documented"
+      ],
+      "priority": "medium",
+      "estimatedEffort": "1",
+      "dependsOn": ["RELEASE-VAL-003"],
+      "type": "documentation",
+      "passes": true,
+      "capabilities": ["documentation", "review"]
+    },
+    {
+      "id": "RELEASE-VAL-007",
+      "title": "ReleaseChain Integration Validation",
+      "description": "Validate ReleaseChain integration with automated test scripts and workflow documentation.",
+      "acceptanceCriteria": [
+        "test-plugin-release.sh script works correctly",
+        "validate-new-domains.sh script validates all five domains",
+        "create-plugin-zip.sh creates correctly structured ZIP",
+        "TESTING_WORKFLOW.md is comprehensive for ReleaseChain",
+        "All scripts are executable and properly documented"
+      ],
+      "priority": "medium",
+      "estimatedEffort": "1",
+      "dependsOn": ["RELEASE-VAL-005"],
+      "type": "validation",
+      "passes": true,
+      "capabilities": ["automation", "testing"]
+    },
+    {
+      "id": "RELEASE-VAL-008",
+      "title": "Final Release Artifacts Generation",
+      "description": "Generate final release artifacts including checksum and release notes.",
+      "acceptanceCriteria": [
+        "SHA256 checksum generated for elementify-2.0.1.zip",
+        "Release notes created summarizing five feature domains",
+        "Plugin ZIP size and structure verified",
+        "All validation tasks marked as passed",
+        "Release ready for distribution"
+      ],
+      "priority": "critical",
+      "estimatedEffort": "1",
+      "dependsOn": [
+        "RELEASE-VAL-001",
+        "RELEASE-VAL-002",
+        "RELEASE-VAL-003",
+        "RELEASE-VAL-004",
+        "RELEASE-VAL-005",
+        "RELEASE-VAL-006",
+        "RELEASE-VAL-007"
+      ],
+      "type": "release",
+      "passes": true,
+      "capabilities": ["automation", "infrastructure"]
+    }
+  ]
+}

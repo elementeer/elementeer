@@ -37,7 +37,10 @@ final class Settings {
      */
     public function get(): array {
         $stored = \get_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, [] );
-        $settings = array_merge( self::DEFAULTS, is_array( $stored ) ? $stored : [] );
+        $defaults = self::DEFAULTS;
+        $defaults['allowed_capabilities'] = Capabilities::all();
+
+        $settings = array_merge( $defaults, is_array( $stored ) ? $stored : [] );
 
         if ( isset( $settings['allowed_capabilities'] ) ) {
             $settings['allowed_capabilities'] = Capabilities::filter( (array) $settings['allowed_capabilities'] );

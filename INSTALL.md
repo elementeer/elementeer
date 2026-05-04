@@ -9,9 +9,9 @@ It focuses on the public `Free` surface. `Advanced` is built from the private Fo
 ### 1. Install the WordPress plugin
 
 1. Clone or download the repository.
-2. Create a ZIP archive from the `plugin/` directory.
+2. Use `scripts/create-plugin-zip.sh` to create a properly named ZIP archive (following "elementify.X.Y.Z.zip" convention).
 3. In WordPress admin, go to `Plugins -> Add New -> Upload Plugin`.
-4. Upload the ZIP and activate `Elementify MCP Plugin`.
+4. Upload the ZIP (e.g., `elementify.2.0.1.zip`) and activate `Elementify MCP Plugin`.
 5. Open `Settings -> Elementify MCP` and generate an API key.
 
 ### 2. Install the MCP server

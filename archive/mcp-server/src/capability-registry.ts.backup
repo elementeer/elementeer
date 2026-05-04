@@ -1,0 +1,286 @@
+import type { CapabilityId } from './client.js';
+
+export interface CapabilityRequirement {
+  /** Tool/operation name */
+  operation: string;
+  /** Required capability ID */
+  requiredCapability: CapabilityId;
+  /** Risk level for queue auto-approval */
+  riskLevel: 'low' | 'medium' | 'high';
+  /** Minimum governance level required */
+  minGovernanceLevel?: 'L1' | 'L2' | 'L3';
+  /** Whether operation requires write permission */
+  requiresWrite: boolean;
+  /** Description for documentation */
+  description: string;
+}
+
+/**
+ * Registry mapping all Elementify operations to required capabilities
+ * This is used for capability-based routing and permission checks
+ */
+export const CAPABILITY_REGISTRY: CapabilityRequirement[] = [
+  // Page Operations
+  {
+    operation: 'list_elementor_pages',
+    requiredCapability: 'page-composition',
+    riskLevel: 'low',
+    requiresWrite: false,
+    description: 'List pages built with Elementor',
+  },
+  {
+    operation: 'get_page_data',
+    requiredCapability: 'page-composition',
+    riskLevel: 'low',
+    requiresWrite: false,
+    description: 'Read Elementor page data',
+  },
+  {
+    operation: 'update_page_data',
+    requiredCapability: 'page-composition',
+    riskLevel: 'high',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Write Elementor page data',
+  },
+  {
+    operation: 'save_page_section_as_template',
+    requiredCapability: 'page-composition',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Extract page section as template',
+  },
+  {
+    operation: 'save_full_page_as_template',
+    requiredCapability: 'page-composition',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Save entire page as template',
+  },
+  {
+    operation: 'compose_page_from_templates',
+    requiredCapability: 'page-composition',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Compose page from multiple templates',
+  },
+
+  // Template Library Operations
+  {
+    operation: 'list_templates',
+    requiredCapability: 'global-styles', // Templates are part of global library
+    riskLevel: 'low',
+    requiresWrite: false,
+    description: 'List Elementor templates',
+  },
+  {
+    operation: 'get_template',
+    requiredCapability: 'global-styles',
+    riskLevel: 'low',
+    requiresWrite: false,
+    description: 'Get template details',
+  },
+  {
+    operation: 'create_template',
+    requiredCapability: 'global-styles',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Create new template',
+  },
+  {
+    operation: 'update_template_data',
+    requiredCapability: 'global-styles',
+    riskLevel: 'high',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Update template content',
+  },
+  {
+    operation: 'delete_template',
+    requiredCapability: 'global-styles',
+    riskLevel: 'high',
+    minGovernanceLevel: 'L3',
+    requiresWrite: true,
+    description: 'Delete template',
+  },
+
+  // Global Styles Operations
+  {
+    operation: 'get_global_styles',
+    requiredCapability: 'global-styles',
+    riskLevel: 'low',
+    requiresWrite: false,
+    description: 'Read global colors and typography',
+  },
+  {
+    operation: 'set_global_colors',
+    requiredCapability: 'global-styles',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Update global color palette',
+  },
+  {
+    operation: 'set_global_typography',
+    requiredCapability: 'global-styles',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Update global typography',
+  },
+
+  // Site Operations
+  {
+    operation: 'set_site_logo',
+    requiredCapability: 'global-styles',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Set site logo',
+  },
+  {
+    operation: 'update_site_settings',
+    requiredCapability: 'global-styles',
+    riskLevel: 'high',
+    minGovernanceLevel: 'L3',
+    requiresWrite: true,
+    description: 'Update site settings',
+  },
+
+  // Theme Builder Operations
+  {
+    operation: 'wizard_theme_builder',
+    requiredCapability: 'theme-builder',
+    riskLevel: 'high',
+    minGovernanceLevel: 'L3',
+    requiresWrite: true,
+    description: 'Create Theme Builder template',
+  },
+
+  // WooCommerce Operations
+  {
+    operation: 'update_woocommerce_template',
+    requiredCapability: 'woocommerce-templates',
+    riskLevel: 'high',
+    minGovernanceLevel: 'L3',
+    requiresWrite: true,
+    description: 'Update WooCommerce template',
+  },
+
+  // Change Queue Operations
+  {
+    operation: 'queue_change',
+    requiredCapability: 'change-review',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Queue change for review',
+  },
+  {
+    operation: 'list_change_queue',
+    requiredCapability: 'change-review',
+    riskLevel: 'low',
+    requiresWrite: false,
+    description: 'List queued changes',
+  },
+  {
+    operation: 'review_change',
+    requiredCapability: 'change-review',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L3',
+    requiresWrite: true,
+    description: 'Review queued change',
+  },
+  {
+    operation: 'apply_change',
+    requiredCapability: 'change-review',
+    riskLevel: 'high',
+    minGovernanceLevel: 'L3',
+    requiresWrite: true,
+    description: 'Apply approved change',
+  },
+
+  // Multilingual Operations
+  {
+    operation: 'batch_translate_strings',
+    requiredCapability: 'multilingual-workflows',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Batch translate strings',
+  },
+  {
+    operation: 'translate_media_metadata',
+    requiredCapability: 'multilingual-workflows',
+    riskLevel: 'medium',
+    minGovernanceLevel: 'L2',
+    requiresWrite: true,
+    description: 'Translate media metadata',
+  },
+];
+
+/**
+ * Get capability requirement for an operation
+ */
+export function getCapabilityRequirement(operation: string): CapabilityRequirement | undefined {
+  return CAPABILITY_REGISTRY.find(req => req.operation === operation);
+}
+
+/**
+ * Check if operation is allowed based on capabilities
+ */
+export function checkOperationAllowed(
+  operation: string,
+  availableCapabilities: Set<CapabilityId>,
+  governanceLevel: 'L1' | 'L2' | 'L3' = 'L1'
+): { allowed: boolean; reason?: string } {
+  const requirement = getCapabilityRequirement(operation);
+  
+  if (!requirement) {
+    // Unknown operation - default to deny for security
+    return { allowed: false, reason: `Unknown operation: ${operation}` };
+  }
+
+  // Check capability
+  if (!availableCapabilities.has(requirement.requiredCapability)) {
+    return { 
+      allowed: false, 
+      reason: `Operation requires capability: ${requirement.requiredCapability}` 
+    };
+  }
+
+  // Check governance level
+  if (requirement.minGovernanceLevel) {
+    const governanceOrder = { 'L1': 1, 'L2': 2, 'L3': 3 };
+    const requiredLevel = governanceOrder[requirement.minGovernanceLevel];
+    const userLevel = governanceOrder[governanceLevel];
+    
+    if (userLevel < requiredLevel) {
+      return { 
+        allowed: false, 
+        reason: `Operation requires governance level ${requirement.minGovernanceLevel} or higher` 
+      };
+    }
+  }
+
+  return { allowed: true };
+}
+
+/**
+ * Get all operations requiring a specific capability
+ */
+export function getOperationsForCapability(capabilityId: CapabilityId): CapabilityRequirement[] {
+  return CAPABILITY_REGISTRY.filter(req => req.requiredCapability === capabilityId);
+}
+
+/**
+ * Get risk level for auto-approval decisions
+ */
+export function getRiskLevel(operation: string): 'low' | 'medium' | 'high' | undefined {
+  const requirement = getCapabilityRequirement(operation);
+  return requirement?.riskLevel;
+}

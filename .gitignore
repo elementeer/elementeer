@@ -144,3 +144,6 @@ vite.config.ts.timestamp-*
 # Plugin release ZIPs
 *.zip
 *.sha256
+
+# SkillWeave work directory (session-local tracking, never pushed)
+.skillweave/

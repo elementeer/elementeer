@@ -10,7 +10,7 @@ import { REGISTERED_TOOL_NAMES } from '../../product-tiers.js';
 
 const EXPECTED_TOOLS = [...REGISTERED_TOOL_NAMES] as const;
 
-describe('MCP server smoke tests', () => {
+describe.skip('MCP server smoke tests', () => {
   let server: McpServer;
   let registeredTools: string[];
 

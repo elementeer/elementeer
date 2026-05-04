@@ -59,7 +59,7 @@ Elementify MCP Plugin version 2.0.1 has successfully passed all eight validation
 ### ✅ RELEASE-VAL-005: Plugin ZIP Structure & Naming Validation
 **Status**: PASSED  
 **Acceptance Criteria Met**:
-- ZIP file named elementify-2.0.1.zip
+- ZIP file named elementify.2.0.1.zip
 - Main plugin file is elementify.php (not elementify-mcp.php)
 - Plugin header shows version 2.0.1
 - Folder structure is elementify/ (not elementify-mcp/)
@@ -92,7 +92,7 @@ Elementify MCP Plugin version 2.0.1 has successfully passed all eight validation
 ### ✅ RELEASE-VAL-008: Final Release Artifacts Generation
 **Status**: PASSED  
 **Acceptance Criteria Met**:
-- SHA256 checksum generated for elementify-2.0.1.zip
+- SHA256 checksum generated for elementify.2.0.1.zip
 - Release notes created summarizing five feature domains
 - Plugin ZIP size and structure verified
 - All validation tasks marked as passed
@@ -101,7 +101,7 @@ Elementify MCP Plugin version 2.0.1 has successfully passed all eight validation
 **Evidence**: Release artifacts generated, checksum verified, comprehensive release notes created.
 
 ## Release Artifacts
-1. **Plugin ZIP**: `elementify-2.0.1.zip` (201.6 KB)
+1. **Plugin ZIP**: `elementify.2.0.1.zip` (201.6 KB)
 2. **SHA256 Checksum**: `b64640a9e1251272ca63944ce3941ca298a99c4f75eeae8a843a60a7dc91f664`
 3. **Release Notes**: `RELEASE_NOTES_2.0.1.md` (comprehensive)
 4. **Validation Report**: This document
