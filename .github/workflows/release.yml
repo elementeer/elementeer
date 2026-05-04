@@ -44,17 +44,17 @@ jobs:
       - name: Build plugin ZIP
         run: |
           VERSION=${GITHUB_REF_NAME#v}
-          zip -r elementify-mcp-${VERSION}.zip plugin/ \
+          zip -r "elementify.${VERSION}.zip" plugin/ \
             --exclude "plugin/vendor/*/test*" \
             --exclude "plugin/tests/*"
       - uses: actions/upload-artifact@v4
         with:
           name: plugin-zip
-          path: elementify-mcp-*.zip
+          path: "elementify.*.zip"
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          files: elementify-mcp-*.zip
+           files: "elementify.*.zip"
           generate_release_notes: true
 
   publish-dry-run:

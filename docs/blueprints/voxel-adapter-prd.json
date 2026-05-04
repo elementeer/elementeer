@@ -1,0 +1,86 @@
+{
+  "projectName": "Elementify Voxel Adapter Integration",
+  "version": "1.0",
+  "status": "draft",
+  "sequence_type": "mixed",
+  "execution_recommendation": {
+    "mode": "standard",
+    "reason": "Requires parallel development of PHP plugin class and TypeScript MCP tools, followed by registration + test verification. Ralph Loop attended execution recommended.",
+    "suggested_workflow": "ralph-loop-attended",
+    "estimated_iterations": 4,
+    "parallel_opportunities": 2
+  },
+  "tasks": [
+    {
+      "id": "VOXEL-DETECT-001",
+      "title": "Implement Voxel detection in PHP",
+      "description": "Create plugin/includes/Api/Voxel.php with detect, post-types, taxonomies, product-types, settings, health endpoints.",
+      "acceptanceCriteria": [
+        "Voxel.php implements BaseController with 6+ REST routes",
+        "detect_voxel returns active, version, elementor_integration, theme_active",
+        "Post types endpoint returns label, slug, field count",
+        "Taxonomies endpoint returns term count",
+        "Product types endpoint returns pricing models",
+        "Settings endpoint returns pagination, map provider, currency",
+        "Health endpoint checks REST API, tables, memory"
+      ],
+      "priority": "high",
+      "estimatedEffort": "3",
+      "dependsOn": [],
+      "type": "build",
+      "required_capabilities": ["code_generation"],
+      "files": ["plugin/includes/Api/Voxel.php", "plugin/includes/Router.php"],
+      "passes": false
+    },
+    {
+      "id": "VOXEL-TOOLS-001",
+      "title": "Implement Voxel MCP tools in TypeScript",
+      "description": "Create mcp-server/src/tools/voxel.ts with 7 tool definitions matching Voxel.php endpoints.",
+      "acceptanceCriteria": [
+        "7 tools defined: detect_voxel, list_voxel_post_types, get_voxel_post_type, list_voxel_taxonomies, get_voxel_product_types, get_voxel_settings, voxel_health_check",
+        "All tools use Free tier governance",
+        "Tools produce structured JSON output"
+      ],
+      "priority": "high",
+      "estimatedEffort": "2",
+      "dependsOn": ["VOXEL-DETECT-001"],
+      "type": "build",
+      "required_capabilities": ["code_generation"],
+      "files": ["mcp-server/src/tools/voxel.ts"],
+      "passes": false
+    },
+    {
+      "id": "VOXEL-REGISTER-001",
+      "title": "Register Voxel tools in product-tiers.ts",
+      "description": "Register all 7 Voxel tools in the Free tier tool manifest.",
+      "acceptanceCriteria": [
+        "All Voxel tools appear in product-tiers.ts under free tier",
+        "Route registration in Router.php includes Voxel namespace",
+        "Tools appear in list_tools response"
+      ],
+      "priority": "high",
+      "estimatedEffort": "1",
+      "dependsOn": ["VOXEL-TOOLS-001"],
+      "type": "build",
+      "required_capabilities": ["code_generation"],
+      "files": ["mcp-server/src/product-tiers.ts", "plugin/includes/Router.php"],
+      "passes": false
+    },
+    {
+      "id": "VOXEL-TEST-001",
+      "title": "Write tests for Voxel adapter",
+      "description": "Write PHP unit tests for Voxel.php endpoints and TypeScript tests for voxel.ts tools.",
+      "acceptanceCriteria": [
+        "PHP tests cover all 6+ endpoints with mock Voxel data",
+        "TypeScript tests verify tool definitions and parameter validation",
+        "All tests pass"
+      ],
+      "priority": "medium",
+      "estimatedEffort": "2",
+      "dependsOn": ["VOXEL-DETECT-001", "VOXEL-TOOLS-001"],
+      "type": "build",
+      "required_capabilities": ["code_generation", "testing"],
+      "passes": false
+    }
+  ]
+}

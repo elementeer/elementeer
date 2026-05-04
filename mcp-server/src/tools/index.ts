@@ -56,6 +56,7 @@ import { registerAllyTools } from './ally.js';
 import { registerLmsTools } from './lms.js';
 import { registerCharityTools } from './charity.js';
 import { registerBookingTools, registerBookingAdvancedTools } from "./booking.js";
+import { registerVoxelTools } from './voxel.js';
 import { registerWooCommerceTools } from './woocommerce.js';
 
 interface ToolRegistrationOptions {
@@ -94,6 +95,7 @@ const FREE_TOOL_REGISTRARS = [
   registerLmsTools,
   registerCharityTools,
   registerBookingTools,
+  registerVoxelTools,
   registerFreeWizardTools,
   registerFingerprintTools,
   registerDestinationTools,

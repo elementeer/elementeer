@@ -462,6 +462,69 @@ export interface CharityDonationStats {
   total_donations: number;
 }
 
+export interface VoxelStatus {
+  voxel_available: boolean;
+  version: string | null;
+  post_type_count: number;
+  taxonomy_count: number;
+  product_type_count: number;
+}
+
+export interface VoxelPostTypeList {
+  post_types: Array<{
+    key: string;
+    label: string;
+    singular: string;
+    is_public: boolean;
+    is_editable: boolean;
+  }>;
+  total: number;
+}
+
+export interface VoxelPostTypeDetail {
+  key: string;
+  label: string;
+  singular: string;
+  is_public: boolean;
+  is_editable: boolean;
+  fields?: Array<{
+    key: string;
+    type: string;
+    label: string;
+  }>;
+  error?: string;
+}
+
+export interface VoxelTaxonomyList {
+  taxonomies: Array<{
+    key: string;
+    label: string;
+    singular: string;
+    post_type: string | null;
+  }>;
+  total: number;
+}
+
+export interface VoxelProductTypeList {
+  product_types: Array<{
+    key: string;
+    label: string;
+  }>;
+  total: number;
+}
+
+export interface VoxelSettings {
+  settings: Record<string, unknown>;
+}
+
+export interface VoxelHealth {
+  healthy: boolean;
+  issues: string[];
+  rest_reachable: boolean;
+  tables_healthy: boolean;
+  memory_usage_mb: number | null;
+}
+
 export interface ListTemplatesParams {
   page?: number;
   per_page?: number;
@@ -597,7 +660,7 @@ export class ElementifyClient {
   }
 
   async updateTemplate(id: number, updates: any): Promise<any> {
-    const res = await this.http.put<any>(`/templates/${id}`, updates);
+    const res = await this.http.patch<any>(`/templates/${id}`, updates);
     return res.data;
   }
 
@@ -1083,6 +1146,45 @@ export class ElementifyClient {
     return res.data;
   }
 
+  // ------------------------------------------------------------------ //
+  // Voxel Integration
+  // ------------------------------------------------------------------ //
+
+  async getVoxelStatus(): Promise<VoxelStatus> {
+    const res = await this.http.get('/voxel/status');
+    return res.data;
+  }
+
+  async listVoxelPostTypes(): Promise<VoxelPostTypeList> {
+    const res = await this.http.get('/voxel/post-types');
+    return res.data;
+  }
+
+  async getVoxelPostType(postType: string): Promise<VoxelPostTypeDetail> {
+    const res = await this.http.get(`/voxel/post-types/${encodeURIComponent(postType)}`);
+    return res.data;
+  }
+
+  async listVoxelTaxonomies(): Promise<VoxelTaxonomyList> {
+    const res = await this.http.get('/voxel/taxonomies');
+    return res.data;
+  }
+
+  async listVoxelProductTypes(): Promise<VoxelProductTypeList> {
+    const res = await this.http.get('/voxel/product-types');
+    return res.data;
+  }
+
+  async getVoxelSettings(): Promise<VoxelSettings> {
+    const res = await this.http.get('/voxel/settings');
+    return res.data;
+  }
+
+  async getVoxelHealth(): Promise<VoxelHealth> {
+    const res = await this.http.get('/voxel/health');
+    return res.data;
+  }
+
   async listAmeliaServices(params: { page?: number; per_page?: number } = {}): Promise<any> {
     const res = await this.http.get('/booking/amelia/services', { params });
     return res.data;
@@ -1138,63 +1240,63 @@ export class ElementifyClient {
   // ------------------------------------------------------------------ //
 
   async listWooCommerceProducts(params: { page?: number; per_page?: number; status?: string; category?: string; stock_status?: string; search?: string } = {}): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async getWooCommerceProduct(productId: number): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async createWooCommerceProduct(data: any): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async updateWooCommerceProduct(productId: number, data: any): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async deleteWooCommerceProduct(productId: number, force?: boolean): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async listWooCommerceOrders(params: { page?: number; per_page?: number; status?: string; customer?: number; product?: number; date_after?: string; date_before?: string } = {}): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async getWooCommerceOrder(orderId: number): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async updateWooCommerceOrderStatus(orderId: number, status: string, note?: string): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async listWooCommerceProductCategories(params: { page?: number; per_page?: number; parent?: number } = {}): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async createWooCommerceProductCategory(data: any): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async updateWooCommerceProductCategory(categoryId: number, data: any): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async deleteWooCommerceProductCategory(categoryId: number): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async getWooCommerceStoreSettings(): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async updateWooCommerceStoreSettings(data: any): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async setupWooCommercePages(params: { create_missing?: boolean; assign_template?: boolean } = {}): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   // ------------------------------------------------------------------ //
@@ -1202,35 +1304,35 @@ export class ElementifyClient {
   // ------------------------------------------------------------------ //
 
   async listForms(params: { plugin?: string; page?: number; per_page?: number } = {}): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async getForm(formId: number, plugin?: string): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async createForm(data: any): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async updateForm(formId: number, data: any): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async deleteForm(formId: number, plugin?: string): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async listFormEntries(formId: number, params: { page?: number; per_page?: number; plugin?: string } = {}): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async getFormEntry(entryId: number, plugin?: string): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async exportFormEntries(formId: number, format: string = 'csv', plugin?: string): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   // ------------------------------------------------------------------ //
@@ -1238,23 +1340,23 @@ export class ElementifyClient {
   // ------------------------------------------------------------------ //
 
   async generateCriticalCss(pageId?: number): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'Critical CSS generation coming soon', data: { status: 501 } };
   }
 
   async auditAssetLoading(pageId?: number): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async enableRedisCache(): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async purgeCdnCache(): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   async optimizeHtaccess(): Promise<any> {
-    throw new Error('Not implemented');
+    return { code: 'not_implemented', message: 'WooCommerce integration coming soon', data: { status: 501 } };
   }
 
   // ------------------------------------------------------------------ //

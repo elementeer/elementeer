@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Version Consistency**: Updated ELEMENTIFY_MCP_VERSION constant to 2.0.1
 - **Plugin Header**: Version updated to 2.0.1 in plugin main file
 - **Build Scripts**: Enhanced create-plugin-zip.sh for proper folder structure
+- **Release Naming Convention**: All release ZIP files now follow "elementify.X.Y.Z.zip" format (non-negotiable)
 
 ### Fixed
 - **Authentication**: Wildcard capability support and Elementor permission error elimination

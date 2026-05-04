@@ -1,0 +1,192 @@
+{
+  "project": "Elementify Voxel Adapter Integration",
+  "version": "1.0",
+  "description": "Execute the Voxel adapter integration PRD: detect, read, register, test",
+  "estimatedEffort": "8 hours",
+  "parallelOpportunities": 2,
+  "workflow": "ralph-loop-attended",
+  "prerequisites": [
+    "Git repository is clean and committed",
+    "Current implementation passes all existing tests",
+    "Reference existing integrations: plugin/includes/Api/Lms.php, mcp-server/src/tools/lms.ts",
+    "WordPress site with Voxel plugin available for manual verification (optional for test phase)"
+  ],
+  "strands": [
+    {
+      "id": "strand-1",
+      "name": "Backend: PHP Plugin Class + TypeScript Tools",
+      "parallel_lanes": [
+        {
+          "lane_id": "lane-1a",
+          "name": "PHP Voxel detection class",
+          "tasks": [
+            {
+              "id": "PHP-001",
+              "title": "Create plugin/includes/Api/Voxel.php",
+              "source": "voxel-adapter-prd.json",
+              "description": "Implement Voxel API controller with 7 REST endpoints following Lms.php pattern.",
+              "files": [
+                "plugin/includes/Api/Voxel.php"
+              ],
+              "acceptanceCriteria": [
+                "Implements BaseController with register_routes()",
+                "6+ REST endpoints under /elementify/v1/voxel/",
+                "detect endpoint uses class_exists + option reading",
+                "Post types proxied from /wp-json/voxel/v1/post-types/"
+              ],
+              "steps": [
+                "1. Read plugin/includes/Api/Lms.php to understand BaseController pattern",
+                "2. Create Voxel.php with detect endpoint (class_exists, version option, Elementor check)",
+                "3. Add post-types endpoint (proxy to Voxel REST, enrich with field/taxonomy counts)",
+                "4. Add single post-type endpoint with full field structure",
+                "5. Add taxonomies endpoint with term counts",
+                "6. Add product-types endpoint with pricing models",
+                "7. Add settings endpoint",
+                "8. Add health endpoint (REST reachable, tables exist, memory hint)"
+              ],
+              "capabilities": ["code_generation"]
+            }
+          ]
+        },
+        {
+          "lane_id": "lane-1b",
+          "name": "TypeScript MCP tools",
+          "tasks": [
+            {
+              "id": "TS-001",
+              "title": "Create mcp-server/src/tools/voxel.ts",
+              "source": "voxel-adapter-prd.json",
+              "description": "Implement TypeScript tool definitions for all 7 Voxel endpoints.",
+              "files": [
+                "mcp-server/src/tools/voxel.ts"
+              ],
+              "acceptanceCriteria": [
+                "7 tool definitions matching Voxel.php endpoints",
+                "Proper TypeScript types for response data (VoxelPostType, VoxelTaxonomy, etc.)",
+                "Free tier governance (no governance for read-only tools)",
+                "Consistent with lms.ts tool definition patterns"
+              ],
+              "steps": [
+                "1. Read mcp-server/src/tools/lms.ts to understand tool definition pattern",
+                "2. Define TypeScript interfaces: VoxelDetection, VoxelPostType, VoxelTaxonomy, VoxelProductType, VoxelSettings, VoxelHealth",
+                "3. Implement detect_voxel tool",
+                "4. Implement list_voxel_post_types tool",
+                "5. Implement get_voxel_post_type tool (with type param)",
+                "6. Implement list_voxel_taxonomies tool",
+                "7. Implement get_voxel_product_types tool",
+                "8. Implement get_voxel_settings tool",
+                "9. Implement voxel_health_check tool"
+              ],
+              "capabilities": ["code_generation"]
+            }
+          ]
+        }
+      ],
+      "parallel": true,
+      "completion_contract": "PHP-001 + TS-001 both pass verification independently"
+    },
+    {
+      "id": "strand-2",
+      "name": "Registration + Tests",
+      "tasks": [
+        {
+          "id": "REG-001",
+          "title": "Register Voxel tools in product-tiers.ts and Router.php",
+          "source": "voxel-adapter-prd.json",
+          "description": "Register all 7 Voxel tools in Free tier and wire up Router.php route registration.",
+          "files": [
+            "mcp-server/src/product-tiers.ts",
+            "plugin/includes/Router.php"
+          ],
+          "acceptanceCriteria": [
+            "All 7 Voxel tools registered in Free tier",
+            "Voxel controller registered in Router.php",
+            "tools appear in list_tools response"
+          ],
+          "steps": [
+            "1. Add Voxel tools to Free tier list in product-tiers.ts",
+            "2. Add Voxel controller to Router.php route registration"
+          ],
+          "capabilities": ["code_generation"]
+        },
+        {
+          "id": "TEST-001",
+          "title": "Write PHP and TypeScript tests for Voxel adapter",
+          "source": "voxel-adapter-prd.json",
+          "description": "Write unit tests covering all 7 endpoints and tool definitions.",
+          "files": [
+            "plugin/tests/",
+            "mcp-server/src/__tests__/"
+          ],
+          "acceptanceCriteria": [
+            "PHP tests cover all 6+ REST endpoints",
+            "TypeScript tests verify tool definitions and parameters",
+            "All tests pass"
+          ],
+          "steps": [
+            "1. Write PHP unit tests following existing test patterns",
+            "2. Write TypeScript tests following existing test patterns",
+            "3. Run composer test",
+            "4. Run npm test"
+          ],
+          "capabilities": ["code_generation", "testing"],
+          "dependsOn": ["PHP-001", "TS-001", "REG-001"]
+        }
+      ],
+      "parallel": false,
+      "completion_contract": "REG-001 passes verification first, then TEST-001 depends on all prior tasks"
+    }
+  ],
+  "batch_plan": [
+    {
+      "batch_id": "batch-1",
+      "goal": "Implement PHP + TypeScript in parallel",
+      "included_strands": ["strand-1"],
+      "parallel_lanes": ["lane-1a", "lane-1b"],
+      "write_surfaces": [
+        "plugin/includes/Api/Voxel.php",
+        "mcp-server/src/tools/voxel.ts"
+      ],
+      "verification_commands": [
+        "php -l plugin/includes/Api/Voxel.php",
+        "npx tsc --noEmit"
+      ],
+      "review_gate": "PHP syntax OK + TypeScript compiles + endpoint structure matches LMS pattern",
+      "completion_contract": "Both lane-1a and lane-1b pass their acceptance criteria",
+      "next_batch_if_pass": "batch-2",
+      "fallback_if_fail": "fix failing lane, do not advance"
+    },
+    {
+      "batch_id": "batch-2",
+      "goal": "Register tools + write tests",
+      "included_strands": ["strand-2"],
+      "parallel_lanes": [],
+      "write_surfaces": [
+        "mcp-server/src/product-tiers.ts",
+        "plugin/includes/Router.php",
+        "plugin/tests/",
+        "mcp-server/src/__tests__/"
+      ],
+      "verification_commands": [
+        "npm test",
+        "composer test"
+      ],
+      "review_gate": "All tests pass, all 7 tools registered",
+      "completion_contract": "Tests pass, Voxel tools appear in list_tools",
+      "next_batch_if_pass": "done",
+      "fallback_if_fail": "fix failing tests or registration, retry batch"
+    }
+  ],
+  "successCriteria": [
+    "PHP Voxel.php class with 6+ working endpoints",
+    "TypeScript voxel.ts with 7 tool definitions",
+    "All tools registered in Free tier",
+    "PHP + TypeScript tests pass"
+  ],
+  "postCompletion": [
+    "Run npm test && composer test for full regression",
+    "Update tracking log: voxel-adapter-session-001.md",
+    "Label PRD tasks as completed in prd.json",
+    "Verify against a live Voxel WordPress site if available"
+  ]
+}

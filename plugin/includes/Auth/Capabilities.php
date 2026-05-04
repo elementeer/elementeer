@@ -47,6 +47,7 @@ final class Capabilities {
         'charity:read',
         'booking:read',
         'booking:write',
+        'voxel:read',
         'diagnostics:read',
         'diagnostics:write',
         'workflow-orchestration:read',
@@ -162,6 +163,7 @@ final class Capabilities {
         'charity:read'                   => 'Charity — Read',
         'booking:read'                   => 'Booking — Read',
         'booking:write'                  => 'Booking — Write',
+        'voxel:read'                     => 'Voxel — Read',
         'diagnostics:read'               => 'Diagnostics — Read',
         'diagnostics:write'              => 'Diagnostics — Write',
         'workflow-orchestration:read'    => 'Workflow Orchestration — Read',
@@ -198,6 +200,7 @@ final class Capabilities {
         'LMS'                    => [ 'lms:read' ],
         'Charity'                => [ 'charity:read' ],
         'Booking'                => [ 'booking:read', 'booking:write' ],
+        'Voxel'                  => [ 'voxel:read' ],
         'Diagnostics'            => [ 'diagnostics:read', 'diagnostics:write' ],
     ];
 
