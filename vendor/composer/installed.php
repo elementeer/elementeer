@@ -1,6 +1,6 @@
 <?php return array(
     'root' => array(
-        'name' => 'vamerli/elementify-mcp-plugin',
+        'name' => 'vamerli/elementeer-mcp-plugin',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
         'reference' => '28e0f116a5ed69359d668653f724f379070dbe12',
@@ -10,7 +10,7 @@
         'dev' => false,
     ),
     'versions' => array(
-        'vamerli/elementify-mcp-plugin' => array(
+        'vamerli/elementeer-mcp-plugin' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
             'reference' => '28e0f116a5ed69359d668653f724f379070dbe12',

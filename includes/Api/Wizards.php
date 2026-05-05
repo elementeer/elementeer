@@ -65,7 +65,7 @@ final class Wizards {
 			);
 		}
 
-		$class_name = 'Elementify\\MCP\\Api\\Wizards\\' . $class_map[ $wizard_id ];
+		$class_name = 'Elementeer\\MCP\\Api\\Wizards\\' . $class_map[ $wizard_id ];
 
 		// Check if the wizard class exists
 		if ( ! \class_exists( $class_name ) ) {

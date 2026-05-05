@@ -1,11 +1,11 @@
 <?php
 /**
- * Plugin Name: Elementify
- * Plugin URI:  https://github.com/elementeer/elementeer-mcp
- * Description: Complete WordPress/Elementor AI development platform with enhanced API, intelligent composition, workflow staging, governance systems, and MCP integration.
+ * Plugin Name: Elementeer
+ * Plugin URI: https://github.com/elementeer/elementeer
+ * Description: The agent-native Elementor growth layer. Complete WordPress/Elementor AI platform with enhanced API, intelligent composition, workflow staging, governance systems, and MCP integration.
  * Version:     2.0.1
- * Author:      Elementify
- * Author URI:  https://elementeer.dev
+ * Author:      Elementeer
+ * Author URI: https://elementeer.xyz
  * License:     GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain: elementeer
@@ -16,7 +16,7 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP;
+namespace Elementeer\MCP;
 
 if ( ! defined( 'ABSPATH' ) ) {
     exit;
@@ -53,7 +53,7 @@ define( 'ELEMENTIFY_MCP_OPTION_MODE', 'elementeer_mcp_activation_mode' );
 
 // Autoloader for our classes
 spl_autoload_register( function ( string $class ): void {
-    $prefix   = 'Elementify\\MCP\\';
+    $prefix   = 'Elementeer\\MCP\\';
     $base_dir = ELEMENTIFY_MCP_DIR . 'includes/';
 
     if ( str_starts_with( $class, $prefix ) ) {
@@ -75,11 +75,11 @@ if ( function_exists( 'add_action' ) ) {
                 echo '<div class="notice notice-error"><p>';
                 if ( function_exists( 'esc_html_e' ) ) {
                     \esc_html_e(
-                         'Elementify MCP Plugin requires Elementor to be installed and active.',
+                         'Elementeer MCP Plugin requires Elementor to be installed and active.',
                         'elementeer'
                     );
                 } else {
-                    echo 'Elementify MCP Plugin requires Elementor to be installed and active.';
+                    echo 'Elementeer MCP Plugin requires Elementor to be installed and active.';
                 }
                 echo '</p></div>';
             } );

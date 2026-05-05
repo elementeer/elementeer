@@ -337,7 +337,7 @@ final class Assessment {
         }
 
         // ------------------------------------------------------------------ //
-        // 11. Capabilities (Elementify plugin)
+        // 11. Capabilities (Elementeer plugin)
         // ------------------------------------------------------------------ //
         $seo_plugin = null;
         if ( ! empty( $plugins_classified['seo'] ) ) {

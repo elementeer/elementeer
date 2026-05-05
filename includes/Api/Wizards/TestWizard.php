@@ -55,7 +55,7 @@ final class TestWizard extends BaseWizard {
 			'suggested_plugins' => [
 				[
 					'slug' => 'elementeer/elementeer.php',
-					'name' => 'Elementify',
+					'name' => 'Elementeer',
 					'reason' => 'Already installed and active',
 					'required_capability' => 'plugin-stack-context:read',
 				],

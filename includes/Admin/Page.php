@@ -15,8 +15,8 @@ final class Page {
 
     public static function register_menu(): void {
         add_menu_page(
-            __( 'Elementify', 'elementeer' ),
-            __( 'Elementify', 'elementeer' ),
+            __( 'Elementeer', 'elementeer' ),
+            __( 'Elementeer', 'elementeer' ),
             'manage_options',
             'elementeer',
             [ self::class, 'render' ],

@@ -10,7 +10,7 @@ namespace Elementeer\MCP\Activation;
  * Modes:
  *   vamerli-agency    — Vamerli Agency license detected (highest tier)
  *   vamerli-embedded  — Running inside Vamerli Studio (non-agency)
- *   standalone-pro    — Elementify Pro license present, no Vamerli
+ *   standalone-pro    — Elementeer Pro license present, no Vamerli
  *   standalone-free   — Free tier, no special licenses
  */
 final class Mode {
@@ -62,7 +62,7 @@ final class Mode {
             return 'vamerli-embedded';
         }
 
-        // Standalone Pro: Elementify Pro license key in options
+        // Standalone Pro: Elementeer Pro license key in options
         if ( $this->has_elementeer_pro_license() ) {
             return 'standalone-pro';
         }

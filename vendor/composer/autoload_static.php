@@ -9,12 +9,12 @@ class ComposerStaticInit598c9c1252d8e46e003a3eb143b55e49
     public static $prefixLengthsPsr4 = array (
         'E' =>
         array (
-            'Elementify\\MCP\\' => 15,
+            'Elementeer\\MCP\\' => 15,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'Elementify\\MCP\\' =>
+        'Elementeer\\MCP\\' =>
         array (
             0 => __DIR__ . '/../..' . '/includes',
         ),
@@ -78,7 +78,7 @@ class ComposerStaticInit598c9c1252d8e46e003a3eb143b55e49
         'Elementeer\\MCP\\Auth\\Capabilities' => __DIR__ . '/../..' . '/includes/Auth/Capabilities.php',
         'Elementeer\\MCP\\Auth\\Manager' => __DIR__ . '/../..' . '/includes/Auth/Manager.php',
         'Elementeer\\MCP\\Governance\\Settings' => __DIR__ . '/../..' . '/includes/Governance/Settings.php',
-        'Elementify\\MCP\\Plugin' => __DIR__ . '/../..' . '/includes/Plugin.php',
+        'Elementeer\\MCP\\Plugin' => __DIR__ . '/../..' . '/includes/Plugin.php',
     );
 
     public static function getInitializer(ClassLoader $loader)

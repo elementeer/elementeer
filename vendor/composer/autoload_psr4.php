@@ -6,5 +6,5 @@ $vendorDir = dirname(__DIR__);
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Elementify\\MCP\\' => array($baseDir . '/includes'),
+    'Elementeer\\MCP\\' => array($baseDir . '/includes'),
 );

@@ -63,5 +63,5 @@ return array(
     'Elementeer\\MCP\\Auth\\Capabilities' => $baseDir . '/includes/Auth/Capabilities.php',
     'Elementeer\\MCP\\Auth\\Manager' => $baseDir . '/includes/Auth/Manager.php',
     'Elementeer\\MCP\\Governance\\Settings' => $baseDir . '/includes/Governance/Settings.php',
-    'Elementify\\MCP\\Plugin' => $baseDir . '/includes/Plugin.php',
+    'Elementeer\\MCP\\Plugin' => $baseDir . '/includes/Plugin.php',
 );

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP;
+namespace Elementeer\MCP;
 
 use Elementeer\MCP\Admin\Page;
 use Elementeer\MCP\Api\Router;
