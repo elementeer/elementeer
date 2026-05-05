@@ -1,0 +1,56 @@
+name: Release Plugin
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  test:
+    name: Test
+    uses: ./.github/workflows/test-plugin.yml
+
+  build-and-release:
+    name: Build & Release
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build release ZIP
+        run: |
+          ZIP_NAME="elementeer.${{ steps.version.outputs.version }}.zip"
+          git archive --format=zip --prefix=elementeer/ HEAD -o "$ZIP_NAME"
+          echo "SHA256=$(sha256sum $ZIP_NAME | awk '{print $1}')" >> "$GITHUB_OUTPUT"
+          echo "zip_name=$ZIP_NAME" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "Elementeer v${{ steps.version.outputs.version }}"
+          files: elementeer.*.zip
+          generate_release_notes: true
+          body: |
+            ## Elementeer v${{ steps.version.outputs.version }}
+
+            **The agent-native Elementor growth layer.**
+            Complete WordPress/Elementor AI platform.
+
+            ### Verification
+            | | |
+            |---|---|
+            | SHA256 | `${{ steps.version.outputs.sha256 }}` |
+
+            ### Installation
+            1. Download the ZIP
+            2. Upload to WordPress → Plugins → Add New → Upload
+            3. Activate
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
