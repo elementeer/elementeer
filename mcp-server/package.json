@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@elementify/shared": "*",
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "axios": "^1.7.0",
     "zod": "^3.23.0"
   },
