@@ -86,14 +86,14 @@ if ( function_exists( 'add_action' ) ) {
             return;
         }
 
-        Plugin::get_instance()->init();
+        \Elementeer\MCP\Plugin::get_instance()->init();
     } );
 }
 
 // Activation / deactivation hooks
 if ( function_exists( 'register_activation_hook' ) ) {
-    \register_activation_hook( __FILE__, [ Plugin::class, 'activate' ] );
+    \register_activation_hook( __FILE__, [ \Elementeer\MCP\Plugin::class, 'activate' ] );
 }
 if ( function_exists( 'register_deactivation_hook' ) ) {
-    \register_deactivation_hook( __FILE__, [ Plugin::class, 'deactivate' ] );
+    \register_deactivation_hook( __FILE__, [ \Elementeer\MCP\Plugin::class, 'deactivate' ] );
 }
