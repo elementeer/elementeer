@@ -1,6 +1,6 @@
 {
-  "name": "vamerli/elementify-mcp-plugin",
-  "description": "Elementify MCP WordPress Plugin",
+  "name": "elementeer/elementeer",
+  "description": "Elementeer WordPress Plugin",
   "type": "wordpress-plugin",
   "license": "GPL-3.0-or-later",
   "require": {
@@ -13,12 +13,12 @@
   },
   "autoload": {
     "psr-4": {
-      "Elementify\\MCP\\": "includes/"
+      "Elementeer\\MCP\\": "includes/"
     }
   },
   "autoload-dev": {
     "psr-4": {
-      "Elementify\\Tests\\": "tests/"
+      "Elementeer\\Tests\\": "tests/"
     }
   },
   "scripts": {

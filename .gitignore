@@ -1,0 +1,8 @@
+.phpunit.result.cache
+vendor/
+*.zip
+
+.codenomad/
+.claude/
+.skillweave/
+.understand-anything/

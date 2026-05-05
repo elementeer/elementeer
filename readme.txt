@@ -5,8 +5,8 @@ Requires at least: 6.0
 Tested up to: 6.5
 Stable tag: 2.0.1
 Requires PHP: 8.0
-License: MIT
-License URI: https://opensource.org/licenses/MIT
+License: GPL-3.0-or-later
+License URI: https://www.gnu.org/licenses/gpl-3.0.html
 
 AI-native REST API for Elementor template management. Connect Claude, Cursor, and other MCP clients directly to your Elementor library.
 
