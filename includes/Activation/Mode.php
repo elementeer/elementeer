@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Activation;
+namespace Elementeer\MCP\Activation;
 
 /**
  * Detects and persists the plugin activation mode.
@@ -29,10 +29,10 @@ final class Mode {
      */
     public function detect(): void {
         $mode = $this->compute_mode();
-        $stored = \get_option( ELEMENTIFY_MCP_OPTION_MODE, '' );
+        $stored = \get_option( ELEMENTEER_MCP_OPTION_MODE, '' );
 
         if ( $mode !== $stored ) {
-            \update_option( ELEMENTIFY_MCP_OPTION_MODE, $mode );
+            \update_option( ELEMENTEER_MCP_OPTION_MODE, $mode );
         }
     }
 
@@ -42,10 +42,10 @@ final class Mode {
      * @return 'standalone-free'|'standalone-pro'|'vamerli-embedded'|'vamerli-agency'
      */
     public function get_mode(): string {
-        $stored = \get_option( ELEMENTIFY_MCP_OPTION_MODE, '' );
+        $stored = \get_option( ELEMENTEER_MCP_OPTION_MODE, '' );
         if ( '' === $stored ) {
             $stored = $this->compute_mode();
-            \update_option( ELEMENTIFY_MCP_OPTION_MODE, $stored );
+            \update_option( ELEMENTEER_MCP_OPTION_MODE, $stored );
         }
         return $stored;
     }
@@ -63,7 +63,7 @@ final class Mode {
         }
 
         // Standalone Pro: Elementify Pro license key in options
-        if ( $this->has_elementify_pro_license() ) {
+        if ( $this->has_elementeer_pro_license() ) {
             return 'standalone-pro';
         }
 
@@ -84,8 +84,8 @@ final class Mode {
         return 'agency' === $tier;
     }
 
-    private function has_elementify_pro_license(): bool {
-        $license = \get_option( 'elementify_mcp_pro_license', '' );
+    private function has_elementeer_pro_license(): bool {
+        $license = \get_option( 'elementeer_mcp_pro_license', '' );
         return ! empty( $license );
     }
 }

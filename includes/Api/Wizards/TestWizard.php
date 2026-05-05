@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api\Wizards;
+namespace Elementeer\MCP\Api\Wizards;
 
 /**
  * Test wizard for verifying BaseWizard architecture.
@@ -54,7 +54,7 @@ final class TestWizard extends BaseWizard {
 			],
 			'suggested_plugins' => [
 				[
-					'slug' => 'elementify/elementify.php',
+					'slug' => 'elementeer/elementeer.php',
 					'name' => 'Elementify',
 					'reason' => 'Already installed and active',
 					'required_capability' => 'plugin-stack-context:read',

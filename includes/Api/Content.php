@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for WordPress content management.
@@ -44,8 +44,8 @@ final class Content {
 
         if ( empty( $title ) ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Title is required.', 'elementify' ),
+                'elementeer_missing_param',
+                __( 'Title is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -61,10 +61,10 @@ final class Content {
         $page_id = wp_insert_post( $post_data, true );
         if ( is_wp_error( $page_id ) ) {
             return new WP_Error(
-                'elementify_create_failed',
+                'elementeer_create_failed',
                 sprintf(
                     /* translators: %s: error message */
-                    __( 'Failed to create page: %s', 'elementify' ),
+                    __( 'Failed to create page: %s', 'elementeer' ),
                     $page_id->get_error_message()
                 ),
                 [ 'status' => 500 ]
@@ -84,7 +84,7 @@ final class Content {
                 'page' => $this->format_post( $page ),
                 'message' => sprintf(
                     /* translators: %s: page title */
-                    __( 'Page "%s" created successfully.', 'elementify' ),
+                    __( 'Page "%s" created successfully.', 'elementeer' ),
                     $title
                 ),
             ],
@@ -115,8 +115,8 @@ final class Content {
 
         if ( empty( $title ) ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Title is required.', 'elementify' ),
+                'elementeer_missing_param',
+                __( 'Title is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -131,10 +131,10 @@ final class Content {
         $post_id = wp_insert_post( $post_data, true );
         if ( is_wp_error( $post_id ) ) {
             return new WP_Error(
-                'elementify_create_failed',
+                'elementeer_create_failed',
                 sprintf(
                     /* translators: %s: error message */
-                    __( 'Failed to create post: %s', 'elementify' ),
+                    __( 'Failed to create post: %s', 'elementeer' ),
                     $post_id->get_error_message()
                 ),
                 [ 'status' => 500 ]
@@ -156,7 +156,7 @@ final class Content {
                 'post' => $this->format_post( $post ),
                 'message' => sprintf(
                     /* translators: %s: post title */
-                    __( 'Post "%s" created successfully.', 'elementify' ),
+                    __( 'Post "%s" created successfully.', 'elementeer' ),
                     $title
                 ),
             ],
@@ -176,8 +176,8 @@ final class Content {
         $post_id = absint( $request->get_param( 'id' ) );
         if ( ! $post_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Post ID is required.', 'elementify' ),
+                'elementeer_missing_param',
+                __( 'Post ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -185,8 +185,8 @@ final class Content {
         $post = get_post( $post_id );
         if ( ! $post ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Post not found.', 'elementify' ),
+                'elementeer_not_found',
+                __( 'Post not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -228,8 +228,8 @@ final class Content {
                     $updated['featured_image_id'] = $featured_image_id;
                 } else {
                     return new WP_Error(
-                        'elementify_invalid_param',
-                        __( 'Invalid featured image ID.', 'elementify' ),
+                        'elementeer_invalid_param',
+                        __( 'Invalid featured image ID.', 'elementeer' ),
                         [ 'status' => 400 ]
                     );
                 }
@@ -244,7 +244,7 @@ final class Content {
             [
                 'post_id' => $post_id,
                 'updated' => $updated,
-                'message' => __( 'Post meta updated successfully.', 'elementify' ),
+                'message' => __( 'Post meta updated successfully.', 'elementeer' ),
             ],
             200
         );
@@ -262,8 +262,8 @@ final class Content {
         $post_id = absint( $request->get_param( 'id' ) );
         if ( ! $post_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Post ID is required.', 'elementify' ),
+                'elementeer_missing_param',
+                __( 'Post ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -273,24 +273,24 @@ final class Content {
         $post = get_post( $post_id );
         if ( ! $post ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Post not found.', 'elementify' ),
+                'elementeer_not_found',
+                __( 'Post not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
 
         if ( $force ) {
             $result = wp_delete_post( $post_id, true );
-            $message = __( 'Post permanently deleted.', 'elementify' );
+            $message = __( 'Post permanently deleted.', 'elementeer' );
         } else {
             $result = wp_trash_post( $post_id );
-            $message = __( 'Post moved to trash.', 'elementify' );
+            $message = __( 'Post moved to trash.', 'elementeer' );
         }
 
         if ( ! $result ) {
             return new WP_Error(
-                'elementify_delete_failed',
-                __( 'Failed to delete post.', 'elementify' ),
+                'elementeer_delete_failed',
+                __( 'Failed to delete post.', 'elementeer' ),
                 [ 'status' => 500 ]
             );
         }
@@ -353,10 +353,10 @@ final class Content {
         $taxonomy = sanitize_text_field( $request->get_param( 'taxonomy' ) );
         if ( ! taxonomy_exists( $taxonomy ) ) {
             return new WP_Error(
-                'elementify_invalid_taxonomy',
+                'elementeer_invalid_taxonomy',
                 sprintf(
                     /* translators: %s: taxonomy name */
-                    __( 'Taxonomy "%s" does not exist.', 'elementify' ),
+                    __( 'Taxonomy "%s" does not exist.', 'elementeer' ),
                     $taxonomy
                 ),
                 [ 'status' => 400 ]
@@ -372,8 +372,8 @@ final class Content {
                 $name = sanitize_text_field( $params['name'] ?? '' );
                 if ( empty( $name ) ) {
                     return new WP_Error(
-                        'elementify_missing_param',
-                        __( 'Term name is required.', 'elementify' ),
+                        'elementeer_missing_param',
+                        __( 'Term name is required.', 'elementeer' ),
                         [ 'status' => 400 ]
                     );
                 }
@@ -390,10 +390,10 @@ final class Content {
 
                 if ( is_wp_error( $term ) ) {
                     return new WP_Error(
-                        'elementify_term_create_failed',
+                        'elementeer_term_create_failed',
                         sprintf(
                             /* translators: %s: error message */
-                            __( 'Failed to create term: %s', 'elementify' ),
+                            __( 'Failed to create term: %s', 'elementeer' ),
                             $term->get_error_message()
                         ),
                         [ 'status' => 500 ]
@@ -407,7 +407,7 @@ final class Content {
                         'term' => $this->format_term( $term_obj ),
                         'message' => sprintf(
                             /* translators: %s: term name */
-                            __( 'Term "%s" created successfully.', 'elementify' ),
+                            __( 'Term "%s" created successfully.', 'elementeer' ),
                             $name
                         ),
                     ],
@@ -419,8 +419,8 @@ final class Content {
                 $term_id = absint( $params['id'] ?? 0 );
                 if ( ! $term_id ) {
                     return new WP_Error(
-                        'elementify_missing_param',
-                        __( 'Term ID is required.', 'elementify' ),
+                        'elementeer_missing_param',
+                        __( 'Term ID is required.', 'elementeer' ),
                         [ 'status' => 400 ]
                     );
                 }
@@ -441,8 +441,8 @@ final class Content {
 
                 if ( empty( $args ) ) {
                     return new WP_Error(
-                        'elementify_missing_param',
-                        __( 'No fields to update.', 'elementify' ),
+                        'elementeer_missing_param',
+                        __( 'No fields to update.', 'elementeer' ),
                         [ 'status' => 400 ]
                     );
                 }
@@ -450,10 +450,10 @@ final class Content {
                 $term = wp_update_term( $term_id, $taxonomy, $args );
                 if ( is_wp_error( $term ) ) {
                     return new WP_Error(
-                        'elementify_term_update_failed',
+                        'elementeer_term_update_failed',
                         sprintf(
                             /* translators: %s: error message */
-                            __( 'Failed to update term: %s', 'elementify' ),
+                            __( 'Failed to update term: %s', 'elementeer' ),
                             $term->get_error_message()
                         ),
                         [ 'status' => 500 ]
@@ -465,7 +465,7 @@ final class Content {
                 return new WP_REST_Response(
                     [
                         'term' => $this->format_term( $term_obj ),
-                        'message' => __( 'Term updated successfully.', 'elementify' ),
+                        'message' => __( 'Term updated successfully.', 'elementeer' ),
                     ],
                     200
                 );
@@ -475,8 +475,8 @@ final class Content {
                 $term_id = absint( $params['id'] ?? 0 );
                 if ( ! $term_id ) {
                     return new WP_Error(
-                        'elementify_missing_param',
-                        __( 'Term ID is required.', 'elementify' ),
+                        'elementeer_missing_param',
+                        __( 'Term ID is required.', 'elementeer' ),
                         [ 'status' => 400 ]
                     );
                 }
@@ -486,10 +486,10 @@ final class Content {
                 $result = wp_delete_term( $term_id, $taxonomy, [ 'force' => $force ] );
                 if ( is_wp_error( $result ) ) {
                     return new WP_Error(
-                        'elementify_term_delete_failed',
+                        'elementeer_term_delete_failed',
                         sprintf(
                             /* translators: %s: error message */
-                            __( 'Failed to delete term: %s', 'elementify' ),
+                            __( 'Failed to delete term: %s', 'elementeer' ),
                             $result->get_error_message()
                         ),
                         [ 'status' => 500 ]
@@ -500,15 +500,15 @@ final class Content {
                     [
                         'term_id' => $term_id,
                         'deleted' => true,
-                        'message' => __( 'Term deleted successfully.', 'elementify' ),
+                        'message' => __( 'Term deleted successfully.', 'elementeer' ),
                     ],
                     200
                 );
 
             default:
                 return new WP_Error(
-                    'elementify_method_not_allowed',
-                    __( 'Method not allowed.', 'elementify' ),
+                    'elementeer_method_not_allowed',
+                    __( 'Method not allowed.', 'elementeer' ),
                     [ 'status' => 405 ]
                 );
         }

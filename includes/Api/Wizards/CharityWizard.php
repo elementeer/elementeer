@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api\Wizards;
+namespace Elementeer\MCP\Api\Wizards;
 
 /**
  * Charity recommendation wizard (CHARITY-003).

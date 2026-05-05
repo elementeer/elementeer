@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
 use WP_Query;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for Elementor template CRUD.
@@ -20,7 +20,7 @@ use Elementify\MCP\Auth\Manager as Auth;
 final class Templates {
 
     private const ALLOWED_TEMPLATE_TYPES = [ 'page', 'section', 'container', 'widget', 'popup', 'kit', 'global-widget' ];
-    private const ALLOWED_LIBRARY_SOURCE_KINDS = [ 'local-elementor', 'elementify-premium' ];
+    private const ALLOWED_LIBRARY_SOURCE_KINDS = [ 'local-elementor', 'elementeer-premium' ];
 
     private Auth $auth;
 
@@ -110,7 +110,7 @@ final class Templates {
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
             return new WP_Error(
                 'not_found',
-                \__( 'Template not found.', 'elementify-mcp' ),
+                \__( 'Template not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -136,7 +136,7 @@ final class Templates {
         if ( empty( $title ) ) {
             return new WP_Error(
                 'missing_title',
-                \__( 'Template title is required.', 'elementify-mcp' ),
+                \__( 'Template title is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -144,7 +144,7 @@ final class Templates {
         if ( ! in_array( $type, self::ALLOWED_TEMPLATE_TYPES, true ) ) {
             return new WP_Error(
                 'template_type_unsupported',
-                sprintf( \__( 'Unsupported template type: %s.', 'elementify-mcp' ), $type ),
+                sprintf( \__( 'Unsupported template type: %s.', 'elementeer' ), $type ),
                 [ 'status' => 400 ]
             );
         }
@@ -205,7 +205,7 @@ final class Templates {
         if ( empty( $title ) ) {
             return new WP_Error(
                 'missing_title',
-                \__( 'Template title is required.', 'elementify-mcp' ),
+                \__( 'Template title is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -213,7 +213,7 @@ final class Templates {
         if ( ! in_array( $type, self::ALLOWED_TEMPLATE_TYPES, true ) ) {
             return new WP_Error(
                 'template_type_unsupported',
-                sprintf( \__( 'Unsupported template type: %s.', 'elementify-mcp' ), $type ),
+                sprintf( \__( 'Unsupported template type: %s.', 'elementeer' ), $type ),
                 [ 'status' => 400 ]
             );
         }
@@ -221,7 +221,7 @@ final class Templates {
         if ( ! isset( $body['elementor_data'] ) || ! is_array( $body['elementor_data'] ) ) {
             return new WP_Error(
                 'invalid_data',
-                \__( 'elementor_data must be a JSON array.', 'elementify-mcp' ),
+                \__( 'elementor_data must be a JSON array.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -234,7 +234,7 @@ final class Templates {
         if ( empty( $source_kind ) || empty( $source_id ) ) {
             return new WP_Error(
                 'missing_source',
-                \__( 'Library imports require a source.kind and source.asset_id.', 'elementify-mcp' ),
+                \__( 'Library imports require a source.kind and source.asset_id.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -242,7 +242,7 @@ final class Templates {
         if ( ! in_array( $source_kind, self::ALLOWED_LIBRARY_SOURCE_KINDS, true ) ) {
             return new WP_Error(
                 'library_source_unsupported',
-                \__( 'Cloud library imports are not supported on the plugin side.', 'elementify-mcp' ),
+                \__( 'Cloud library imports are not supported on the plugin side.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -265,15 +265,15 @@ final class Templates {
         \update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
         \update_post_meta( $post_id, '_elementor_data', \wp_slash( \wp_json_encode( $body['elementor_data'] ) ) );
 
-        \update_post_meta( $post_id, '_elementify_library_source_kind', $source_kind );
-        \update_post_meta( $post_id, '_elementify_library_source_asset_id', $source_id );
-        \update_post_meta( $post_id, '_elementify_library_source_title', $source_title );
-        \update_post_meta( $post_id, '_elementify_library_source_reference', $source_ref );
-        \update_post_meta( $post_id, '_elementify_library_import_mode', 'manual-import' );
-        \update_post_meta( $post_id, '_elementify_library_imported_at', gmdate( 'c' ) );
+        \update_post_meta( $post_id, '_elementeer_library_source_kind', $source_kind );
+        \update_post_meta( $post_id, '_elementeer_library_source_asset_id', $source_id );
+        \update_post_meta( $post_id, '_elementeer_library_source_title', $source_title );
+        \update_post_meta( $post_id, '_elementeer_library_source_reference', $source_ref );
+        \update_post_meta( $post_id, '_elementeer_library_import_mode', 'manual-import' );
+        \update_post_meta( $post_id, '_elementeer_library_imported_at', gmdate( 'c' ) );
         \update_post_meta(
             $post_id,
-            '_elementify_library_source',
+            '_elementeer_library_source',
             \wp_slash(
                 \wp_json_encode(
                     [
@@ -326,7 +326,7 @@ final class Templates {
         $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
 
         $body    = $request->get_json_params() ?: [];
@@ -371,14 +371,14 @@ final class Templates {
         $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
 
         $deleted = wp_delete_post( $id, true ); // force delete, skip trash
         if ( ! $deleted ) {
             return new WP_Error(
                 'delete_failed',
-                \__( 'Failed to delete template.', 'elementify-mcp' ),
+                \__( 'Failed to delete template.', 'elementeer' ),
                 [ 'status' => 500 ]
             );
         }
@@ -400,7 +400,7 @@ final class Templates {
         $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
 
         $body      = $request->get_json_params() ?: [];
@@ -459,7 +459,7 @@ final class Templates {
         $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
 
         $raw  = get_post_meta( $id, '_elementor_data', true );
@@ -484,7 +484,7 @@ final class Templates {
         $post = \get_post( $id );
 
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
-            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementify-mcp' ), [ 'status' => 404 ] );
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
 
         $body = $request->get_json_params() ?: [];
@@ -492,7 +492,7 @@ final class Templates {
         if ( ! isset( $body['elementor_data'] ) || ! is_array( $body['elementor_data'] ) ) {
             return new WP_Error(
                 'invalid_data',
-                \__( 'elementor_data must be a JSON array.', 'elementify-mcp' ),
+                \__( 'elementor_data must be a JSON array.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }

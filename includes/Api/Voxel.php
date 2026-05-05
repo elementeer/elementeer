@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for Voxel (directory/community plugin) integration.
@@ -44,7 +44,7 @@ final class Voxel {
 		$status = $this->detect_voxel();
 		if ( ! $status['voxel_available'] ) {
 			return new WP_Error(
-				'elementify_voxel_inactive',
+				'elementeer_voxel_inactive',
 				'Voxel plugin is not active.',
 				[ 'status' => 400 ]
 			);
@@ -63,7 +63,7 @@ final class Voxel {
 		$status = $this->detect_voxel();
 		if ( ! $status['voxel_available'] ) {
 			return new WP_Error(
-				'elementify_voxel_inactive',
+				'elementeer_voxel_inactive',
 				'Voxel plugin is not active.',
 				[ 'status' => 400 ]
 			);
@@ -72,7 +72,7 @@ final class Voxel {
 		$post_type = $request->get_param( 'post_type' );
 		if ( empty( $post_type ) ) {
 			return new WP_Error(
-				'elementify_missing_param',
+				'elementeer_missing_param',
 				'post_type is required.',
 				[ 'status' => 400 ]
 			);
@@ -91,7 +91,7 @@ final class Voxel {
 		$status = $this->detect_voxel();
 		if ( ! $status['voxel_available'] ) {
 			return new WP_Error(
-				'elementify_voxel_inactive',
+				'elementeer_voxel_inactive',
 				'Voxel plugin is not active.',
 				[ 'status' => 400 ]
 			);
@@ -110,7 +110,7 @@ final class Voxel {
 		$status = $this->detect_voxel();
 		if ( ! $status['voxel_available'] ) {
 			return new WP_Error(
-				'elementify_voxel_inactive',
+				'elementeer_voxel_inactive',
 				'Voxel plugin is not active.',
 				[ 'status' => 400 ]
 			);
@@ -129,7 +129,7 @@ final class Voxel {
 		$status = $this->detect_voxel();
 		if ( ! $status['voxel_available'] ) {
 			return new WP_Error(
-				'elementify_voxel_inactive',
+				'elementeer_voxel_inactive',
 				'Voxel plugin is not active.',
 				[ 'status' => 400 ]
 			);
@@ -148,7 +148,7 @@ final class Voxel {
 		$status = $this->detect_voxel();
 		if ( ! $status['voxel_available'] ) {
 			return new WP_Error(
-				'elementify_voxel_inactive',
+				'elementeer_voxel_inactive',
 				'Voxel plugin is not active.',
 				[ 'status' => 400 ]
 			);
@@ -200,7 +200,7 @@ final class Voxel {
 
 		if ( \is_wp_error( $response ) ) {
 			return new WP_Error(
-				'elementify_voxel_proxy_failed',
+				'elementeer_voxel_proxy_failed',
 				'Failed to reach Voxel REST API: ' . $response->get_error_message(),
 				[ 'status' => 502 ]
 			);
@@ -209,7 +209,7 @@ final class Voxel {
 		$code = \wp_remote_retrieve_response_code( $response );
 		if ( $code >= 400 ) {
 			return new WP_Error(
-				'elementify_voxel_api_error',
+				'elementeer_voxel_api_error',
 				'Voxel API returned status ' . $code,
 				[ 'status' => 502 ]
 			);
@@ -220,7 +220,7 @@ final class Voxel {
 
 		if ( \json_last_error() !== JSON_ERROR_NONE ) {
 			return new WP_Error(
-				'elementify_voxel_invalid_json',
+				'elementeer_voxel_invalid_json',
 				'Invalid JSON response from Voxel API.',
 				[ 'status' => 502 ]
 			);

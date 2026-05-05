@@ -2,25 +2,25 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Admin;
+namespace Elementeer\MCP\Admin;
 
-use Elementify\MCP\Auth\Capabilities;
-use Elementify\MCP\Auth\Manager as Auth;
-use Elementify\MCP\Governance\Settings;
+use Elementeer\MCP\Auth\Capabilities;
+use Elementeer\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Governance\Settings;
 
 /**
- * WP Admin settings page for Elementify MCP.
+ * WP Admin settings page for Elementeer MCP.
  */
 final class Page {
 
     public static function register_menu(): void {
         add_menu_page(
-            __( 'Elementify', 'elementify' ),
-            __( 'Elementify', 'elementify' ),
+            __( 'Elementify', 'elementeer' ),
+            __( 'Elementify', 'elementeer' ),
             'manage_options',
-            'elementify',
+            'elementeer',
             [ self::class, 'render' ],
-            ELEMENTIFY_MCP_URL . 'assets/images/icon.svg',
+            ELEMENTEER_MCP_URL . 'assets/images/icon.svg',
             self::get_menu_position()
         );
         
@@ -66,15 +66,15 @@ final class Page {
     public static function add_admin_styles(): void {
         ?>
         <style>
-            #adminmenu .toplevel_page_elementify .wp-menu-image img {
+            #adminmenu .toplevel_page_elementeer .wp-menu-image img {
                 width: 20px;
                 height: 20px;
                 padding: 7px 0 0;
                 opacity: 0.8;
                 transition: opacity 0.3s;
             }
-            #adminmenu .toplevel_page_elementify:hover .wp-menu-image img,
-            #adminmenu .toplevel_page_elementify.current .wp-menu-image img {
+            #adminmenu .toplevel_page_elementeer:hover .wp-menu-image img,
+            #adminmenu .toplevel_page_elementeer.current .wp-menu-image img {
                 opacity: 1;
             }
         </style>
@@ -83,23 +83,23 @@ final class Page {
 
     public static function render(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
-            wp_die( esc_html__( 'You do not have permission to access this page.', 'elementify' ) );
+            wp_die( esc_html__( 'You do not have permission to access this page.', 'elementeer' ) );
         }
 
         // Handle form submissions
-        if ( isset( $_POST['elementify_action'] ) && check_admin_referer( 'elementify_mcp_admin' ) ) {
-            self::handle_action( sanitize_text_field( $_POST['elementify_action'] ) );
+        if ( isset( $_POST['elementeer_action'] ) && check_admin_referer( 'elementeer_mcp_admin' ) ) {
+            self::handle_action( sanitize_text_field( $_POST['elementeer_action'] ) );
         }
 
-        $keys       = get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys       = get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
         $governance = Settings::get_instance()->get();
 
         ?>
         <div class="wrap">
-            <h1><?php esc_html_e( 'Elementify MCP Settings', 'elementify' ); ?></h1>
+            <h1><?php esc_html_e( 'Elementeer MCP Settings', 'elementeer' ); ?></h1>
 
-            <h2><?php esc_html_e( 'API Keys', 'elementify' ); ?></h2>
-            <p><?php esc_html_e( 'Use these keys in the X-Elementify-Key header when connecting your MCP server.', 'elementify' ); ?></p>
+            <h2><?php esc_html_e( 'API Keys', 'elementeer' ); ?></h2>
+            <p><?php esc_html_e( 'Use these keys in the X-Elementeer-Key header when connecting your MCP server.', 'elementeer' ); ?></p>
 
             <?php
             // Capture new key from redirect (shown only on this page load).
@@ -111,14 +111,14 @@ final class Page {
             <?php if ( $just_generated_key ) : ?>
                 <div class="notice notice-warning" style="padding:12px 16px">
                     <p>
-                        <strong><?php esc_html_e( 'New API Key generated — save this key now. It won\'t be shown again.', 'elementify' ); ?></strong>
+                        <strong><?php esc_html_e( 'New API Key generated — save this key now. It won\'t be shown again.', 'elementeer' ); ?></strong>
                     </p>
                     <p>
-                        <code id="elementify-new-key" style="font-size:1.1em;user-select:all"><?php echo esc_html( $just_generated_key ); ?></code>
+                        <code id="elementeer-new-key" style="font-size:1.1em;user-select:all"><?php echo esc_html( $just_generated_key ); ?></code>
                         &nbsp;
                         <button type="button" class="button button-small"
                             onclick="(function(btn){navigator.clipboard.writeText('<?php echo esc_js( $just_generated_key ); ?>').then(function(){var t=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=t;},2000);});})(this)">
-                                     <?php esc_html_e( 'Copy', 'elementify' ); ?>
+                                     <?php esc_html_e( 'Copy', 'elementeer' ); ?>
                         </button>
                     </p>
                 </div>
@@ -128,12 +128,12 @@ final class Page {
             <table class="widefat fixed striped">
                 <thead>
                     <tr>
-                        <th><?php esc_html_e( 'Label', 'elementify' ); ?></th>
-                        <th><?php esc_html_e( 'Key', 'elementify' ); ?></th>
-                        <th><?php esc_html_e( 'Capabilities', 'elementify' ); ?></th>
-                        <th><?php esc_html_e( 'Status', 'elementify' ); ?></th>
-                        <th><?php esc_html_e( 'Last Used', 'elementify' ); ?></th>
-                        <th><?php esc_html_e( 'Actions', 'elementify' ); ?></th>
+                        <th><?php esc_html_e( 'Label', 'elementeer' ); ?></th>
+                        <th><?php esc_html_e( 'Key', 'elementeer' ); ?></th>
+                        <th><?php esc_html_e( 'Capabilities', 'elementeer' ); ?></th>
+                        <th><?php esc_html_e( 'Status', 'elementeer' ); ?></th>
+                        <th><?php esc_html_e( 'Last Used', 'elementeer' ); ?></th>
+                        <th><?php esc_html_e( 'Actions', 'elementeer' ); ?></th>
                     </tr>
                 </thead>
                 <tbody>
@@ -158,15 +158,15 @@ final class Page {
                             <?php if ( ! empty( $key['is_active'] ) ) : ?>
                                 <button type="button" class="button button-small"
                                     onclick="(function(btn){navigator.clipboard.writeText('<?php echo esc_js( $raw_key ); ?>').then(function(){var t=btn.textContent;btn.textContent='Copied!';setTimeout(function(){btn.textContent=t;},2000);});})(this)">
-                                    <?php esc_html_e( 'Copy', 'elementify' ); ?>
+                                    <?php esc_html_e( 'Copy', 'elementeer' ); ?>
                                 </button>
                             <?php endif; ?>
                             <?php if ( $key['is_active'] ) : ?>
                             <form method="post" style="display:inline">
-                                <?php wp_nonce_field( 'elementify_mcp_admin' ); ?>
-                                <input type="hidden" name="elementify_action" value="revoke_key">
+                                <?php wp_nonce_field( 'elementeer_mcp_admin' ); ?>
+                                <input type="hidden" name="elementeer_action" value="revoke_key">
                                 <input type="hidden" name="key_value" value="<?php echo esc_attr( $raw_key ); ?>">
-                                 <button type="submit" class="button button-small"><?php esc_html_e( 'Revoke', 'elementify' ); ?></button>
+                                 <button type="submit" class="button button-small"><?php esc_html_e( 'Revoke', 'elementeer' ); ?></button>
                             </form>
                             <?php endif; ?>
                         </td>
@@ -175,20 +175,20 @@ final class Page {
                 </tbody>
             </table>
             <?php else : ?>
-                 <p><em><?php esc_html_e( 'No API keys yet. Generate one below.', 'elementify' ); ?></em></p>
+                 <p><em><?php esc_html_e( 'No API keys yet. Generate one below.', 'elementeer' ); ?></em></p>
             <?php endif; ?>
 
-             <h3><?php esc_html_e( 'Generate New Key', 'elementify' ); ?></h3>
+             <h3><?php esc_html_e( 'Generate New Key', 'elementeer' ); ?></h3>
             <form method="post">
-                <?php wp_nonce_field( 'elementify_mcp_admin' ); ?>
-                <input type="hidden" name="elementify_action" value="generate_key">
+                <?php wp_nonce_field( 'elementeer_mcp_admin' ); ?>
+                <input type="hidden" name="elementeer_action" value="generate_key">
                 <table class="form-table">
                     <tr>
-                         <th><label for="key_label"><?php esc_html_e( 'Label', 'elementify' ); ?></label></th>
+                         <th><label for="key_label"><?php esc_html_e( 'Label', 'elementeer' ); ?></label></th>
                         <td><input type="text" id="key_label" name="key_label" class="regular-text" placeholder="My MCP Client" required></td>
                     </tr>
                     <tr>
-                         <th><?php esc_html_e( 'Capabilities', 'elementify' ); ?></th>
+                         <th><?php esc_html_e( 'Capabilities', 'elementeer' ); ?></th>
                         <td>
                             <?php
                             $all_capabilities = Capabilities::labels();
@@ -197,17 +197,17 @@ final class Page {
                             ?>
                             <button type="button" class="button button-small" style="margin-bottom:10px"
                                 onclick="(function(){
-                                    var boxes=document.querySelectorAll('#elementify-caps-wrap input[type=checkbox]');
+                                    var boxes=document.querySelectorAll('#elementeer-caps-wrap input[type=checkbox]');
                                     var allChecked=Array.from(boxes).every(function(b){return b.checked;});
                                     boxes.forEach(function(b){b.checked=!allChecked;});
                                     this.textContent=allChecked?'Select All':'Deselect All';
                                 }).call(this)">
-                                <?php esc_html_e( 'Select All', 'elementify' ); ?>
+                                <?php esc_html_e( 'Select All', 'elementeer' ); ?>
                             </button>
                             <p class="description" style="margin-top:0">
-                                <?php esc_html_e( 'Capabilities are grouped by operating domain. Existing legacy keys continue to work, but newly generated keys use the new domain-based capability model.', 'elementify' ); ?>
+                                <?php esc_html_e( 'Capabilities are grouped by operating domain. Existing legacy keys continue to work, but newly generated keys use the new domain-based capability model.', 'elementeer' ); ?>
                             </p>
-                            <div id="elementify-caps-wrap" style="display:flex;flex-wrap:wrap;gap:12px">
+                            <div id="elementeer-caps-wrap" style="display:flex;flex-wrap:wrap;gap:12px">
                             <?php foreach ( $cap_groups as $group_label => $group_caps ) : ?>
                                 <fieldset style="border:1px solid #ddd;padding:8px 12px;min-width:180px">
                                     <legend style="font-weight:600;padding:0 4px"><?php echo esc_html( $group_label ); ?></legend>
@@ -227,23 +227,23 @@ final class Page {
                         </td>
                     </tr>
                 </table>
-                 <?php submit_button( __( 'Generate Key', 'elementify' ) ); ?>
+                 <?php submit_button( __( 'Generate Key', 'elementeer' ) ); ?>
             </form>
 
             <hr>
-             <h2><?php esc_html_e( 'Governance Settings', 'elementify' ); ?></h2>
+             <h2><?php esc_html_e( 'Governance Settings', 'elementeer' ); ?></h2>
             <form method="post">
-                <?php wp_nonce_field( 'elementify_mcp_admin' ); ?>
-                <input type="hidden" name="elementify_action" value="save_governance">
+                <?php wp_nonce_field( 'elementeer_mcp_admin' ); ?>
+                <input type="hidden" name="elementeer_action" value="save_governance">
                 <input type="hidden" name="governance_capabilities_present" value="1">
                 <table class="form-table">
                     <tr>
-                         <th><label for="max_keys"><?php esc_html_e( 'Max API Keys', 'elementify' ); ?></label></th>
+                         <th><label for="max_keys"><?php esc_html_e( 'Max API Keys', 'elementeer' ); ?></label></th>
                         <td><input type="number" id="max_keys" name="max_keys" min="1" max="100"
                             value="<?php echo esc_attr( $governance['max_keys'] ?? 10 ); ?>"></td>
                     </tr>
                     <tr>
-                         <th><?php esc_html_e( 'Allowed Capabilities', 'elementify' ); ?></th>
+                         <th><?php esc_html_e( 'Allowed Capabilities', 'elementeer' ); ?></th>
                         <td>
                             <?php
                             $all_capabilities     = Capabilities::labels();
@@ -252,17 +252,17 @@ final class Page {
                             ?>
                             <button type="button" class="button button-small" style="margin-bottom:10px"
                                 onclick="(function(){
-                                    var boxes=document.querySelectorAll('#elementify-governance-caps-wrap input[type=checkbox]');
+                                    var boxes=document.querySelectorAll('#elementeer-governance-caps-wrap input[type=checkbox]');
                                     var allChecked=Array.from(boxes).every(function(b){return b.checked;});
                                     boxes.forEach(function(b){b.checked=!allChecked;});
                                     this.textContent=allChecked?'Select All':'Deselect All';
                                 }).call(this)">
-                                <?php esc_html_e( 'Select All', 'elementify' ); ?>
+                                <?php esc_html_e( 'Select All', 'elementeer' ); ?>
                             </button>
                             <p class="description" style="margin-top:0">
-                                <?php esc_html_e( 'Governance can allow or deny whole operating domains regardless of what an individual key grants. Existing legacy settings are normalized to the domain model automatically.', 'elementify' ); ?>
+                                <?php esc_html_e( 'Governance can allow or deny whole operating domains regardless of what an individual key grants. Existing legacy settings are normalized to the domain model automatically.', 'elementeer' ); ?>
                             </p>
-                            <div id="elementify-governance-caps-wrap" style="display:flex;flex-wrap:wrap;gap:12px">
+                            <div id="elementeer-governance-caps-wrap" style="display:flex;flex-wrap:wrap;gap:12px">
                             <?php foreach ( $cap_groups as $group_label => $group_caps ) : ?>
                                 <fieldset style="border:1px solid #ddd;padding:8px 12px;min-width:180px">
                                     <legend style="font-weight:600;padding:0 4px"><?php echo esc_html( $group_label ); ?></legend>
@@ -282,27 +282,27 @@ final class Page {
                         </td>
                     </tr>
                     <tr>
-                         <th><?php esc_html_e( 'Audit Log', 'elementify' ); ?></th>
+                         <th><?php esc_html_e( 'Audit Log', 'elementeer' ); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="audit_log_enabled" value="1"
                                     <?php checked( $governance['audit_log_enabled'] ?? true ); ?>>
-                                 <?php esc_html_e( 'Enable audit logging for API key usage', 'elementify' ); ?>
+                                 <?php esc_html_e( 'Enable audit logging for API key usage', 'elementeer' ); ?>
                             </label>
                         </td>
                     </tr>
                     <tr>
-                         <th><?php esc_html_e( 'Require Approval', 'elementify' ); ?></th>
+                         <th><?php esc_html_e( 'Require Approval', 'elementeer' ); ?></th>
                         <td>
                             <label>
                                 <input type="checkbox" name="require_approval" value="1"
                                     <?php checked( $governance['require_approval'] ?? false ); ?>>
-                                 <?php esc_html_e( 'Require admin approval before new keys become active', 'elementify' ); ?>
+                                 <?php esc_html_e( 'Require admin approval before new keys become active', 'elementeer' ); ?>
                             </label>
                         </td>
                     </tr>
                 </table>
-                 <?php submit_button( __( 'Save Governance Settings', 'elementify' ) ); ?>
+                 <?php submit_button( __( 'Save Governance Settings', 'elementeer' ) ); ?>
             </form>
         </div>
         <?php
@@ -317,7 +317,7 @@ final class Page {
                     : [];
 
                 if ( empty( $label ) ) {
-                     add_settings_error( 'elementify_mcp', 'missing_label', __( 'Key label is required.', 'elementify' ) );
+                     add_settings_error( 'elementeer_mcp', 'missing_label', __( 'Key label is required.', 'elementeer' ) );
                     break;
                 }
 
@@ -325,7 +325,7 @@ final class Page {
                 $new_key = $record['key'];
 
                 wp_safe_redirect( add_query_arg( [
-                     'page'    => 'elementify',
+                     'page'    => 'elementeer',
                     'new_key' => $new_key,
                 ], admin_url( 'admin.php' ) ) );
                 exit;
@@ -335,7 +335,7 @@ final class Page {
                 if ( ! empty( $key_value ) ) {
                     Auth::get_instance()->revoke_key( $key_value );
                 }
-                 wp_safe_redirect( add_query_arg( 'page', 'elementify', admin_url( 'admin.php' ) ) );
+                 wp_safe_redirect( add_query_arg( 'page', 'elementeer', admin_url( 'admin.php' ) ) );
                 exit;
 
             case 'save_governance':
@@ -352,7 +352,7 @@ final class Page {
                     'audit_log_enabled' => ! empty( $_POST['audit_log_enabled'] ),
                     'require_approval'  => ! empty( $_POST['require_approval'] ),
                 ] );
-                 add_settings_error( 'elementify_mcp', 'saved', __( 'Governance settings saved.', 'elementify' ), 'updated' );
+                 add_settings_error( 'elementeer_mcp', 'saved', __( 'Governance settings saved.', 'elementeer' ), 'updated' );
                 break;
         }
     }

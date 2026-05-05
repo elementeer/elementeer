@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Governance;
+namespace Elementeer\MCP\Governance;
 
-use Elementify\MCP\Auth\Capabilities;
+use Elementeer\MCP\Auth\Capabilities;
 
 /**
  * Manages site-level governance settings stored in wp_options.
@@ -36,7 +36,7 @@ final class Settings {
      * @return array{allowed_capabilities: string[], require_approval: bool, audit_log_enabled: bool, max_keys: int}
      */
     public function get(): array {
-        $stored = \get_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, [] );
+        $stored = \get_option( ELEMENTEER_MCP_OPTION_GOVERNANCE, [] );
         $defaults = self::DEFAULTS;
         $defaults['allowed_capabilities'] = Capabilities::all();
 
@@ -69,7 +69,7 @@ final class Settings {
             $current['allowed_capabilities'] = Capabilities::filter( (array) $current['allowed_capabilities'] );
         }
 
-        \update_option( ELEMENTIFY_MCP_OPTION_GOVERNANCE, $current );
+        \update_option( ELEMENTEER_MCP_OPTION_GOVERNANCE, $current );
     }
 
     /**

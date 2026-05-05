@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for the site context resource.
@@ -22,7 +22,7 @@ use Elementify\MCP\Auth\Manager as Auth;
  */
 final class SiteContext {
 
-    private const OPTION_KEY = 'elementify_site_context';
+    private const OPTION_KEY = 'elementeer_site_context';
 
     private const VALID_ROLES    = [ 'freelancer', 'agency', 'site-owner', 'ai-agent' ];
     private const VALID_PURPOSES = [ 'ecommerce', 'corporate', 'portfolio', 'blog', 'community', 'other' ];

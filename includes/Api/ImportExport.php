@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for external data import (CSV, JSON, XML).
@@ -41,16 +41,16 @@ final class ImportExport {
 
 		if ( empty( $data ) ) {
 			return new WP_Error(
-				'elementify_missing_param',
-				\__( 'Data field is required.', 'elementify' ),
+				'elementeer_missing_param',
+				\__( 'Data field is required.', 'elementeer' ),
 				[ 'status' => 400 ]
 			);
 		}
 
 		if ( ! \in_array( $format, [ 'csv', 'json', 'xml' ], true ) ) {
 			return new WP_Error(
-				'elementify_invalid_param',
-				\__( 'Format must be csv, json, or xml.', 'elementify' ),
+				'elementeer_invalid_param',
+				\__( 'Format must be csv, json, or xml.', 'elementeer' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -64,8 +64,8 @@ final class ImportExport {
 		// Validate structure: array of rows/objects
 		if ( ! \is_array( $parsed ) || empty( $parsed ) ) {
 			return new WP_Error(
-				'elementify_invalid_data',
-				\__( 'Parsed data is empty or not an array.', 'elementify' ),
+				'elementeer_invalid_data',
+				\__( 'Parsed data is empty or not an array.', 'elementeer' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -94,8 +94,8 @@ final class ImportExport {
 				return $this->parse_xml( $data );
 			default:
 				return new WP_Error(
-					'elementify_internal_error',
-					\__( 'Unsupported format.', 'elementify' ),
+					'elementeer_internal_error',
+					\__( 'Unsupported format.', 'elementeer' ),
 					[ 'status' => 500 ]
 				);
 		}
@@ -126,16 +126,16 @@ final class ImportExport {
 		$decoded = json_decode( $json, true );
 		if ( json_last_error() !== JSON_ERROR_NONE ) {
 			return new WP_Error(
-				'elementify_invalid_json',
-				sprintf( \__( 'Invalid JSON: %s', 'elementify' ), json_last_error_msg() ),
+				'elementeer_invalid_json',
+				sprintf( \__( 'Invalid JSON: %s', 'elementeer' ), json_last_error_msg() ),
 				[ 'status' => 400 ]
 			);
 		}
 
 		if ( ! \is_array( $decoded ) ) {
 			return new WP_Error(
-				'elementify_invalid_json',
-				\__( 'JSON must decode to an array.', 'elementify' ),
+				'elementeer_invalid_json',
+				\__( 'JSON must decode to an array.', 'elementeer' ),
 				[ 'status' => 400 ]
 			);
 		}
@@ -146,8 +146,8 @@ final class ImportExport {
 	private function parse_xml( string $xml ): array|WP_Error {
 		if ( ! class_exists( 'SimpleXMLElement' ) ) {
 			return new WP_Error(
-				'elementify_missing_extension',
-				\__( 'XML parsing requires SimpleXML extension.', 'elementify' ),
+				'elementeer_missing_extension',
+				\__( 'XML parsing requires SimpleXML extension.', 'elementeer' ),
 				[ 'status' => 500 ]
 			);
 		}
@@ -158,8 +158,8 @@ final class ImportExport {
 			$errors = libxml_get_errors();
 			libxml_clear_errors();
 			return new WP_Error(
-				'elementify_invalid_xml',
-				\__( 'Invalid XML structure.', 'elementify' ),
+				'elementeer_invalid_xml',
+				\__( 'Invalid XML structure.', 'elementeer' ),
 				[ 'status' => 400, 'details' => $errors ]
 			);
 		}
@@ -389,8 +389,8 @@ final class ImportExport {
 
 		if ( ! \in_array( $format, [ 'csv', 'json' ], true ) ) {
 			return new WP_Error(
-				'elementify_invalid_param',
-				\__( 'Format must be csv or json.', 'elementify' ),
+				'elementeer_invalid_param',
+				\__( 'Format must be csv or json.', 'elementeer' ),
 				[ 'status' => 400 ]
 			);
 		}

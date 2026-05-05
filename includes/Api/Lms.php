@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for LMS (Learning Management System) integration.
@@ -44,7 +44,7 @@ final class Lms {
 		$status = $this->detect_lms_plugin();
 		if ( ! $status['lms_available'] ) {
 			return new WP_Error(
-				'elementify_lms_inactive',
+				'elementeer_lms_inactive',
 				'No active LMS plugin detected (LearnDash, Tutor LMS, or LifterLMS).',
 				[ 'status' => 400 ]
 			);
@@ -67,7 +67,7 @@ final class Lms {
 		$status = $this->detect_lms_plugin();
 		if ( ! $status['lms_available'] ) {
 			return new WP_Error(
-				'elementify_lms_inactive',
+				'elementeer_lms_inactive',
 				'No active LMS plugin detected.',
 				[ 'status' => 400 ]
 			);
@@ -76,7 +76,7 @@ final class Lms {
 		$course_id = \absint( $request->get_param( 'course_id' ) );
 		if ( ! $course_id ) {
 			return new WP_Error(
-				'elementify_missing_param',
+				'elementeer_missing_param',
 				'course_id is required.',
 				[ 'status' => 400 ]
 			);
@@ -366,7 +366,7 @@ final class Lms {
 				return $this->fetch_lifter_course_structure( $course_id );
 			default:
 				return new WP_Error(
-					'elementify_lms_unsupported',
+					'elementeer_lms_unsupported',
 					'Course structure not supported for ' . $plugin_name,
 					[ 'status' => 501 ]
 				);
@@ -376,7 +376,7 @@ final class Lms {
 	private function fetch_learndash_course_structure( int $course_id ): array|WP_Error {
 		if ( ! \function_exists( 'learndash_get_course_lessons' ) ) {
 			return new WP_Error(
-				'elementify_learndash_missing',
+				'elementeer_learndash_missing',
 				'LearnDash functions not available.',
 				[ 'status' => 500 ]
 			);
@@ -455,7 +455,7 @@ final class Lms {
 	private function fetch_tutor_course_structure( int $course_id ): array|WP_Error {
 		if ( ! \function_exists( 'tutor_utils' ) ) {
 			return new WP_Error(
-				'elementify_tutor_missing',
+				'elementeer_tutor_missing',
 				'Tutor LMS functions not available.',
 				[ 'status' => 500 ]
 			);
@@ -517,7 +517,7 @@ final class Lms {
 	private function fetch_lifter_course_structure( int $course_id ): array|WP_Error {
 		if ( ! \function_exists( 'llms_get_course' ) ) {
 			return new WP_Error(
-				'elementify_lifter_missing',
+				'elementeer_lifter_missing',
 				'LifterLMS functions not available.',
 				[ 'status' => 500 ]
 			);
@@ -526,7 +526,7 @@ final class Lms {
 		$course = \llms_get_course( $course_id );
 		if ( ! $course ) {
 			return new WP_Error(
-				'elementify_course_not_found',
+				'elementeer_course_not_found',
 				'Course not found.',
 				[ 'status' => 404 ]
 			);

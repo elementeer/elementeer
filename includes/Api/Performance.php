@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 use Elementor\Plugin;
 
 /**
@@ -469,7 +469,7 @@ final class Performance {
         
         if ( ! \in_array( $symptom, $allowed_symptoms, true ) ) {
             return new WP_Error(
-                'elementify_invalid_symptom',
+                'elementeer_invalid_symptom',
                 'Invalid symptom. Must be one of: ' . \implode( ', ', $allowed_symptoms ),
                 [ 'status' => 400 ]
             );
@@ -642,7 +642,7 @@ final class Performance {
         
         if ( ! \in_array( $action, [ 'deactivate', 'reactivate' ], true ) ) {
             return new WP_Error(
-                'elementify_invalid_action',
+                'elementeer_invalid_action',
                 'Action must be "deactivate" or "reactivate"',
                 [ 'status' => 400 ]
             );

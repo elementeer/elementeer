@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for Booking & Events integration.
@@ -44,7 +44,7 @@ final class Booking {
 		$status = $this->detect_booking_plugin();
 		if ( ! $status['booking_available'] ) {
 			return new WP_Error(
-				'elementify_booking_inactive',
+				'elementeer_booking_inactive',
 				'No active booking/events plugin detected (Amelia, Simply Schedule Appointments, or The Events Calendar).',
 				[ 'status' => 400 ]
 			);
@@ -67,7 +67,7 @@ final class Booking {
 		$status = $this->detect_booking_plugin();
 		if ( ! $status['booking_available'] ) {
 			return new WP_Error(
-				'elementify_booking_inactive',
+				'elementeer_booking_inactive',
 				'No active booking/events plugin detected.',
 				[ 'status' => 400 ]
 			);
@@ -531,7 +531,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -549,7 +549,7 @@ final class Booking {
 		$services = $this->fetch_amelia_api( 'services', $params );
 		if ( $services === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to fetch services from Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -566,7 +566,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -575,7 +575,7 @@ final class Booking {
 		$service_id = \absint( $request->get_param( 'id' ) );
 		if ( ! $service_id ) {
 			return new WP_Error(
-				'elementify_missing_param',
+				'elementeer_missing_param',
 				'Service ID is required.',
 				[ 'status' => 400 ]
 			);
@@ -584,7 +584,7 @@ final class Booking {
 		$service = $this->fetch_amelia_api( 'services/' . $service_id );
 		if ( $service === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to fetch service from Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -601,7 +601,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -610,7 +610,7 @@ final class Booking {
 		$body = $request->get_json_params();
 		if ( empty( $body ) ) {
 			return new WP_Error(
-				'elementify_invalid_data',
+				'elementeer_invalid_data',
 				'Request body is empty or invalid.',
 				[ 'status' => 400 ]
 			);
@@ -619,7 +619,7 @@ final class Booking {
 		$result = $this->call_amelia_api( 'POST', 'services', [], $body );
 		if ( $result === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to create service via Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -636,7 +636,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -645,7 +645,7 @@ final class Booking {
 		$service_id = \absint( $request->get_param( 'id' ) );
 		if ( ! $service_id ) {
 			return new WP_Error(
-				'elementify_missing_param',
+				'elementeer_missing_param',
 				'Service ID is required.',
 				[ 'status' => 400 ]
 			);
@@ -654,7 +654,7 @@ final class Booking {
 		$body = $request->get_json_params();
 		if ( empty( $body ) ) {
 			return new WP_Error(
-				'elementify_invalid_data',
+				'elementeer_invalid_data',
 				'Request body is empty or invalid.',
 				[ 'status' => 400 ]
 			);
@@ -663,7 +663,7 @@ final class Booking {
 		$result = $this->call_amelia_api( 'PATCH', 'services/' . $service_id, [], $body );
 		if ( $result === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to update service via Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -680,7 +680,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -689,7 +689,7 @@ final class Booking {
 		$service_id = \absint( $request->get_param( 'id' ) );
 		if ( ! $service_id ) {
 			return new WP_Error(
-				'elementify_missing_param',
+				'elementeer_missing_param',
 				'Service ID is required.',
 				[ 'status' => 400 ]
 			);
@@ -698,7 +698,7 @@ final class Booking {
 		$result = $this->call_amelia_api( 'DELETE', 'services/' . $service_id );
 		if ( $result === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to delete service via Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -715,7 +715,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -737,7 +737,7 @@ final class Booking {
 		$appointments = $this->fetch_amelia_api( 'appointments', $params );
 		if ( $appointments === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to fetch appointments from Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -754,7 +754,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -763,7 +763,7 @@ final class Booking {
 		$appointment_id = \absint( $request->get_param( 'id' ) );
 		if ( ! $appointment_id ) {
 			return new WP_Error(
-				'elementify_missing_param',
+				'elementeer_missing_param',
 				'Appointment ID is required.',
 				[ 'status' => 400 ]
 			);
@@ -772,7 +772,7 @@ final class Booking {
 		$appointment = $this->fetch_amelia_api( 'appointments/' . $appointment_id );
 		if ( $appointment === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to fetch appointment from Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -789,7 +789,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -798,7 +798,7 @@ final class Booking {
 		$body = $request->get_json_params();
 		if ( empty( $body ) ) {
 			return new WP_Error(
-				'elementify_invalid_data',
+				'elementeer_invalid_data',
 				'Request body is empty or invalid.',
 				[ 'status' => 400 ]
 			);
@@ -807,7 +807,7 @@ final class Booking {
 		$result = $this->call_amelia_api( 'POST', 'appointments', [], $body );
 		if ( $result === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to create appointment via Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -824,7 +824,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -833,7 +833,7 @@ final class Booking {
 		$appointment_id = \absint( $request->get_param( 'id' ) );
 		if ( ! $appointment_id ) {
 			return new WP_Error(
-				'elementify_missing_param',
+				'elementeer_missing_param',
 				'Appointment ID is required.',
 				[ 'status' => 400 ]
 			);
@@ -842,7 +842,7 @@ final class Booking {
 		$body = $request->get_json_params();
 		if ( empty( $body ) ) {
 			return new WP_Error(
-				'elementify_invalid_data',
+				'elementeer_invalid_data',
 				'Request body is empty or invalid.',
 				[ 'status' => 400 ]
 			);
@@ -851,7 +851,7 @@ final class Booking {
 		$result = $this->call_amelia_api( 'PATCH', 'appointments/' . $appointment_id, [], $body );
 		if ( $result === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to update appointment via Amelia API.',
 				[ 'status' => 500 ]
 			);
@@ -868,7 +868,7 @@ final class Booking {
 
 		if ( ! $this->is_amelia_api_available() ) {
 			return new WP_Error(
-				'elementify_amelia_unavailable',
+				'elementeer_amelia_unavailable',
 				'Amelia plugin is not active or API is not available.',
 				[ 'status' => 400 ]
 			);
@@ -877,7 +877,7 @@ final class Booking {
 		$appointment_id = \absint( $request->get_param( 'id' ) );
 		if ( ! $appointment_id ) {
 			return new WP_Error(
-				'elementify_missing_param',
+				'elementeer_missing_param',
 				'Appointment ID is required.',
 				[ 'status' => 400 ]
 			);
@@ -886,7 +886,7 @@ final class Booking {
 		$result = $this->call_amelia_api( 'DELETE', 'appointments/' . $appointment_id );
 		if ( $result === null ) {
 			return new WP_Error(
-				'elementify_amelia_api_error',
+				'elementeer_amelia_api_error',
 				'Failed to delete appointment via Amelia API.',
 				[ 'status' => 500 ]
 			);

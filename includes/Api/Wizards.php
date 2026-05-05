@@ -2,13 +2,13 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
-use Elementify\MCP\Api\Wizards\BaseWizard;
+use Elementeer\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Api\Wizards\BaseWizard;
 
 /**
  * REST controller for module wizards.
@@ -59,7 +59,7 @@ final class Wizards {
 
 		if ( ! isset( $class_map[ $wizard_id ] ) ) {
 			return new WP_Error(
-				'elementify_wizard_not_found',
+				'elementeer_wizard_not_found',
 				\sprintf( 'Wizard "%s" does not exist.', $wizard_id ),
 				[ 'status' => 404 ]
 			);
@@ -80,7 +80,7 @@ final class Wizards {
 			return new WP_REST_Response( $result, 200 );
 		} catch ( \Exception $e ) {
 			return new WP_Error(
-				'elementify_wizard_error',
+				'elementeer_wizard_error',
 				\sprintf( 'Wizard "%s" failed: %s', $wizard_id, $e->getMessage() ),
 				[ 'status' => 500 ]
 			);
@@ -126,7 +126,7 @@ final class Wizards {
 	 * @return array
 	 */
 	private function get_cached_assessment(): array {
-		$transient_key = "elementify_assessment_cache";
+		$transient_key = "elementeer_assessment_cache";
 		$cached = \get_transient( $transient_key );
 		
 		if ( $cached !== false ) {

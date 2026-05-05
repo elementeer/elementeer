@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for WooCommerce integration.
@@ -36,8 +36,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -97,8 +97,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -106,8 +106,8 @@ final class WooCommerce {
         $product_id = absint( $request->get_param( 'id' ) );
         if ( ! $product_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Product ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Product ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -115,8 +115,8 @@ final class WooCommerce {
         $product = wc_get_product( $product_id );
         if ( ! $product ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Product not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Product not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -140,8 +140,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -153,8 +153,8 @@ final class WooCommerce {
 
         if ( empty( $name ) ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Product name is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Product name is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -176,8 +176,8 @@ final class WooCommerce {
 
         if ( ! $product_id ) {
             return new WP_Error(
-                'elementify_create_failed',
-                __( 'Failed to create product.', 'elementify-mcp' ),
+                'elementeer_create_failed',
+                __( 'Failed to create product.', 'elementeer' ),
                 [ 'status' => 500 ]
             );
         }
@@ -203,8 +203,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -212,8 +212,8 @@ final class WooCommerce {
         $product_id = absint( $request->get_param( 'id' ) );
         if ( ! $product_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Product ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Product ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -221,8 +221,8 @@ final class WooCommerce {
         $product = wc_get_product( $product_id );
         if ( ! $product ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Product not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Product not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -279,8 +279,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -288,8 +288,8 @@ final class WooCommerce {
         $product_id = absint( $request->get_param( 'id' ) );
         if ( ! $product_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Product ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Product ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -297,8 +297,8 @@ final class WooCommerce {
         $product = wc_get_product( $product_id );
         if ( ! $product ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Product not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Product not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -308,8 +308,8 @@ final class WooCommerce {
 
         if ( ! $deleted ) {
             return new WP_Error(
-                'elementify_delete_failed',
-                __( 'Failed to delete product.', 'elementify-mcp' ),
+                'elementeer_delete_failed',
+                __( 'Failed to delete product.', 'elementeer' ),
                 [ 'status' => 500 ]
             );
         }
@@ -339,8 +339,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -400,8 +400,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -409,8 +409,8 @@ final class WooCommerce {
         $order_id = absint( $request->get_param( 'id' ) );
         if ( ! $order_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Order ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Order ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -418,8 +418,8 @@ final class WooCommerce {
         $order = wc_get_order( $order_id );
         if ( ! $order ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Order not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Order not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -443,8 +443,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -452,8 +452,8 @@ final class WooCommerce {
         $order_id = absint( $request->get_param( 'id' ) );
         if ( ! $order_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Order ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Order ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -461,8 +461,8 @@ final class WooCommerce {
         $order = wc_get_order( $order_id );
         if ( ! $order ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Order not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Order not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -473,8 +473,8 @@ final class WooCommerce {
 
         if ( empty( $new_status ) ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Status is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Status is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -506,8 +506,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -535,8 +535,8 @@ final class WooCommerce {
         $terms = get_terms( $args );
         if ( is_wp_error( $terms ) ) {
             return new WP_Error(
-                'elementify_categories_error',
-                __( 'Failed to retrieve categories.', 'elementify-mcp' ),
+                'elementeer_categories_error',
+                __( 'Failed to retrieve categories.', 'elementeer' ),
                 [ 'status' => 500 ]
             );
         }
@@ -564,8 +564,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -578,8 +578,8 @@ final class WooCommerce {
         if ( $action === 'create' || $action === 'update' ) {
             if ( empty( $name ) ) {
                 return new WP_Error(
-                    'elementify_missing_param',
-                    __( 'Category name is required.', 'elementify-mcp' ),
+                    'elementeer_missing_param',
+                    __( 'Category name is required.', 'elementeer' ),
                     [ 'status' => 400 ]
                 );
             }
@@ -596,8 +596,8 @@ final class WooCommerce {
             } else {
                 if ( ! $id ) {
                     return new WP_Error(
-                        'elementify_missing_param',
-                        __( 'Category ID is required for update.', 'elementify-mcp' ),
+                        'elementeer_missing_param',
+                        __( 'Category ID is required for update.', 'elementeer' ),
                         [ 'status' => 400 ]
                     );
                 }
@@ -606,7 +606,7 @@ final class WooCommerce {
 
             if ( is_wp_error( $result ) ) {
                 return new WP_Error(
-                    'elementify_category_failed',
+                    'elementeer_category_failed',
                     $result->get_error_message(),
                     [ 'status' => 500 ]
                 );
@@ -624,8 +624,8 @@ final class WooCommerce {
         if ( $action === 'delete' ) {
             if ( ! $id ) {
                 return new WP_Error(
-                    'elementify_missing_param',
-                    __( 'Category ID is required for deletion.', 'elementify-mcp' ),
+                    'elementeer_missing_param',
+                    __( 'Category ID is required for deletion.', 'elementeer' ),
                     [ 'status' => 400 ]
                 );
             }
@@ -633,8 +633,8 @@ final class WooCommerce {
             $result = wp_delete_term( $id, 'product_cat' );
             if ( is_wp_error( $result ) || ! $result ) {
                 return new WP_Error(
-                    'elementify_delete_failed',
-                    __( 'Failed to delete category.', 'elementify-mcp' ),
+                    'elementeer_delete_failed',
+                    __( 'Failed to delete category.', 'elementeer' ),
                     [ 'status' => 500 ]
                 );
             }
@@ -650,8 +650,8 @@ final class WooCommerce {
         }
 
         return new WP_Error(
-            'elementify_invalid_action',
-            __( 'Invalid action. Must be "create", "update", or "delete".', 'elementify-mcp' ),
+            'elementeer_invalid_action',
+            __( 'Invalid action. Must be "create", "update", or "delete".', 'elementeer' ),
             [ 'status' => 400 ]
         );
     }
@@ -671,8 +671,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -705,8 +705,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -762,8 +762,8 @@ final class WooCommerce {
 
         if ( ! $this->is_woocommerce_active() ) {
             return new WP_Error(
-                'elementify_woocommerce_inactive',
-                __( 'WooCommerce is not active on this site.', 'elementify-mcp' ),
+                'elementeer_woocommerce_inactive',
+                __( 'WooCommerce is not active on this site.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }

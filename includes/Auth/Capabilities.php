@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Auth;
+namespace Elementeer\MCP\Auth;
 
 /**
  * Canonical capability registry for the plugin.

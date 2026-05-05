@@ -1,15 +1,15 @@
 <?php
 declare(strict_types=1);
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for the change review queue.
- * Changes are stored as a JSON array in wp_options under 'elementify_change_queue'.
+ * Changes are stored as a JSON array in wp_options under 'elementeer_change_queue'.
  *
  * GET    /changes/queue          — list changes (?status=pending|approved|rejected|applied|all)
  * POST   /changes/queue          — create a queued change
@@ -19,7 +19,7 @@ use Elementify\MCP\Auth\Manager as Auth;
  */
 final class ChangeQueue {
 
-    private const OPTION_KEY  = 'elementify_change_queue';
+    private const OPTION_KEY  = 'elementeer_change_queue';
     private const MAX_CHANGES = 500;
 
     private Auth $auth;

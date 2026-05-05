@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for WordPress media library management.
@@ -97,8 +97,8 @@ final class Media {
         $attachment_id = absint( $request->get_param( 'id' ) );
         if ( ! $attachment_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Media ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Media ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -106,8 +106,8 @@ final class Media {
         $attachment = get_post( $attachment_id );
         if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Media attachment not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Media attachment not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -136,8 +136,8 @@ final class Media {
         $attachment_id = absint( $request->get_param( 'id' ) );
         if ( ! $attachment_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Media ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Media ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -145,8 +145,8 @@ final class Media {
         $attachment = get_post( $attachment_id );
         if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Media attachment not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Media attachment not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -205,7 +205,7 @@ final class Media {
                 'media_id' => $attachment_id,
                 'updated'  => $updated,
                 'media'    => $this->format_attachment( $attachment ),
-                'message'  => __( 'Media updated successfully.', 'elementify-mcp' ),
+                'message'  => __( 'Media updated successfully.', 'elementeer' ),
             ],
             200
         );
@@ -227,8 +227,8 @@ final class Media {
         $attachment_id = absint( $request->get_param( 'id' ) );
         if ( ! $attachment_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Media ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Media ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -236,8 +236,8 @@ final class Media {
         $attachment = get_post( $attachment_id );
         if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Media attachment not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Media attachment not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -247,8 +247,8 @@ final class Media {
 
         if ( ! $result ) {
             return new WP_Error(
-                'elementify_delete_failed',
-                __( 'Failed to delete media attachment.', 'elementify-mcp' ),
+                'elementeer_delete_failed',
+                __( 'Failed to delete media attachment.', 'elementeer' ),
                 [ 'status' => 500 ]
             );
         }
@@ -258,8 +258,8 @@ final class Media {
                 'media_id' => $attachment_id,
                 'deleted'  => true,
                 'message'  => $force
-                    ? __( 'Media permanently deleted.', 'elementify-mcp' )
-                    : __( 'Media moved to trash.', 'elementify-mcp' ),
+                    ? __( 'Media permanently deleted.', 'elementeer' )
+                    : __( 'Media moved to trash.', 'elementeer' ),
             ],
             200
         );
@@ -281,8 +281,8 @@ final class Media {
         $attachment_id = absint( $request->get_param( 'id' ) );
         if ( ! $attachment_id ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Media ID is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Media ID is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -290,8 +290,8 @@ final class Media {
         $attachment = get_post( $attachment_id );
         if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
             return new WP_Error(
-                'elementify_not_found',
-                __( 'Media attachment not found.', 'elementify-mcp' ),
+                'elementeer_not_found',
+                __( 'Media attachment not found.', 'elementeer' ),
                 [ 'status' => 404 ]
             );
         }
@@ -299,8 +299,8 @@ final class Media {
         // Check if image
         if ( ! wp_attachment_is_image( $attachment_id ) ) {
             return new WP_Error(
-                'elementify_not_image',
-                __( 'Only images can have alt text generated.', 'elementify-mcp' ),
+                'elementeer_not_image',
+                __( 'Only images can have alt text generated.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }
@@ -319,7 +319,7 @@ final class Media {
             [
                 'media_id' => $attachment_id,
                 'alt_text' => $alt_text,
-                'message'  => __( 'Alt text generated successfully.', 'elementify-mcp' ),
+                'message'  => __( 'Alt text generated successfully.', 'elementeer' ),
             ],
             200
         );
@@ -366,7 +366,7 @@ final class Media {
                     'processed' => 0,
                     'updated'   => 0,
                     'results'   => [],
-                    'message'   => __( 'No images found without alt text.', 'elementify-mcp' ),
+                    'message'   => __( 'No images found without alt text.', 'elementeer' ),
                 ],
                 200
             );
@@ -412,7 +412,7 @@ final class Media {
                 'updated'   => $updated,
                 'results'   => $results,
                 'message'   => sprintf(
-                    __( 'Generated alt text for %d out of %d images.', 'elementify-mcp' ),
+                    __( 'Generated alt text for %d out of %d images.', 'elementeer' ),
                     $updated,
                     count( $attachment_ids )
                 ),
@@ -448,7 +448,7 @@ final class Media {
         $name_without_ext = str_replace( [ '-', '_' ], ' ', $name_without_ext );
         $name_without_ext = ucwords( $name_without_ext );
         
-        return sprintf( __( 'Image of %s', 'elementify-mcp' ), $name_without_ext );
+        return sprintf( __( 'Image of %s', 'elementeer' ), $name_without_ext );
     }
 
     // ------------------------------------------------------------------ //
@@ -472,8 +472,8 @@ final class Media {
 
         if ( empty( $query ) ) {
             return new WP_Error(
-                'elementify_missing_param',
-                __( 'Search query is required.', 'elementify-mcp' ),
+                'elementeer_missing_param',
+                __( 'Search query is required.', 'elementeer' ),
                 [ 'status' => 400 ]
             );
         }

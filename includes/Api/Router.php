@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 /**
- * Registers all REST routes under /wp-json/elementify/v1/
+ * Registers all REST routes under /wp-json/elementeer/v1/
  */
 final class Router {
 
-    public const NAMESPACE = 'elementify/v1';
+    public const NAMESPACE = 'elementeer/v1';
 
     public static function register(): void {
         $templates = new Templates();
@@ -259,7 +259,7 @@ final class Router {
         register_rest_route( self::NAMESPACE, '/media/sideload', [
             [
                 'methods'             => 'POST',
-                'callback'            => [ new \Elementify\MCP\Api\MediaSideload(), 'sideload' ],
+                'callback'            => [ new \Elementeer\MCP\Api\MediaSideload(), 'sideload' ],
                 'permission_callback' => '__return_true',
             ],
         ] );
@@ -268,7 +268,7 @@ final class Router {
         register_rest_route( self::NAMESPACE, '/theme-builder/templates', [
             [
                 'methods'             => 'POST',
-                'callback'            => [ new \Elementify\MCP\Api\ThemeBuilder(), 'create_template' ],
+                'callback'            => [ new \Elementeer\MCP\Api\ThemeBuilder(), 'create_template' ],
                 'permission_callback' => '__return_true',
             ],
         ] );
@@ -440,7 +440,7 @@ final class Router {
         ] );
 
         // Ally detection (ALLY-001)
-        $ally = new \Elementify\MCP\Api\Ally();
+        $ally = new \Elementeer\MCP\Api\Ally();
         register_rest_route( self::NAMESPACE, '/ally/status', [
             [
                 'methods'             => 'GET',
@@ -556,7 +556,7 @@ final class Router {
         ] );
 
         // LMS integration (LMS-001, LMS-002)
-        $lms = new \Elementify\MCP\Api\Lms();
+        $lms = new \Elementeer\MCP\Api\Lms();
         register_rest_route( self::NAMESPACE, '/lms/status', [
             [
                 'methods'             => 'GET',
@@ -599,7 +599,7 @@ final class Router {
         ] );
 
         // Charity integration (CHARITY-001, CHARITY-002)
-        $charity = new \Elementify\MCP\Api\Charity();
+        $charity = new \Elementeer\MCP\Api\Charity();
         register_rest_route( self::NAMESPACE, '/charity/status', [
             [
                 'methods'             => 'GET',
@@ -636,7 +636,7 @@ final class Router {
         ] );
 
         // Voxel integration (VOXEL-001 through VOXEL-006)
-        $voxel = new \Elementify\MCP\Api\Voxel();
+        $voxel = new \Elementeer\MCP\Api\Voxel();
         register_rest_route( self::NAMESPACE, '/voxel/status', [
             [
                 'methods'             => 'GET',
@@ -695,7 +695,7 @@ final class Router {
         ] );
 
         // Booking & Events integration (BOOK-001, BOOK-002)
-        $booking = new \Elementify\MCP\Api\Booking();
+        $booking = new \Elementeer\MCP\Api\Booking();
         register_rest_route( self::NAMESPACE, '/booking/status', [
             [
                 'methods'             => 'GET',
@@ -838,7 +838,7 @@ final class Router {
         register_rest_route( self::NAMESPACE, '/site', [
             [
                 'methods'             => 'GET',
-                'callback'            => [ new \Elementify\MCP\Api\Site(), 'get_site_info' ],
+                'callback'            => [ new \Elementeer\MCP\Api\Site(), 'get_site_info' ],
                 'permission_callback' => '__return_true',
             ],
         ] );
@@ -847,13 +847,13 @@ final class Router {
         register_rest_route( self::NAMESPACE, '/site/assessment', [
             [
                 'methods'             => 'GET',
-                'callback'            => [ new \Elementify\MCP\Api\Assessment(), 'get_assessment' ],
+                'callback'            => [ new \Elementeer\MCP\Api\Assessment(), 'get_assessment' ],
                 'permission_callback' => '__return_true',
             ],
         ] );
 
         // Module wizards
-        $wizards = new \Elementify\MCP\Api\Wizards();
+        $wizards = new \Elementeer\MCP\Api\Wizards();
         register_rest_route( self::NAMESPACE, '/site/wizards/(?P<wizard_id>[a-zA-Z0-9_-]+)', [
             [
                 'methods'             => 'GET',
@@ -870,7 +870,7 @@ final class Router {
         ] );
 
         // Site settings — WordPress core settings (blogname, homepage, permalinks)
-        $settings = new \Elementify\MCP\Api\Settings();
+        $settings = new \Elementeer\MCP\Api\Settings();
         register_rest_route( self::NAMESPACE, '/site/settings', [
             [
                 'methods'             => 'GET',
@@ -885,7 +885,7 @@ final class Router {
         ] );
 
         // SEO meta management
-        $seo = new \Elementify\MCP\Api\Seo();
+        $seo = new \Elementeer\MCP\Api\Seo();
         register_rest_route( self::NAMESPACE, '/site/seo/meta', [
             [
                 'methods'             => 'GET',
@@ -907,7 +907,7 @@ final class Router {
         ] );
 
         // Performance & cache management
-        $performance = new \Elementify\MCP\Api\Performance();
+        $performance = new \Elementeer\MCP\Api\Performance();
         register_rest_route( self::NAMESPACE, '/site/performance/flush-cache', [
             [
                 'methods'             => 'POST',
@@ -1069,7 +1069,7 @@ final class Router {
         ] );
 
         // Site logo
-        $logo = new \Elementify\MCP\Api\Logo();
+        $logo = new \Elementeer\MCP\Api\Logo();
         register_rest_route( self::NAMESPACE, '/site/logo', [
             [
                 'methods'             => 'GET',
@@ -1084,7 +1084,7 @@ final class Router {
         ] );
 
         // Global Styles — Elementor Kit colors + typography
-        $gs = new \Elementify\MCP\Api\GlobalStyles();
+        $gs = new \Elementeer\MCP\Api\GlobalStyles();
         register_rest_route( self::NAMESPACE, '/site/global-styles', [
             [
                 'methods'             => 'GET',
@@ -1108,7 +1108,7 @@ final class Router {
         ] );
 
         // Site context — user role + site purpose + brand notes
-        $context = new \Elementify\MCP\Api\SiteContext();
+        $context = new \Elementeer\MCP\Api\SiteContext();
         register_rest_route( self::NAMESPACE, '/site/context', [
             [
                 'methods'             => 'GET',
@@ -1123,7 +1123,7 @@ final class Router {
         ] );
 
         // Change review queue
-        $cq = new \Elementify\MCP\Api\ChangeQueue();
+        $cq = new \Elementeer\MCP\Api\ChangeQueue();
         register_rest_route( self::NAMESPACE, '/changes/queue', [
             [
                 'methods'             => 'GET',

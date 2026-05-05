@@ -1,14 +1,14 @@
 <?php
 /**
  * Plugin Name: Elementify
- * Plugin URI:  https://github.com/elementify/elementify-mcp
+ * Plugin URI:  https://github.com/elementeer/elementeer-mcp
  * Description: Complete WordPress/Elementor AI development platform with enhanced API, intelligent composition, workflow staging, governance systems, and MCP integration.
  * Version:     2.0.1
  * Author:      Elementify
- * Author URI:  https://elementify.dev
+ * Author URI:  https://elementeer.dev
  * License:     GPL-3.0-or-later
  * License URI: https://www.gnu.org/licenses/gpl-3.0.html
- * Text Domain: elementify
+ * Text Domain: elementeer
  * Domain Path: /languages
  * Requires at least: 6.0
  * Requires PHP: 8.0
@@ -47,9 +47,9 @@ if ( function_exists( 'plugin_dir_url' ) ) {
     define( 'ELEMENTIFY_MCP_URL', '' );
 }
 
-define( 'ELEMENTIFY_MCP_OPTION_KEYS', 'elementify_mcp_api_keys' );
-define( 'ELEMENTIFY_MCP_OPTION_GOVERNANCE', 'elementify_mcp_governance' );
-define( 'ELEMENTIFY_MCP_OPTION_MODE', 'elementify_mcp_activation_mode' );
+define( 'ELEMENTIFY_MCP_OPTION_KEYS', 'elementeer_mcp_api_keys' );
+define( 'ELEMENTIFY_MCP_OPTION_GOVERNANCE', 'elementeer_mcp_governance' );
+define( 'ELEMENTIFY_MCP_OPTION_MODE', 'elementeer_mcp_activation_mode' );
 
 // Autoloader for our classes
 spl_autoload_register( function ( string $class ): void {
@@ -76,7 +76,7 @@ if ( function_exists( 'add_action' ) ) {
                 if ( function_exists( 'esc_html_e' ) ) {
                     \esc_html_e(
                          'Elementify MCP Plugin requires Elementor to be installed and active.',
-                        'elementify'
+                        'elementeer'
                     );
                 } else {
                     echo 'Elementify MCP Plugin requires Elementor to be installed and active.';

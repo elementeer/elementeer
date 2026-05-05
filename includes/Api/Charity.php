@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Auth\Manager as Auth;
 
 /**
  * REST controller for Charity/Donation plugin integration.
@@ -44,7 +44,7 @@ final class Charity {
 		$status = $this->detect_charity_plugin();
 		if ( ! $status['charity_available'] ) {
 			return new WP_Error(
-				'elementify_charity_inactive',
+				'elementeer_charity_inactive',
 				'No active charity plugin detected (GiveWP or Charitable).',
 				[ 'status' => 400 ]
 			);
@@ -67,7 +67,7 @@ final class Charity {
 		$status = $this->detect_charity_plugin();
 		if ( ! $status['charity_available'] ) {
 			return new WP_Error(
-				'elementify_charity_inactive',
+				'elementeer_charity_inactive',
 				'No active charity plugin detected.',
 				[ 'status' => 400 ]
 			);

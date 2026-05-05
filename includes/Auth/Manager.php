@@ -2,19 +2,19 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Auth;
+namespace Elementeer\MCP\Auth;
 
 use WP_Error;
 use WP_REST_Request;
-use Elementify\MCP\Governance\Settings;
+use Elementeer\MCP\Governance\Settings;
 
 /**
  * Two-layer API key authentication.
  *
- * Layer 1: Validate key exists and is active → WP_Error 'elementify_invalid_key' if not.
- * Layer 2: Check the key has the required capability → WP_Error 'elementify_insufficient_scope' if not.
+ * Layer 1: Validate key exists and is active → WP_Error 'elementeer_invalid_key' if not.
+ * Layer 2: Check the key has the required capability → WP_Error 'elementeer_insufficient_scope' if not.
  *          NOTE: This is intentionally a DIFFERENT error than invalid_key. Callers must distinguish these.
- * Layer 3: Governance check → WP_Error 'elementify_governance_blocked' if the site disallows the capability.
+ * Layer 3: Governance check → WP_Error 'elementeer_governance_blocked' if the site disallows the capability.
  */
 class Manager {
 
@@ -38,13 +38,13 @@ class Manager {
 
         if ( empty( $raw_key ) ) {
             return new WP_Error(
-                'elementify_invalid_key',
-                __( 'Missing API key. Provide X-Elementify-Key header or Bearer token.', 'elementify-mcp' ),
+                'elementeer_invalid_key',
+                __( 'Missing API key. Provide X-Elementeer-Key header or Bearer token.', 'elementeer' ),
                 [ 'status' => 401 ]
             );
         }
 
-        $keys    = \get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys    = \get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
         $matched = null;
 
         foreach ( $keys as $stored ) {
@@ -56,16 +56,16 @@ class Manager {
 
         if ( null === $matched ) {
             return new WP_Error(
-                'elementify_invalid_key',
-                __( 'Invalid API key.', 'elementify-mcp' ),
+                'elementeer_invalid_key',
+                __( 'Invalid API key.', 'elementeer' ),
                 [ 'status' => 401 ]
             );
         }
 
         if ( empty( $matched['is_active'] ) ) {
             return new WP_Error(
-                'elementify_invalid_key',
-                __( 'This API key has been deactivated.', 'elementify-mcp' ),
+                'elementeer_invalid_key',
+                __( 'This API key has been deactivated.', 'elementeer' ),
                 [ 'status' => 401 ]
             );
         }
@@ -79,8 +79,8 @@ class Manager {
     /**
      * Check that an already-authenticated key has a specific capability.
      *
-     * Returns true on success, WP_Error 'elementify_insufficient_scope' on failure.
-     * IMPORTANT: never return 'elementify_invalid_key' here — the key is valid, it just lacks scope.
+     * Returns true on success, WP_Error 'elementeer_insufficient_scope' on failure.
+     * IMPORTANT: never return 'elementeer_invalid_key' here — the key is valid, it just lacks scope.
      *
      * @param array  $key_data  Result from authenticate().
      * @param string $capability  e.g. 'templates:write'
@@ -90,10 +90,10 @@ class Manager {
 
         if ( ! Capabilities::matches_granted( (array) $key_capabilities, $capability ) ) {
             return new WP_Error(
-                'elementify_insufficient_scope',
+                'elementeer_insufficient_scope',
                 sprintf(
                     /* translators: %s: required capability */
-                    __( 'This API key does not have the "%s" capability.', 'elementify-mcp' ),
+                    __( 'This API key does not have the "%s" capability.', 'elementeer' ),
                     $capability
                 ),
                 [ 'status' => 403 ]
@@ -106,7 +106,7 @@ class Manager {
     /**
      * Check that governance settings allow the requested capability.
      *
-     * Returns true on success, WP_Error 'elementify_governance_blocked' on failure.
+     * Returns true on success, WP_Error 'elementeer_governance_blocked' on failure.
      *
      * @param string $capability  e.g. 'templates:delete'
      */
@@ -115,10 +115,10 @@ class Manager {
 
         if ( ! Capabilities::matches_granted( (array) ( $settings['allowed_capabilities'] ?? [] ), $capability ) ) {
             return new WP_Error(
-                'elementify_governance_blocked',
+                'elementeer_governance_blocked',
                 sprintf(
                     /* translators: %s: capability */
-                    __( 'The capability "%s" is disabled by governance settings for this site.', 'elementify-mcp' ),
+                    __( 'The capability "%s" is disabled by governance settings for this site.', 'elementeer' ),
                     $capability
                 ),
                 [ 'status' => 403 ]
@@ -184,9 +184,9 @@ class Manager {
             'is_active'    => true,
         ];
 
-        $keys   = \get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys   = \get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
         $keys[] = $record;
-        \update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
+        \update_option( ELEMENTEER_MCP_OPTION_KEYS, $keys );
 
         return $record;
     }
@@ -195,7 +195,7 @@ class Manager {
      * Revoke (deactivate) a key by its prefix value.
      */
     public function revoke_key( string $key_value ): bool {
-        $keys    = \get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys    = \get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
         $updated = false;
 
         foreach ( $keys as &$record ) {
@@ -208,7 +208,7 @@ class Manager {
         unset( $record );
 
         if ( $updated ) {
-            \update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
+            \update_option( ELEMENTEER_MCP_OPTION_KEYS, $keys );
         }
 
         return $updated;
@@ -219,10 +219,10 @@ class Manager {
     // ------------------------------------------------------------------ //
 
     /**
-     * Extract key from X-Elementify-Key header (preferred) or Authorization: Bearer fallback.
+     * Extract key from X-Elementeer-Key header (preferred) or Authorization: Bearer fallback.
      */
     private function extract_key( WP_REST_Request $request ): string {
-        $header = $request->get_header( 'X-Elementify-Key' );
+        $header = $request->get_header( 'X-Elementeer-Key' );
         if ( ! empty( $header ) ) {
             return trim( $header );
         }
@@ -239,7 +239,7 @@ class Manager {
      * Update last_used for a key.
      */
     private function touch_key( string $key_value ): void {
-        $keys = \get_option( ELEMENTIFY_MCP_OPTION_KEYS, [] );
+        $keys = \get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
         foreach ( $keys as &$record ) {
             if ( isset( $record['key'] ) && hash_equals( $record['key'], $key_value ) ) {
                 $record['last_used'] = gmdate( 'c' );
@@ -247,7 +247,7 @@ class Manager {
             }
         }
         unset( $record );
-        \update_option( ELEMENTIFY_MCP_OPTION_KEYS, $keys );
+        \update_option( ELEMENTEER_MCP_OPTION_KEYS, $keys );
     }
 
     /**
@@ -255,7 +255,7 @@ class Manager {
      * This ensures WordPress hooks and capability checks (e.g., Elementor) work correctly.
      */
     private function set_current_user(): void {
-        // Always set to administrator for Elementify API requests
+        // Always set to administrator for Elementeer API requests
         // This ensures Elementor and other plugins see a user with full capabilities
         
         // Find first administrator user

@@ -2,14 +2,14 @@
 
 declare(strict_types=1);
 
-namespace Elementify\MCP\Api;
+namespace Elementeer\MCP\Api;
 
 use WP_REST_Request;
 use WP_REST_Response;
 use WP_Error;
-use Elementify\MCP\Auth\Manager as Auth;
-use Elementify\MCP\Api\Wizards\BookingWizard;
-use Elementify\MCP\Api\Adapters\AddonRegistry;
+use Elementeer\MCP\Auth\Manager as Auth;
+use Elementeer\MCP\Api\Wizards\BookingWizard;
+use Elementeer\MCP\Api\Adapters\AddonRegistry;
 
 /**
  * REST controller for the site assessment endpoint.
