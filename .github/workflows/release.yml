@@ -19,6 +19,13 @@ jobs:
       sha256: ${{ steps.build.outputs.sha256 }}
     steps:
       - uses: actions/checkout@v4
+      - name: Sync version from tag
+        run: |
+          VERSION="${{ github.ref_name }}"
+          VERSION="${VERSION#v}"
+          sed -i "s/Version:.*/Version:     ${VERSION}/" elementeer.php
+          sed -i "s/define( 'ELEMENTEER_MCP_VERSION', '[^']*' );/define( 'ELEMENTEER_MCP_VERSION', '${VERSION}' );/" elementeer.php
+          echo "Patched elementeer.php to version ${VERSION}"
       - name: Build ZIP
         id: build
         run: |
