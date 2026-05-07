@@ -3,7 +3,7 @@
  * Plugin Name: Elementeer
  * Plugin URI: https://github.com/elementeer/elementeer
  * Description: The agent-native Elementor growth layer. Complete WordPress/Elementor AI platform with enhanced API, intelligent composition, workflow staging, governance systems, and MCP integration.
- * Version:     2.0.1
+ * Version: 2.0.2
  * Author:      Elementeer
  * Author URI: https://elementeer.xyz
  * License:     GPL-3.0-or-later
@@ -28,7 +28,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 // Plugin constants - using WordPress functions when available, fallback otherwise
-define( 'ELEMENTEER_MCP_VERSION', '2.0.1' );
+define( 'ELEMENTEER_MCP_VERSION', '2.0.2' );
 define( 'ELEMENTEER_MCP_FILE', __FILE__ );
 
 // Define ELEMENTEER_MCP_DIR safely
