@@ -41,25 +41,18 @@ final class Page {
         foreach ( $menu as $position => $item ) {
             if ( is_numeric( $position ) ) {
                 $slug = $item[2] ?? '';
-                // Elementor's main menu slug is 'elementor'
                 if ( strpos( $slug, 'elementor' ) === 0 ) {
                     $elementor_position = (float) $position;
                     break;
                 }
             }
         }
-        
+
         if ( $elementor_position !== null ) {
-            // Place directly before Elementor: elementor_position - 0.1
-            $desired_position = $elementor_position - 0.1;
-            // Ensure position doesn't conflict with existing items
-            while ( isset( $menu[ $desired_position ] ) && $desired_position > 0.1 ) {
-                $desired_position -= 0.1;
-            }
-            return max( 0.1, $desired_position );
+            // Place directly before Elementor.
+            return $elementor_position - 0.1;
         }
-        
-        // Fallback: position after Elementor (2.1)
+
         return 2.1;
     }
     
