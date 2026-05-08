@@ -61,6 +61,14 @@ final class Capabilities {
         'performance-operations:write',
         'ecommerce-operations:read',
         'ecommerce-operations:write',
+        'snapshot:read',
+        'snapshot:write',
+        'addon-analysis:read',
+        'workflow:read',
+        'workflow:write',
+        'plugin-stack:write',
+        'media-stock:search',
+        'media-ai:generate',
     ];
 
     public const LEGACY = [
