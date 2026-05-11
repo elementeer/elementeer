@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: Elementeer
- * Plugin URI: https://github.com/elementeer/elementeer
- * Description: The agent-native Elementor growth layer. Complete WordPress/Elementor AI platform with enhanced API, intelligent composition, workflow staging, governance systems, and MCP integration.
- * Version: 2.0.2
+ * Plugin URI: https://git.langevc.com/elementeer/elementeer
+ * Description: The agent-native Elementor growth layer. Complete WordPress/Elementor AI platform with AI-native REST API, Theme Builder management, intelligent composition, workflow staging, and governance. Route preflight, route discovery, structural validation, and mass export included.
+ * Version: 2.1.3
  * Author:      Elementeer
  * Author URI: https://elementeer.xyz
  * License:     GPL-3.0-or-later
