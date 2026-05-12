@@ -55,7 +55,6 @@ final class ThemeBuilder {
         update_post_meta($post_id, '_elementor_conditions', $conditions);
         update_post_meta($post_id, '_elementor_edit_mode', 'builder');
 
-        // Write Elementor data if provided
         if (!empty($body['elementor_data']) && is_array($body['elementor_data'])) {
             $encoded = wp_json_encode($body['elementor_data']);
             update_post_meta($post_id, '_elementor_data', wp_slash($encoded));
@@ -72,5 +71,150 @@ final class ThemeBuilder {
             'status'     => get_post_status($post_id),
             'conditions' => $conditions,
         ], 201);
+    }
+
+    public function list_templates(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize($request, 'theme-structure:read');
+        if (is_wp_error($auth)) return $auth;
+
+        $type   = sanitize_text_field($request->get_param('type') ?? '');
+        $status = sanitize_text_field($request->get_param('status') ?? 'publish');
+
+        $args = [
+            'post_type'      => 'elementor_library',
+            'post_status'    => $status,
+            'posts_per_page' => 50,
+            'meta_key'       => '_elementor_template_type',
+            'orderby'        => 'title',
+            'order'          => 'ASC',
+        ];
+
+        if (!empty($type) && in_array($type, self::VALID_TYPES, true)) {
+            $args['meta_value'] = $type;
+        }
+
+        $query = new \WP_Query($args);
+        $templates = [];
+
+        foreach ($query->posts as $post) {
+            $templates[] = $this->format_template_item($post);
+        }
+
+        return new WP_REST_Response($templates);
+    }
+
+    public function get_template(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize($request, 'theme-structure:read');
+        if (is_wp_error($auth)) return $auth;
+
+        $id   = (int) $request->get_param('id');
+        $post = get_post($id);
+
+        if (!$post || $post->post_type !== 'elementor_library') {
+            return new WP_Error('not_found', 'Template not found', ['status' => 404]);
+        }
+
+        return new WP_REST_Response($this->format_template_item($post));
+    }
+
+    public function update_template(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize($request, 'theme-structure:write');
+        if (is_wp_error($auth)) return $auth;
+
+        $id   = (int) $request->get_param('id');
+        $post = get_post($id);
+
+        if (!$post || $post->post_type !== 'elementor_library') {
+            return new WP_Error('not_found', 'Template not found', ['status' => 404]);
+        }
+
+        $body = $request->get_json_params() ?: [];
+
+        if (isset($body['title'])) {
+            wp_update_post(['ID' => $id, 'post_title' => sanitize_text_field($body['title'])]);
+        }
+
+        if (isset($body['status'])) {
+            wp_update_post(['ID' => $id, 'post_status' => sanitize_key($body['status'])]);
+        }
+
+        if (isset($body['conditions'])) {
+            $conditions_key = sanitize_key($body['conditions']);
+            $conditions     = self::CONDITIONS_MAP[$conditions_key] ?? null;
+            if ($conditions) {
+                update_post_meta($id, '_elementor_conditions', $conditions);
+            }
+        }
+
+        if (isset($body['type']) && in_array($body['type'], self::VALID_TYPES, true)) {
+            update_post_meta($id, '_elementor_template_type', sanitize_text_field($body['type']));
+        }
+
+        return new WP_REST_Response($this->format_template_item(get_post($id)));
+    }
+
+    public function get_conditions(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize($request, 'theme-structure:read');
+        if (is_wp_error($auth)) return $auth;
+
+        $id   = (int) $request->get_param('id');
+        $post = get_post($id);
+
+        if (!$post || $post->post_type !== 'elementor_library') {
+            return new WP_Error('not_found', 'Template not found', ['status' => 404]);
+        }
+
+        $conditions     = get_post_meta($id, '_elementor_conditions', true);
+        $template_type  = get_post_meta($id, '_elementor_template_type', true);
+
+        return new WP_REST_Response([
+            'id'             => $id,
+            'title'          => $post->post_title,
+            'type'           => $template_type,
+            'status'         => $post->post_status,
+            'conditions'     => $conditions ?: [],
+            'conditions_map' => self::CONDITIONS_MAP,
+        ]);
+    }
+
+    public function update_conditions(WP_REST_Request $request): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize($request, 'theme-structure:write');
+        if (is_wp_error($auth)) return $auth;
+
+        $id   = (int) $request->get_param('id');
+        $post = get_post($id);
+
+        if (!$post || $post->post_type !== 'elementor_library') {
+            return new WP_Error('not_found', 'Template not found', ['status' => 404]);
+        }
+
+        $body = $request->get_json_params() ?: [];
+        $conditions = [];
+
+        if (!empty($body['conditions']) && is_array($body['conditions'])) {
+            $conditions = array_map('sanitize_text_field', $body['conditions']);
+        } elseif (!empty($body['conditions_key'])) {
+            $conditions_key = sanitize_key($body['conditions_key']);
+            $conditions     = self::CONDITIONS_MAP[$conditions_key] ?? [];
+        }
+
+        update_post_meta($id, '_elementor_conditions', $conditions);
+
+        return new WP_REST_Response([
+            'id'         => $id,
+            'title'      => $post->post_title,
+            'conditions' => $conditions,
+        ]);
+    }
+
+    private function format_template_item(\WP_Post $post): array {
+        return [
+            'id'                => $post->ID,
+            'title'             => $post->post_title,
+            'type'              => get_post_meta($post->ID, '_elementor_template_type', true),
+            'status'            => $post->post_status,
+            'conditions'        => get_post_meta($post->ID, '_elementor_conditions', true) ?: [],
+            'has_elementor_data' => !empty(get_post_meta($post->ID, '_elementor_data', true)),
+        ];
     }
 }

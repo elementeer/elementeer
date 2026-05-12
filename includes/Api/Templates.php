@@ -516,9 +516,23 @@ final class Templates {
     // ------------------------------------------------------------------ //
 
     /**
-     * Format a WP_Post into our response shape.
+     * Format a WP_Post into our response shape, with error handling.
      */
     private function format_template( \WP_Post $post ): array {
+        try {
+            return $this->format_template_inner( $post );
+        } catch ( \Throwable $e ) {
+            return [
+                'id'             => $post->ID ?? 0,
+                'metadata_error' => $e->getMessage(),
+            ];
+        }
+    }
+
+    /**
+     * Format a WP_Post into our response shape.
+     */
+    private function format_template_inner( \WP_Post $post ): array {
         $type      = get_post_meta( $post->ID, '_elementor_template_type', true ) ?: 'page';
         $shortcode = sprintf( '[elementor-template id="%d"]', $post->ID );
 

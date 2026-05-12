@@ -13,6 +13,7 @@ final class Router {
 
     public static function register(): void {
         $templates = new Templates();
+        $theme_builder = new ThemeBuilder();
         $translation = new Translation();
 
         // Templates collection
@@ -52,6 +53,44 @@ final class Router {
                         'minimum' => 1,
                         'maximum' => 100,
                 ],
+                ],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $templates, 'create_template' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'title'    => [
+                        'type'              => 'string',
+                        'required'          => true,
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'type'     => [
+                        'type'              => 'string',
+                        'enum'              => [ 'page', 'section', 'container', 'widget', 'popup', 'kit', 'global-widget' ],
+                        'default'           => 'page',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'status'   => [
+                        'type'              => 'string',
+                        'enum'              => [ 'publish', 'draft', 'private', 'trash' ],
+                        'default'           => 'draft',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'elementor_data' => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'wp_kses_post',
+                    ],
+                    'categories' => [
+                        'type'    => 'array',
+                        'items'   => [ 'type' => 'string' ],
+                        'default' => [],
+                    ],
+                    'tags' => [
+                        'type'    => 'array',
+                        'items'   => [ 'type' => 'string' ],
+                        'default' => [],
+                    ],
                 ],
             ],
         ] );
@@ -188,6 +227,56 @@ final class Router {
                 'args'                => [
                     'id' => [ 'type' => 'integer', 'required' => true ],
                 ],
+            ],
+        ] );
+
+        // Theme Builder templates
+        register_rest_route( self::NAMESPACE, '/theme-builder/templates', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $theme_builder, 'list_templates' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'type'   => [
+                        'type'              => 'string',
+                        'sanitize_callback' => 'sanitize_text_field',
+                    ],
+                    'status' => [
+                        'type'    => 'string',
+                        'default' => 'publish',
+                    ],
+                ],
+            ],
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $theme_builder, 'create_template' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/theme-builder/templates/(?P<id>\d+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $theme_builder, 'get_template' ],
+                'permission_callback' => '__return_true',
+            ],
+            [
+                'methods'             => 'PATCH',
+                'callback'            => [ $theme_builder, 'update_template' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        register_rest_route( self::NAMESPACE, '/theme-builder/templates/(?P<id>\d+)/conditions', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $theme_builder, 'get_conditions' ],
+                'permission_callback' => '__return_true',
+            ],
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $theme_builder, 'update_conditions' ],
+                'permission_callback' => '__return_true',
             ],
         ] );
 
