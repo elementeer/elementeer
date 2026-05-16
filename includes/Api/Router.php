@@ -1160,5 +1160,6 @@ final class Router {
         ] );
 
         do_action( 'elementeer_register_pro_routes' );
+        do_action( 'elementeer_register_addons', \Elementeer\MCP\Addons\Registry::get_instance() );
     }
 }
