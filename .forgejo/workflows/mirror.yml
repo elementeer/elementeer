@@ -10,9 +10,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Push to GitHub (public)
+      - name: Push to GitHub (public mirror)
         env:
           GH_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
         run: |
-          git remote add github-public https://x-access-token:${GH_TOKEN}@github.com/elementeer/elementeer.git
-          git push github-public main --tags
+          git remote add github-mirror https://x-access-token:${GH_TOKEN}@github.com/elementeer/elementeer.git
+          git push github-mirror main --tags

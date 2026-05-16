@@ -1,0 +1,25 @@
+name: Release Gate
+on:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: docker
+    container: php:8.2-cli-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system deps
+        run: |
+          apk add --no-cache bash coreutils zip findutils
+      - name: PHP syntax check
+        run: |
+          find includes -name '*.php' -exec php -l {} \; | grep -v "No syntax errors"
+          echo "All PHP files pass syntax check"
+      - name: Build Plugin ZIP
+        run: |
+          bash scripts/create-plugin-zip.sh
+          ls -la /tmp/elementeer-build-final/*/
+      - name: Verify ZIP structure
+        run: |
+          unzip -l /tmp/elementeer-build-final/*/elementeer.*.zip | grep -q "elementeer/" && echo "ZIP structure OK" || (echo "ZIP structure INVALID" && exit 1)
