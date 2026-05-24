@@ -16,6 +16,23 @@ jobs:
         run: |
           find includes -name '*.php' -exec php -l {} \; | grep -v "No syntax errors"
           echo "All PHP files pass syntax check"
+      - name: Version Sync Gate
+        run: |
+          HEADER_VER=$(grep "Version:" elementeer.php | head -1 | sed 's/.*Version: *//' | xargs)
+          PHP_CONST_VER=$(grep "ELEMENTEER_MCP_VERSION" elementeer.php | head -1 | sed "s/.*'\(.*\)'.*/\1/" | xargs)
+          echo "Header version:    $HEADER_VER"
+          echo "PHP constant:      $PHP_CONST_VER"
+          if [ "$HEADER_VER" != "$PHP_CONST_VER" ]; then
+            echo "ERROR: Version MISMATCH — header='$HEADER_VER' != ELEMENTEER_MCP_VERSION='$PHP_CONST_VER'"
+            echo "Fix: bump both to the same version before tagging"
+            exit 1
+          fi
+          TAG=$(echo "${GITHUB_REF:-}" | sed 's|refs/tags/||')
+          if [ -n "$TAG" ] && [ "$TAG" != "v$HEADER_VER" ]; then
+            echo "ERROR: Tag ($TAG) does not match plugin version ($HEADER_VER)"
+            exit 1
+          fi
+          echo "Version sync OK: $HEADER_VER"
       - name: Build Plugin ZIP
         run: |
           bash scripts/create-plugin-zip.sh
