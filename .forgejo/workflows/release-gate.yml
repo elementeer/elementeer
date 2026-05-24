@@ -19,11 +19,11 @@ jobs:
       - name: Version Sync Gate
         run: |
           HEADER_VER=$(grep "Version:" elementeer.php | head -1 | sed 's/.*Version: *//' | xargs)
-          PHP_CONST_VER=$(grep "ELEMENTEER_MCP_VERSION" elementeer.php | head -1 | sed "s/.*'\(.*\)'.*/\1/" | xargs)
+          PHP_CONST_VER=$(grep "ELEMENTEER_VERSION" elementeer.php | head -1 | sed "s/.*'\(.*\)'.*/\1/" | xargs)
           echo "Header version:    $HEADER_VER"
           echo "PHP constant:      $PHP_CONST_VER"
           if [ "$HEADER_VER" != "$PHP_CONST_VER" ]; then
-            echo "ERROR: Version MISMATCH — header='$HEADER_VER' != ELEMENTEER_MCP_VERSION='$PHP_CONST_VER'"
+            echo "ERROR: Version MISMATCH — header='$HEADER_VER' != ELEMENTEER_VERSION='$PHP_CONST_VER'"
             echo "Fix: bump both to the same version before release"
             exit 1
           fi

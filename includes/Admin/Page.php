@@ -20,7 +20,7 @@ final class Page {
             'manage_options',
             'elementeer',
             [ self::class, 'render' ],
-            ELEMENTEER_MCP_URL . 'assets/images/icon.svg',
+            ELEMENTEER_URL . 'assets/images/icon.svg',
             self::get_menu_position()
         );
         
@@ -84,7 +84,7 @@ final class Page {
             self::handle_action( sanitize_text_field( $_POST['elementeer_action'] ) );
         }
 
-        $keys       = get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
+        $keys       = get_option( ELEMENTEER_OPTION_KEYS, [] );
         $governance = Settings::get_instance()->get();
 
         ?>

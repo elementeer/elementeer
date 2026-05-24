@@ -44,7 +44,7 @@ class Manager {
             );
         }
 
-        $keys    = \get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
+        $keys    = \get_option( ELEMENTEER_OPTION_KEYS, [] );
         $matched = null;
 
         foreach ( $keys as $stored ) {
@@ -184,9 +184,9 @@ class Manager {
             'is_active'    => true,
         ];
 
-        $keys   = \get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
+        $keys   = \get_option( ELEMENTEER_OPTION_KEYS, [] );
         $keys[] = $record;
-        \update_option( ELEMENTEER_MCP_OPTION_KEYS, $keys );
+        \update_option( ELEMENTEER_OPTION_KEYS, $keys );
 
         return $record;
     }
@@ -195,7 +195,7 @@ class Manager {
      * Revoke (deactivate) a key by its prefix value.
      */
     public function revoke_key( string $key_value ): bool {
-        $keys    = \get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
+        $keys    = \get_option( ELEMENTEER_OPTION_KEYS, [] );
         $updated = false;
 
         foreach ( $keys as &$record ) {
@@ -208,7 +208,7 @@ class Manager {
         unset( $record );
 
         if ( $updated ) {
-            \update_option( ELEMENTEER_MCP_OPTION_KEYS, $keys );
+            \update_option( ELEMENTEER_OPTION_KEYS, $keys );
         }
 
         return $updated;
@@ -239,7 +239,7 @@ class Manager {
      * Update last_used for a key.
      */
     private function touch_key( string $key_value ): void {
-        $keys = \get_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
+        $keys = \get_option( ELEMENTEER_OPTION_KEYS, [] );
         foreach ( $keys as &$record ) {
             if ( isset( $record['key'] ) && hash_equals( $record['key'], $key_value ) ) {
                 $record['last_used'] = gmdate( 'c' );
@@ -247,7 +247,7 @@ class Manager {
             }
         }
         unset( $record );
-        \update_option( ELEMENTEER_MCP_OPTION_KEYS, $keys );
+        \update_option( ELEMENTEER_OPTION_KEYS, $keys );
     }
 
     /**

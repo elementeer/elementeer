@@ -28,33 +28,33 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 // Plugin constants - using WordPress functions when available, fallback otherwise
-define( 'ELEMENTEER_MCP_VERSION', '2.1.6' );
-define( 'ELEMENTEER_MCP_FILE', __FILE__ );
+define( 'ELEMENTEER_VERSION', '2.1.6' );
+define( 'ELEMENTEER_FILE', __FILE__ );
 
-// Define ELEMENTEER_MCP_DIR safely
+// Define ELEMENTEER_DIR safely
 if ( function_exists( 'plugin_dir_path' ) ) {
-    define( 'ELEMENTEER_MCP_DIR', \plugin_dir_path( __FILE__ ) );
+    define( 'ELEMENTEER_DIR', \plugin_dir_path( __FILE__ ) );
 } else {
-    define( 'ELEMENTEER_MCP_DIR', dirname( __FILE__ ) . '/' );
+    define( 'ELEMENTEER_DIR', dirname( __FILE__ ) . '/' );
 }
 
-// Define ELEMENTEER_MCP_URL safely  
+// Define ELEMENTEER_URL safely  
 if ( function_exists( 'plugin_dir_url' ) ) {
-    define( 'ELEMENTEER_MCP_URL', \plugin_dir_url( __FILE__ ) );
+    define( 'ELEMENTEER_URL', \plugin_dir_url( __FILE__ ) );
 } elseif ( function_exists( 'plugins_url' ) ) {
-    define( 'ELEMENTEER_MCP_URL', \plugins_url( '', __FILE__ ) );
+    define( 'ELEMENTEER_URL', \plugins_url( '', __FILE__ ) );
 } else {
-    define( 'ELEMENTEER_MCP_URL', '' );
+    define( 'ELEMENTEER_URL', '' );
 }
 
-define( 'ELEMENTEER_MCP_OPTION_KEYS', 'elementeer_mcp_api_keys' );
-define( 'ELEMENTEER_MCP_OPTION_GOVERNANCE', 'elementeer_mcp_governance' );
-define( 'ELEMENTEER_MCP_OPTION_MODE', 'elementeer_mcp_activation_mode' );
+define( 'ELEMENTEER_OPTION_KEYS', 'elementeer_mcp_api_keys' );
+define( 'ELEMENTEER_OPTION_GOVERNANCE', 'elementeer_mcp_governance' );
+define( 'ELEMENTEER_OPTION_ACTIVATION_MODE', 'elementeer_mcp_activation_mode' );
 
 // Autoloader for our classes
 spl_autoload_register( function ( string $class ): void {
     $prefix   = 'Elementeer\\MCP\\';
-    $base_dir = ELEMENTEER_MCP_DIR . 'includes/';
+    $base_dir = ELEMENTEER_DIR . 'includes/';
 
     if ( str_starts_with( $class, $prefix ) ) {
         $relative = substr( $class, strlen( $prefix ) );

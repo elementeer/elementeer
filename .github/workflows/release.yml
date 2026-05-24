@@ -24,7 +24,7 @@ jobs:
           VERSION="${{ github.ref_name }}"
           VERSION="${VERSION#v}"
           sed -i "s/Version:.*/Version:     ${VERSION}/" elementeer.php
-          sed -i "s/define( 'ELEMENTEER_MCP_VERSION', '[^']*' );/define( 'ELEMENTEER_MCP_VERSION', '${VERSION}' );/" elementeer.php
+          sed -i "s/define( 'ELEMENTEER_VERSION', '[^']*' );/define( 'ELEMENTEER_VERSION', '${VERSION}' );/" elementeer.php
           echo "Patched elementeer.php to version ${VERSION}"
       - name: Build ZIP
         id: build

@@ -42,7 +42,7 @@ final class Plugin {
 
         // Load text domain
         \add_action( 'init', function (): void {
-            \load_plugin_textdomain( 'elementeer', false, dirname( \plugin_basename( ELEMENTEER_MCP_FILE ) ) . '/languages' );
+            \load_plugin_textdomain( 'elementeer', false, dirname( \plugin_basename( ELEMENTEER_FILE ) ) . '/languages' );
         } );
     }
 
@@ -51,8 +51,8 @@ final class Plugin {
      */
     public static function activate(): void {
         // Seed default governance settings if not already set
-        if ( false === \get_option( ELEMENTEER_MCP_OPTION_GOVERNANCE ) ) {
-            \update_option( ELEMENTEER_MCP_OPTION_GOVERNANCE, [
+        if ( false === \get_option( ELEMENTEER_OPTION_GOVERNANCE ) ) {
+            \update_option( ELEMENTEER_OPTION_GOVERNANCE, [
                 'allowed_capabilities' => Capabilities::default_governance_allowed(),
                 'require_approval'   => false,
                 'audit_log_enabled'  => true,
@@ -61,8 +61,8 @@ final class Plugin {
         }
 
         // Seed empty keys array
-        if ( false === \get_option( ELEMENTEER_MCP_OPTION_KEYS ) ) {
-            \update_option( ELEMENTEER_MCP_OPTION_KEYS, [] );
+        if ( false === \get_option( ELEMENTEER_OPTION_KEYS ) ) {
+            \update_option( ELEMENTEER_OPTION_KEYS, [] );
         }
 
         \flush_rewrite_rules();

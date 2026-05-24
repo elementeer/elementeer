@@ -29,10 +29,10 @@ final class Mode {
      */
     public function detect(): void {
         $mode = $this->compute_mode();
-        $stored = \get_option( ELEMENTEER_MCP_OPTION_MODE, '' );
+        $stored = \get_option( ELEMENTEER_OPTION_ACTIVATION_MODE, '' );
 
         if ( $mode !== $stored ) {
-            \update_option( ELEMENTEER_MCP_OPTION_MODE, $mode );
+            \update_option( ELEMENTEER_OPTION_ACTIVATION_MODE, $mode );
         }
     }
 
@@ -42,10 +42,10 @@ final class Mode {
      * @return 'standalone-free'|'standalone-pro'|'vamerli-embedded'|'vamerli-agency'
      */
     public function get_mode(): string {
-        $stored = \get_option( ELEMENTEER_MCP_OPTION_MODE, '' );
+        $stored = \get_option( ELEMENTEER_OPTION_ACTIVATION_MODE, '' );
         if ( '' === $stored ) {
             $stored = $this->compute_mode();
-            \update_option( ELEMENTEER_MCP_OPTION_MODE, $stored );
+            \update_option( ELEMENTEER_OPTION_ACTIVATION_MODE, $stored );
         }
         return $stored;
     }
