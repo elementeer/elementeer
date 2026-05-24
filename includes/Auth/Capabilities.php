@@ -48,6 +48,7 @@ final class Capabilities {
         'booking:read',
         'booking:write',
         'voxel:read',
+        'voxel:write',
         'voxel:marketplace:read',
         'voxel:marketplace:write',
         'diagnostics:read',
@@ -174,6 +175,7 @@ final class Capabilities {
         'booking:read'                   => 'Booking — Read',
         'booking:write'                  => 'Booking — Write',
         'voxel:read'                     => 'Voxel — Read',
+        'voxel:write'                    => 'Voxel — Write',
         'voxel:marketplace:read'         => 'Voxel Marketplace — Read',
         'voxel:marketplace:write'        => 'Voxel Marketplace — Write',
         'diagnostics:read'               => 'Diagnostics — Read',
@@ -212,7 +214,7 @@ final class Capabilities {
         'LMS'                    => [ 'lms:read' ],
         'Charity'                => [ 'charity:read' ],
         'Booking'                => [ 'booking:read', 'booking:write' ],
-        'Voxel'                  => [ 'voxel:read', 'voxel:marketplace:read', 'voxel:marketplace:write' ],
+        'Voxel'                  => [ 'voxel:read', 'voxel:write', 'voxel:marketplace:read', 'voxel:marketplace:write' ],
         'Diagnostics'            => [ 'diagnostics:read', 'diagnostics:write' ],
     ];
 
