@@ -9,7 +9,7 @@ use WP_REST_Response;
 use WP_Error;
 use Elementeer\MCP\Auth\Manager as Auth;
 use Elementeer\MCP\Api\Wizards\BookingWizard;
-use Elementeer\MCP\Api\Adapters\AddonRegistry;
+use Elementeer\MCP\Addons\Registry as AddonRegistry;
 
 /**
  * REST controller for the site assessment endpoint.
@@ -308,8 +308,13 @@ final class Assessment {
 
         // ── 9. Elementor add-ons ─────────────────────────────────────────
         $elementor_addons = $run( 'elementor_addons', function () {
-            $addons         = AddonRegistry::get_instance()->get_active_addons();
-            $addons_detailed = AddonRegistry::get_instance()->get_all_info();
+            $registry       = AddonRegistry::get_instance();
+            $addons         = $registry->get_addons();
+            $addons_detailed = array_map(static fn (array $a) => [
+                'label'        => $a['label'] ?? '',
+                'version'      => $a['version'] ?? '',
+                'capabilities' => $a['capabilities'] ?? [],
+            ], $addons);
 
             return [
                 'active_count' => count( $addons ),
