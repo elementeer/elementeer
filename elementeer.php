@@ -47,9 +47,9 @@ if ( function_exists( 'plugin_dir_url' ) ) {
     define( 'ELEMENTEER_URL', '' );
 }
 
-define( 'ELEMENTEER_OPTION_KEYS', 'elementeer_mcp_api_keys' );
-define( 'ELEMENTEER_OPTION_GOVERNANCE', 'elementeer_mcp_governance' );
-define( 'ELEMENTEER_OPTION_ACTIVATION_MODE', 'elementeer_mcp_activation_mode' );
+define( 'ELEMENTEER_OPTION_KEYS', 'elementeer_api_keys' );
+define( 'ELEMENTEER_OPTION_GOVERNANCE', 'elementeer_governance' );
+define( 'ELEMENTEER_OPTION_ACTIVATION_MODE', 'elementeer_activation_mode' );
 
 // Autoloader for our classes
 spl_autoload_register( function ( string $class ): void {

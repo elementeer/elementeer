@@ -85,7 +85,7 @@ final class Mode {
     }
 
     private function has_elementeer_pro_license(): bool {
-        $license = \get_option( 'elementeer_mcp_pro_license', '' );
+        $license = \get_option( 'elementeer_pro_license', '' );
         return ! empty( $license );
     }
 }

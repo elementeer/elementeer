@@ -80,7 +80,7 @@ final class Page {
         }
 
         // Handle form submissions
-        if ( isset( $_POST['elementeer_action'] ) && check_admin_referer( 'elementeer_mcp_admin' ) ) {
+        if ( isset( $_POST['elementeer_action'] ) && check_admin_referer( 'elementeer_admin' ) ) {
             self::handle_action( sanitize_text_field( $_POST['elementeer_action'] ) );
         }
 
@@ -156,7 +156,7 @@ final class Page {
                             <?php endif; ?>
                             <?php if ( $key['is_active'] ) : ?>
                             <form method="post" style="display:inline">
-                                <?php wp_nonce_field( 'elementeer_mcp_admin' ); ?>
+                                <?php wp_nonce_field( 'elementeer_admin' ); ?>
                                 <input type="hidden" name="elementeer_action" value="revoke_key">
                                 <input type="hidden" name="key_value" value="<?php echo esc_attr( $raw_key ); ?>">
                                  <button type="submit" class="button button-small"><?php esc_html_e( 'Revoke', 'elementeer' ); ?></button>
@@ -173,7 +173,7 @@ final class Page {
 
              <h3><?php esc_html_e( 'Generate New Key', 'elementeer' ); ?></h3>
             <form method="post">
-                <?php wp_nonce_field( 'elementeer_mcp_admin' ); ?>
+                <?php wp_nonce_field( 'elementeer_admin' ); ?>
                 <input type="hidden" name="elementeer_action" value="generate_key">
                 <table class="form-table">
                     <tr>
@@ -226,7 +226,7 @@ final class Page {
             <hr>
              <h2><?php esc_html_e( 'Governance Settings', 'elementeer' ); ?></h2>
             <form method="post">
-                <?php wp_nonce_field( 'elementeer_mcp_admin' ); ?>
+                <?php wp_nonce_field( 'elementeer_admin' ); ?>
                 <input type="hidden" name="elementeer_action" value="save_governance">
                 <input type="hidden" name="governance_capabilities_present" value="1">
                 <table class="form-table">
@@ -310,7 +310,7 @@ final class Page {
                     : [];
 
                 if ( empty( $label ) ) {
-                     add_settings_error( 'elementeer_mcp', 'missing_label', __( 'Key label is required.', 'elementeer' ) );
+                     add_settings_error( 'elementeer', 'missing_label', __( 'Key label is required.', 'elementeer' ) );
                     break;
                 }
 
@@ -345,7 +345,7 @@ final class Page {
                     'audit_log_enabled' => ! empty( $_POST['audit_log_enabled'] ),
                     'require_approval'  => ! empty( $_POST['require_approval'] ),
                 ] );
-                 add_settings_error( 'elementeer_mcp', 'saved', __( 'Governance settings saved.', 'elementeer' ), 'updated' );
+                 add_settings_error( 'elementeer', 'saved', __( 'Governance settings saved.', 'elementeer' ), 'updated' );
                 break;
         }
     }
