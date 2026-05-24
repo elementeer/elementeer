@@ -1,0 +1,54 @@
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: docker
+    container: php:8.2-cli-alpine
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install system deps
+        run: |
+          apk add --no-cache bash coreutils zip findutils curl jq
+      - name: PHP syntax check
+        run: |
+          errors=$(find includes -name '*.php' -exec php -l {} \; | grep -vc "No syntax")
+          if [ "$errors" -gt 0 ]; then
+            echo "PHP syntax errors found" && exit 1
+          fi
+          echo "All PHP files pass syntax check"
+      - name: Build Plugin ZIP
+        run: |
+          bash scripts/create-plugin-zip.sh
+          ZIP=$(ls /tmp/elementeer-build-final/*/elementeer.*.zip | head -1)
+          echo "ZIP=$ZIP" >> $GITHUB_ENV
+      - name: Verify ZIP structure
+        run: |
+          unzip -l "$ZIP" | grep -q "elementeer/" || (echo "ZIP structure INVALID" && exit 1)
+          echo "ZIP structure OK: $(unzip -l "$ZIP" | tail -1)"
+      - name: Create Release
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          VERSION="${TAG#v}"
+          curl -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"tag_name\": \"$TAG\",
+              \"name\": \"Elementeer v$VERSION\",
+              \"body\": \"Release v$VERSION — includes AddonRegistry, Voxel addon support, and marketplace wizard integration.\"
+            }" > /tmp/release-response.json
+          RELEASE_ID=$(jq -r '.id' /tmp/release-response.json)
+          echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
+      - name: Upload Release Asset
+        run: |
+          ZIPNAME=$(basename "$ZIP")
+          curl -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
+            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+            -H "Content-Type: application/zip" \
+            --data-binary "@$ZIP" \
+            -H "name=$ZIPNAME"
+          echo "Asset uploaded: $ZIPNAME"
