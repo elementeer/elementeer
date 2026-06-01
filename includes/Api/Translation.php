@@ -25,7 +25,7 @@ final class Translation {
 	// ------------------------------------------------------------------ //
 
 	public function get_coverage( WP_REST_Request $request ): WP_REST_Response|WP_Error {
-		$auth = $this->auth->authorize( $request, 'site-audit:read' );
+		$auth = $this->auth->authorize( $request, 'translate:read' );
 		if ( \is_wp_error( $auth ) ) {
 			return $auth;
 		}

@@ -67,6 +67,7 @@ final class Capabilities {
         'snapshot:read',
         'snapshot:write',
         'addon-analysis:read',
+        'addon-analysis:write',
         'workflow:read',
         'workflow:write',
         'plugin-stack:write',
@@ -191,6 +192,8 @@ final class Capabilities {
         'performance-operations:write'   => 'Performance Operations — Write',
         'ecommerce-operations:read'      => 'E‑commerce Operations — Read',
         'ecommerce-operations:write'     => 'E‑commerce Operations — Write',
+        'addon-analysis:read'            => 'Addon Analysis — Read',
+        'addon-analysis:write'           => 'Addon Analysis — Write',
     ];
 
     public const GROUPS = [
@@ -216,6 +219,7 @@ final class Capabilities {
         'Booking'                => [ 'booking:read', 'booking:write' ],
         'Voxel'                  => [ 'voxel:read', 'voxel:write', 'voxel:marketplace:read', 'voxel:marketplace:write' ],
         'Diagnostics'            => [ 'diagnostics:read', 'diagnostics:write' ],
+        'Addon Analysis'         => [ 'addon-analysis:read', 'addon-analysis:write' ],
     ];
 
     public const DEFAULT_KEY_CAPABILITIES = [

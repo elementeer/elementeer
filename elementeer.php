@@ -3,7 +3,7 @@
  * Plugin Name: Elementeer
  * Plugin URI: https://git.langevc.com/elementeer/elementeer
  * Description: The agent-native Elementor growth layer. Complete WordPress/Elementor AI platform with AI-native REST API, Theme Builder management, intelligent composition, workflow staging, and governance. Route preflight, route discovery, structural validation, and mass export included.
- * Version: 2.1.9
+ * Version: 2.2.0
  * Author:      Elementeer
  * Author URI: https://elementeer.xyz
  * License:     GPL-3.0-or-later
@@ -28,7 +28,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 // Plugin constants - using WordPress functions when available, fallback otherwise
-define( 'ELEMENTEER_VERSION', '2.1.8' );
+define( 'ELEMENTEER_VERSION', '2.2.0' );
 define( 'ELEMENTEER_FILE', __FILE__ );
 
 // Define ELEMENTEER_DIR safely

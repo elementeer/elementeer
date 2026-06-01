@@ -118,7 +118,7 @@ final class Router {
         // Add‑on‑specific operations
         // ------------------------------------------------------------------ //
         $addon_specific = new AddonSpecific();
-        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)', [
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>(voxel|essential-addons|elementskit|powerpack|premium-addons|happy-addons|the-plus-addons|ultimate-addons))', [
             [
                 'methods'             => 'GET',
                 'callback'            => [ $addon_specific, 'get_addon' ],
@@ -128,7 +128,7 @@ final class Router {
                 ],
             ],
         ] );
-        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/widgets', [
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>(voxel|essential-addons|elementskit|powerpack|premium-addons|happy-addons|the-plus-addons|ultimate-addons))/widgets', [
             [
                 'methods'             => 'GET',
                 'callback'            => [ $addon_specific, 'get_addon_widgets' ],
@@ -138,7 +138,7 @@ final class Router {
                 ],
             ],
         ] );
-        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/post-types', [
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>(voxel|essential-addons|elementskit|powerpack|premium-addons|happy-addons|the-plus-addons|ultimate-addons))/post-types', [
             [
                 'methods'             => 'GET',
                 'callback'            => [ $addon_specific, 'get_addon_post_types' ],
@@ -148,7 +148,7 @@ final class Router {
                 ],
             ],
         ] );
-        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/capabilities', [
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>(voxel|essential-addons|elementskit|powerpack|premium-addons|happy-addons|the-plus-addons|ultimate-addons))/capabilities', [
             [
                 'methods'             => 'GET',
                 'callback'            => [ $addon_specific, 'get_addon_capabilities' ],
@@ -158,7 +158,7 @@ final class Router {
                 ],
             ],
         ] );
-        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>[a-zA-Z0-9_-]+)/widgets/(?P<widget_id>[a-zA-Z0-9_-]+)/toggle', [
+        register_rest_route( self::NAMESPACE, '/addons/(?P<plugin_slug>(voxel|essential-addons|elementskit|powerpack|premium-addons|happy-addons|the-plus-addons|ultimate-addons))/widgets/(?P<widget_id>[a-zA-Z0-9_:-]+)/toggle', [
             [
                 'methods'             => 'POST',
                 'callback'            => [ $addon_specific, 'toggle_widget' ],
