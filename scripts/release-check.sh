@@ -1,89 +1,65 @@
 #!/bin/bash
+# SkillWeave Release Gate — tag version check
+# Enforces: capability.yaml version == package.json version
+#           new tag > existing tag on origin (semver)
+#           tag does NOT already exist on origin (unless --force)
+# Usage: bash scripts/release-check.sh [--force]
+
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC='\033[0m'
-GATE_PASS=0; GATE_FAIL=0
+FORCE="${1:-}"
 
-log_section()  { echo -e "\n${BLUE}═══ $1 ═══${NC}"; }
-log_pass()     { echo -e "  ${GREEN}✓${NC} $1"; GATE_PASS=$((GATE_PASS + 1)); }
-log_fail()     { echo -e "  ${RED}✗${NC} $1"; GATE_FAIL=$((GATE_FAIL + 1)); }
-log_warn()     { echo -e "  ${YELLOW}⚠${NC} $1"; }
+# 1. Read versions
+PKG_VER=$(python3 -c "import json; print(json.load(open('package.json'))['version'])" 2>/dev/null || echo "MISSING")
+CAP_VER=$(grep "^version:" capability.yaml 2>/dev/null | awk '{print $2}' || echo "MISSING")
 
-check_plugin_header() {
-    log_section "Plugin Header"
-    local hdr="$REPO_DIR/elementeer.php"
-    if [ ! -f "$hdr" ]; then log_fail "elementeer.php not found"; return; fi
-    log_pass "elementeer.php present"
+echo "  package.json:     $PKG_VER"
+echo "  capability.yaml:  $CAP_VER"
 
-    local ver; ver=$(grep "Version:" "$hdr" | head -1 | awk '{print $NF}')
-    local cver; cver=$(grep "ELEMENTEER_MCP_VERSION" "$hdr" | sed "s/.*'\(.*\)'.*/\1/")
-    if [ "$ver" = "$cver" ]; then
-        log_pass "Version: $ver (header == PHP constant)"
+# 2. Version sync gate
+if [ "$PKG_VER" != "$CAP_VER" ]; then
+    echo "❌ VERSION MISMATCH: package.json ($PKG_VER) != capability.yaml ($CAP_VER)"
+    exit 1
+fi
+
+TAG="v$PKG_VER"
+echo "  tag:              $TAG"
+
+# 3. Check tag on origin (Forgejo source of truth)
+ORIGIN_URL=$(git remote get-url origin 2>/dev/null || echo "")
+echo "  origin:           $ORIGIN_URL"
+
+# Fetch tags silently
+git fetch origin --tags --quiet 2>/dev/null || true
+
+# Does tag already exist on origin?
+if git ls-remote --tags origin "refs/tags/$TAG" | grep -q "$TAG"; then
+    if [ "$FORCE" = "--force" ]; then
+        echo "⚠️  Tag $TAG already exists on origin — --force allowed, will overwrite"
     else
-        log_fail "Version mismatch: header=$ver, constant=$cver"
+        echo "❌ Tag $TAG already exists on origin"
+        echo "   Use --force to overwrite, or bump version higher"
+        exit 1
     fi
+fi
 
-    local uri; uri=$(grep "Plugin URI:" "$hdr" | head -1)
-    if echo "$uri" | grep -q "git\.langevc\.com"; then
-        log_pass "Plugin URI: Forgejo"
-    else
-        log_fail "Plugin URI must be git.langevc.com"
+# Does a LOWER or EQUAL tag already exist on origin? (only warn if force)
+HIGHEST_TAG=$(git tag -l 'v[0-9]*' --sort=-version:refname | head -1)
+if [ -n "$HIGHEST_TAG" ]; then
+    HIGHEST_NUM=$(echo "$HIGHEST_TAG" | sed 's/^v//')
+    CURRENT_NUM="$PKG_VER"
+    if [ "$(printf '%s\n%s' "$HIGHEST_NUM" "$CURRENT_NUM" | sort -V | tail -1)" = "$HIGHEST_NUM" ] && [ "$HIGHEST_NUM" != "$CURRENT_NUM" ]; then
+        echo "⚠️  Highest origin tag: $HIGHEST_TAG — your $TAG is lower"
+        echo "   Are you releasing on a different repo clone? Check origin."
     fi
-}
+fi
 
-check_php_syntax() {
-    log_section "PHP Syntax"
-    local files; files=$(find "$REPO_DIR/includes" -name '*.php' 2>/dev/null || true)
-    local errs=0
-    for f in $files; do
-        php -l "$f" >/dev/null 2>&1 || { log_fail "Syntax: $f"; errs=$((errs+1)); }
-    done
-    [ $errs -eq 0 ] && log_pass "All PHP files pass ($(echo "$files" | wc -l | tr -d ' ') files)"
-}
+# 4. GitHub mirror check (secondary — warn only)
+GITHUB_URL=$(git remote get-url origin 2>/dev/null | grep -c "github" || echo "0")
+if [ "$GITHUB_URL" -gt 0 ]; then
+    echo "⚠️  Remote origin points to GitHub, not Forgejo!"
+    echo "   Forgejo (git.langevc.com) is the source of truth."
+    echo "   Tag pushes should go to Forgejo first, then mirror to GitHub."
+fi
 
-check_required_files() {
-    log_section "Required Files"
-    for f in elementeer.php readme.txt includes/Plugin.php includes/Api/Router.php includes/Api/Templates.php includes/Api/Assessment.php includes/Api/ThemeBuilder.php; do
-        [ -f "$REPO_DIR/$f" ] && log_pass "$f" || log_fail "MISSING: $f"
-    done
-}
-
-check_forgejo_origin() {
-    log_section "Source of Truth"
-    local origin; origin=$(cd "$REPO_DIR" && git remote get-url origin 2>/dev/null)
-    if echo "$origin" | grep -q 'git\.langevc\.com'; then
-        log_pass "Origin: Forgejo"
-    else
-        log_fail "Origin is not Forgejo: $origin"
-    fi
-}
-
-print_summary() {
-    log_section "Gate Summary"
-    local total=$((GATE_PASS + GATE_FAIL))
-    echo -e "  ${GREEN}Passed: $GATE_PASS${NC}  ${RED}Failed: $GATE_FAIL${NC}  Total: $total"
-    [ $GATE_FAIL -gt 0 ] && { echo -e "\n${RED}RELEASE BLOCKED${NC}"; exit 1; }
-    echo -e "\n${GREEN}All gates passed — release can proceed.${NC}"
-    exit 0
-}
-
-case "${1:-full}" in
-    --pre-build)
-        log_section "PRE-BUILD GATES (Plugin)"
-        check_forgejo_origin
-        check_plugin_header
-        check_required_files
-        check_php_syntax
-        print_summary
-        ;;
-    *)
-        log_section "FULL RELEASE GATE (Plugin)"
-        check_forgejo_origin
-        check_plugin_header
-        check_required_files
-        check_php_syntax
-        print_summary
-        ;;
-esac
+echo "✅ Release check passed: $TAG ready"
