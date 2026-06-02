@@ -107,6 +107,38 @@ final class GlobalStyles {
     }
 
     // ------------------------------------------------------------------ //
+    // PUT /site/global-css
+    // ------------------------------------------------------------------ //
+
+    public function set_global_css( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'design-system:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $kit_id = $this->get_active_kit_id();
+        if ( ! $kit_id ) {
+            return new WP_Error( 'no_kit', 'No active Elementor Kit found.', [ 'status' => 404 ] );
+        }
+
+        $body = $request->get_json_params() ?: [];
+
+        if ( ! isset( $body['css'] ) || ! is_string( $body['css'] ) ) {
+            return new WP_Error( 'invalid_data', 'css must be a string.', [ 'status' => 400 ] );
+        }
+
+        $css = wp_strip_all_tags( $body['css'] );
+
+        $settings               = $this->get_kit_settings( $kit_id );
+        $settings['custom_css'] = $css;
+        $this->save_kit_settings( $kit_id, $settings );
+
+        return new WP_REST_Response( [
+            'kit_id' => $kit_id,
+            'css'    => $css,
+            'updated' => true,
+        ], 200 );
+    }
+
+    // ------------------------------------------------------------------ //
     // PUT /site/global-styles/typography
     // ------------------------------------------------------------------ //
 
@@ -172,6 +204,34 @@ final class GlobalStyles {
             'slot'       => $slot,
             'typography' => $entries,
             'updated'    => true,
+        ], 200 );
+    }
+
+    // ------------------------------------------------------------------ //
+    // PUT /site/theme-mode
+    // ------------------------------------------------------------------ //
+
+    public function set_theme_mode( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'design-system:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $body = $request->get_json_params() ?: [];
+
+        $mode = sanitize_text_field( $body['mode'] ?? '' );
+
+        if ( ! in_array( $mode, [ 'dark', 'light', 'auto' ], true ) ) {
+            return new WP_Error(
+                'invalid_mode',
+                'mode must be one of: dark, light, auto.',
+                [ 'status' => 400 ]
+            );
+        }
+
+        update_option( 'elementeer_theme_mode', $mode );
+
+        return new WP_REST_Response( [
+            'mode'    => $mode,
+            'updated' => true,
         ], 200 );
     }
 

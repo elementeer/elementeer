@@ -783,6 +783,24 @@ final class Router {
             ],
         ] );
 
+        // Global CSS injection
+        register_rest_route( self::NAMESPACE, '/site/global-css', [
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $gs, 'set_global_css' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // Theme mode — dark, light, auto
+        register_rest_route( self::NAMESPACE, '/site/theme-mode', [
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $gs, 'set_theme_mode' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
         // Site context — user role + site purpose + brand notes
         $context = new \Elementeer\MCP\Api\SiteContext();
         register_rest_route( self::NAMESPACE, '/site/context', [

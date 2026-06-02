@@ -38,8 +38,15 @@ final class ThemeBuilder {
             return new WP_Error('invalid_type', sprintf('type must be one of: %s', implode(', ', self::VALID_TYPES)), ['status' => 400]);
         }
 
-        $conditions_key = sanitize_key($body['conditions'] ?? 'all');
-        $conditions     = self::CONDITIONS_MAP[$conditions_key] ?? self::CONDITIONS_MAP['all'];
+        $conditions_input = $body['conditions'] ?? 'all';
+        if (is_string($conditions_input)) {
+            $conditions_key = sanitize_key($conditions_input);
+            $conditions     = self::CONDITIONS_MAP[$conditions_key] ?? self::CONDITIONS_MAP['all'];
+        } elseif (is_array($conditions_input)) {
+            $conditions = self::build_structured_conditions($conditions_input);
+        } else {
+            $conditions = self::CONDITIONS_MAP['all'];
+        }
 
         $post_id = wp_insert_post([
             'post_title'  => $title,
@@ -139,9 +146,15 @@ final class ThemeBuilder {
         }
 
         if (isset($body['conditions'])) {
-            $conditions_key = sanitize_key($body['conditions']);
-            $conditions     = self::CONDITIONS_MAP[$conditions_key] ?? null;
-            if ($conditions) {
+            $conditions_input = $body['conditions'];
+            if (is_string($conditions_input)) {
+                $conditions_key = sanitize_key($conditions_input);
+                $conditions     = self::CONDITIONS_MAP[$conditions_key] ?? null;
+                if ($conditions) {
+                    update_post_meta($id, '_elementor_conditions', $conditions);
+                }
+            } elseif (is_array($conditions_input)) {
+                $conditions = self::build_structured_conditions($conditions_input);
                 update_post_meta($id, '_elementor_conditions', $conditions);
             }
         }
@@ -191,8 +204,17 @@ final class ThemeBuilder {
         $body = $request->get_json_params() ?: [];
         $conditions = [];
 
-        if (!empty($body['conditions']) && is_array($body['conditions'])) {
-            $conditions = array_map('sanitize_text_field', $body['conditions']);
+        if (!empty($body['conditions'])) {
+            if (is_array($body['conditions'])) {
+                if (isset($body['conditions']['include']) || isset($body['conditions']['exclude'])) {
+                    $conditions = self::build_structured_conditions($body['conditions']);
+                } else {
+                    $conditions = array_map('sanitize_text_field', $body['conditions']);
+                }
+            } elseif (is_string($body['conditions'])) {
+                $conditions_key = sanitize_key($body['conditions']);
+                $conditions     = self::CONDITIONS_MAP[$conditions_key] ?? [];
+            }
         } elseif (!empty($body['conditions_key'])) {
             $conditions_key = sanitize_key($body['conditions_key']);
             $conditions     = self::CONDITIONS_MAP[$conditions_key] ?? [];
@@ -205,6 +227,26 @@ final class ThemeBuilder {
             'title'      => $post->post_title,
             'conditions' => $conditions,
         ]);
+    }
+
+    private static function build_structured_conditions(array $input): array {
+        $conditions = [];
+
+        if (!empty($input['include']) && is_array($input['include'])) {
+            foreach ($input['include'] as $item) {
+                $conditions[] = 'include/' . ltrim(sanitize_key($item), '/');
+            }
+        }
+
+        if (!empty($input['exclude']) && is_array($input['exclude'])) {
+            foreach ($input['exclude'] as $item) {
+                $key = sanitize_key($item);
+                $key = ($key === 'error-404') ? '404' : $key;
+                $conditions[] = 'exclude/' . $key;
+            }
+        }
+
+        return !empty($conditions) ? $conditions : self::CONDITIONS_MAP['all'];
     }
 
     private function format_template_item(\WP_Post $post): array {
