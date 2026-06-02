@@ -10,9 +10,31 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Inject mirror marker files (not tracked in source)
+        run: |
+          cat > _MIRROR_IS_READONLY.md << 'EOF'
+          # This is a mirror — read only
+
+          **Source of Truth:** [git.langevc.com](https://git.langevc.com/elementeer/elementeer)
+
+          This repository is automatically mirrored from the official Elementeer Forgejo instance.
+          Pull requests, issues, and contributions are **not accepted here**.
+
+          → [Open an issue](https://git.langevc.com/elementeer/elementeer/issues)
+          → [Read the docs](https://git.langevc.com/elementeer/) (coming soon)
+          EOF
+
+      - name: Remove GitHub-specific config (prevents confusion)
+        run: |
+          rm -rf .github 2>/dev/null || true
+
       - name: Push to GitHub (public mirror)
         env:
           GH_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
         run: |
+          git add -f _MIRROR_IS_READONLY.md
+          git add -u .github 2>/dev/null || true
+          git -c user.name="Elementeer Mirror" -c user.email="mirror@elementeer.langevc.com" commit -m "mirror: mark as read-only, remove .github (auto-generated)" --allow-empty || true
           git remote add github-mirror https://x-access-token:${GH_TOKEN}@github.com/elementeer/elementeer.git
           git push github-mirror main --tags --force
