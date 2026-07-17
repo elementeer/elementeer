@@ -5,21 +5,37 @@ on:
       - 'v*'
 
 jobs:
-  release:
+  validate:
     runs-on: docker
     container: php:8.2-cli-alpine
     steps:
       - uses: actions/checkout@v4
       - name: Install system deps
-        run: |
-          apk add --no-cache bash coreutils zip findutils curl jq
+        run: apk add --no-cache bash coreutils zip findutils curl jq
       - name: PHP syntax check
         run: |
-          errors=$(find includes -name '*.php' -exec php -l {} \; | grep -vc "No syntax")
-          if [ "$errors" -gt 0 ]; then
-            echo "PHP syntax errors found" && exit 1
-          fi
+          errors=0
+          find includes -name '*.php' | while read -r f; do php -l "$f" || exit 1; done
           echo "All PHP files pass syntax check"
+      - name: Version sync gate
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          VERSION="${TAG#v}"
+          HEADER_VER=$(grep "Version:" elementeer.php | head -1 | sed 's/.*Version: *//' | xargs)
+          PHP_VER=$(grep "ELEMENTEER_VERSION" elementeer.php | head -1 | sed "s/.*'\(.*\)'.*/\1/" | xargs)
+          echo "Tag:     $TAG"
+          echo "Version: $VERSION"
+          echo "Header:  $HEADER_VER"
+          echo "Const:   $PHP_VER"
+          if [ "$HEADER_VER" != "$VERSION" ]; then
+            echo "ERROR: Header Version ($HEADER_VER) != tag ($VERSION)"
+            exit 1
+          fi
+          if [ "$PHP_VER" != "$VERSION" ]; then
+            echo "ERROR: ELEMENTEER_VERSION ($PHP_VER) != tag ($VERSION)"
+            exit 1
+          fi
+          echo "Version sync OK: $VERSION"
       - name: Build Plugin ZIP
         run: |
           bash scripts/create-plugin-zip.sh
@@ -29,24 +45,25 @@ jobs:
         run: |
           unzip -l "$ZIP" | grep -q "elementeer/" || (echo "ZIP structure INVALID" && exit 1)
           echo "ZIP structure OK: $(unzip -l "$ZIP" | tail -1)"
-      - name: Create Release
+      - name: Create Forgejo Release
         run: |
           TAG="${GITHUB_REF##*/}"
           VERSION="${TAG#v}"
-          curl -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases" \
+          curl -s -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Content-Type: application/json" \
             -d "{
               \"tag_name\": \"$TAG\",
               \"name\": \"Elementeer v$VERSION\",
-              \"body\": \"Release v$VERSION — includes AddonRegistry, Voxel addon support, and marketplace wizard integration.\"
+              \"body\": \"## Elementeer v$VERSION\n\n**The agent-native Elementor growth layer.**\n\n* PHP syntax validated\n* Version sync confirmed\n* Plugin ZIP built and attached\n\n### Installation\n1. Download the ZIP below\n2. Upload to WordPress \u2192 Plugins \u2192 Add New \u2192 Upload\n3. Activate\n\n---\n\nCanonical source: [git.langevc.com/elementeer/elementeer](https://git.langevc.com/elementeer/elementeer)\"
             }" > /tmp/release-response.json
           RELEASE_ID=$(jq -r '.id' /tmp/release-response.json)
+          echo "Release created: id=$RELEASE_ID"
           echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
       - name: Upload Release Asset
         run: |
           ZIPNAME=$(basename "$ZIP")
-          curl -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
+          curl -s -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Content-Type: application/zip" \
             --data-binary "@$ZIP" \
