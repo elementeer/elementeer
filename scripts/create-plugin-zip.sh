@@ -13,9 +13,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-# Source of truth: Forgejo elementeer plugin repo
-FORGEJO_PLUGIN="/Users/andrelange/Documents/repositories/forgejo/elementeer/elementeer"
-PLUGIN_DIR="${ELEMENTEER_PLUGIN_SOURCE:-$FORGEJO_PLUGIN}"
+PLUGIN_DIR="${ELEMENTEER_PLUGIN_SOURCE:-$REPO_DIR}"
 OUTPUT_DIR="/tmp/elementeer-build-final"
 
 # Extract version from plugin header
