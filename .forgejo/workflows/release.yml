@@ -12,9 +12,9 @@ jobs:
     runs-on: ubuntu-latest
     container: php:8.2-cli-alpine
     steps:
+      - name: Install checkout deps
+        run: apk add --no-cache git nodejs npm bash coreutils zip findutils curl jq
       - uses: actions/checkout@v4
-      - name: Install system deps
-        run: apk add --no-cache bash coreutils zip findutils curl jq nodejs npm
       - name: PHP syntax check
         run: |
           errors=0
