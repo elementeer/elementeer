@@ -6,6 +6,12 @@
 
 # Elementeer
 
+> [!NOTE]
+> **Public mirror.** The canonical repository is hosted on our self-hosted git.
+> This GitHub copy is a read-only mirror kept in sync for visibility and
+> installation. Bug reports are welcome via Issues; pull requests are applied
+> upstream and synced back here.
+
 **The agent-native freemium extension for the Elementor ecosystem.**
 
 Elementeer exposes your WordPress and Elementor site through a secure, capability-scoped REST API at `/wp-json/elementeer/v1/`. AI agents — Claude, Cursor, OpenCode, Codex, Qwen, or any MCP-compatible client — use this API to read templates, assess site health, set up brand systems, compose pages, build theme templates, manage media, handle SEO, and more. No AI hype. Just a clean REST surface with real access control.
