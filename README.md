@@ -2,7 +2,7 @@
 [![PHP](https://img.shields.io/badge/PHP-8.0%2B-777bb4.svg?logo=php)](https://php.net/)
 [![Elementor](https://img.shields.io/badge/Elementor-3.x-92003b.svg)](https://elementor.com/)
 [![License: GPL-2.0+](https://img.shields.io/badge/license-GPL--2.0--or--later-blue.svg)](./LICENSE)
-[![Version](https://img.shields.io/badge/release-2.2.2-6A35FF.svg)](https://github.com/elementeer/elementeer/releases)
+[![Version](https://img.shields.io/badge/release-2.2.2-6A35FF.svg)](https://git.langevc.com/elementeer/elementeer/releases)
 
 # Elementeer
 
@@ -120,7 +120,7 @@ Authentication is via the `X-Elementeer-Key` header (Bearer fallback accepted).
 
 ```bash
 # 1. Download the latest release ZIP from
-#    https://github.com/elementeer/elementeer/releases
+#    https://git.langevc.com/elementeer/elementeer/releases
 
 # 2. Upload to your WordPress site
 #    Plugins → Add New → Upload Plugin → Choose ZIP → Install Now
@@ -133,7 +133,7 @@ Authentication is via the `X-Elementeer-Key` header (Bearer fallback accepted).
 #    Select capabilities, copy the key
 
 # 5. Configure the MCP server
-#    See github.com/elementeer/elementeer-mcp
+#    See git.langevc.com/elementeer/elementeer-mcp
 ```
 
 ---
@@ -230,7 +230,7 @@ elementeer/
 
 - **Documentation:** [docs.elementeer.xyz](https://docs.elementeer.xyz)
 - **Website:** [elementeer.xyz](https://elementeer.xyz)
-- **MCP Server:** [github.com/elementeer/elementeer-mcp](https://github.com/elementeer/elementeer-mcp)
+- **MCP Server:** [git.langevc.com/elementeer/elementeer-mcp](https://git.langevc.com/elementeer/elementeer-mcp)
 - **Conversion Bridge:** [github.com/elementeer/elementeer-bridge](https://github.com/elementeer/elementeer-bridge)
 
 ---
