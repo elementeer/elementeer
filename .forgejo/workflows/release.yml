@@ -69,3 +69,28 @@ jobs:
             --data-binary "@$ZIP" \
             -H "name=$ZIPNAME"
           echo "Asset uploaded: $ZIPNAME"
+      - name: Mirror Release to GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF##*/}"
+          VERSION="${TAG#v}"
+          gh release create "$TAG" \
+            --repo elementeer/elementeer \
+            --title "Elementeer $TAG" \
+            --notes "## Elementeer $TAG
+
+**The agent-native Elementor growth layer.**
+
+* PHP syntax validated
+* Version sync confirmed
+* Plugin ZIP built and attached
+
+### Installation
+1. Download the ZIP below
+2. Upload to WordPress → Plugins → Add New → Upload
+3. Activate
+
+---" \
+            "$ZIP#Elementeer v$VERSION — installable WordPress plugin" \
+            || echo "Mirror release skipped (token may lack permissions)"
