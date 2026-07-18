@@ -9,3 +9,7 @@ vendor/
 # SkillWeave: only agents.md is durable; everything else is runtime and ignored
 .skillweave/*
 !.skillweave/agents.md
+
+# Generated files
+scripts/endpoint_map.json
+scripts/.env

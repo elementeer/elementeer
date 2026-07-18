@@ -174,6 +174,58 @@ composer test
 composer test:coverage
 ```
 
+### Smoke Tests
+
+Two smoke test scripts live in `scripts/` and validate every REST endpoint.
+
+**`smoke-test-capability-aware.sh`** — Capability-aware smoke test (data-driven).
+
+Reads `endpoint_map.json` and tests three dimensions per endpoint:
+1. **Wildcard key** — every endpoint returns 200/201 with a `*` key
+2. **Wrong capability** — a key with `site-audit:read` gets 403 on every endpoint
+   that requires a different capability
+3. **Correct capability** — a key with the exact required capability gets 200/201
+
+```bash
+# Set your WordPress URL and wildcard API key
+export ELEMENTEER_WP_URL=http://localhost:8082
+export ELEMENTEER_API_KEY=ek_...
+
+# Generate the endpoint→capability map
+php scripts/extract-endpoint-map.php
+
+# Run the capability-aware smoke test
+bash scripts/smoke-test-capability-aware.sh
+```
+
+The test auto-creates scoped API keys via the Elementeer REST API (`POST /keys`)
+and cleans them up after each test.
+
+**`extract-endpoint-map.php`** — Source-parsing extraction script.
+
+Parses `Router.php` and all API controller sources to produce `endpoint_map.json`.
+
+```bash
+# Generate the map (output: scripts/endpoint_map.json)
+php scripts/extract-endpoint-map.php
+
+# Output to a specific file
+php scripts/extract-endpoint-map.php /path/to/output.json
+```
+
+What it does:
+1. Scans `includes/Api/Router.php` for all `register_rest_route()` calls
+2. For each callback `[$instance, 'method']`, resolves the class and parses
+   its source to extract the `$this->auth->authorize($request, 'XXX')` capability
+3. Also parses addon routers from `elementeer-pro` and `elementeer-addon-voxel`
+   if those repos exist as siblings
+4. Routes without an `authorize()` call get `null` capability
+5. Outputs JSON: `{"/route/{param}": {"GET": "cap:read", "POST": "cap:write", ...}}`
+
+Run this after adding new routes or changing capabilities to keep the map in sync.
+
+The existing legacy smoke test is at `../elementeer-ops/wp-testing-env/tests/smoke-test-full.sh`.
+
 ### Plugin Structure
 
 ```
@@ -218,6 +270,11 @@ elementeer/
 │   ├── Governance/
 │   │   └── Settings.php       # Site-wide governance
 │   └── Plugin.php             # Bootstrap & init
+├── scripts/
+│   ├── extract-endpoint-map.php    # Endpoint→capability parser
+│   ├── smoke-test-capability-aware.sh  # Capability-aware smoke test
+│   ├── create-plugin-zip.sh        # ZIP build script
+│   └── release-check.sh           # Release validation
 ├── elementeer.php             # Plugin entry point
 ├── composer.json
 ├── readme.txt                 # WordPress.org readme
