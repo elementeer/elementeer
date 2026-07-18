@@ -78,22 +78,25 @@ jobs:
         run: |
           TAG="${GITHUB_REF##*/}"
           VERSION="${TAG#v}"
+          NOTES=$(cat <<'EONOTES'
+          ## Elementeer {TAG}
+
+          The agent-native Elementor growth layer.
+
+          - PHP syntax validated
+          - Version sync confirmed
+          - Plugin ZIP built and attached
+
+          ### Installation
+          1. Download the ZIP below
+          2. Upload to WordPress - Plugins - Add New - Upload
+          3. Activate
+          EONOTES
+          )
+          NOTES=$(echo "$NOTES" | sed "s/{TAG}/$TAG/")
           gh release create "$TAG" \
             --repo elementeer/elementeer \
             --title "Elementeer $TAG" \
-            --notes "## Elementeer $TAG
-
-**The agent-native Elementor growth layer.**
-
-* PHP syntax validated
-* Version sync confirmed
-* Plugin ZIP built and attached
-
-### Installation
-1. Download the ZIP below
-2. Upload to WordPress → Plugins → Add New → Upload
-3. Activate
-
----" \
-            "$ZIP#Elementeer v$VERSION — installable WordPress plugin" \
+            --notes "$NOTES" \
+            "$ZIP#Elementeer v$VERSION - installable WordPress plugin" \
             || echo "Mirror release skipped (token may lack permissions)"
