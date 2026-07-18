@@ -14,7 +14,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install system deps
-        run: apk add --no-cache bash coreutils zip findutils curl jq
+        run: apk add --no-cache bash coreutils zip findutils curl jq nodejs npm
       - name: PHP syntax check
         run: |
           errors=0
