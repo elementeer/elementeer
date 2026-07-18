@@ -23,6 +23,28 @@ final class PluginStackContext {
 			return $auth;
 		}
 
+		return new WP_REST_Response( $this->build_context() );
+	}
+
+	/**
+	 * Refresh plugin stack context data.
+	 *
+	 * Rescans active plugins, Elementor status, and WordPress environment,
+	 * returning updated context identical in structure to get_context().
+	 *
+	 * @param WP_REST_Request $request Request object.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function refresh( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+		$auth = Auth::get_instance()->authorize( $request, 'plugin-stack-context:prepare' );
+		if ( is_wp_error( $auth ) ) {
+			return $auth;
+		}
+
+		return new WP_REST_Response( $this->build_context(), 200 );
+	}
+
+	private function build_context(): array {
 		$all_plugins = \get_plugins();
 		$active      = \get_option( 'active_plugins', [] );
 
@@ -38,7 +60,7 @@ final class PluginStackContext {
 			];
 		}
 
-		return new WP_REST_Response( [
+		return [
 			'plugins'       => $plugins,
 			'active_count'  => \count( $active ),
 			'total_count'   => \count( $all_plugins ),
@@ -46,6 +68,6 @@ final class PluginStackContext {
 			'wp_version'    => \get_bloginfo( 'version' ),
 			'elementor'     => \defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : null,
 			'elementor_pro' => \defined( 'ELEMENTOR_PRO_VERSION' ) ? ELEMENTOR_PRO_VERSION : null,
-		] );
+		];
 	}
 }
