@@ -52,25 +52,39 @@ jobs:
         run: |
           TAG="${GITHUB_REF##*/}"
           VERSION="${TAG#v}"
+          BODY=$(cat <<EOBODY
+          ## Elementeer $VERSION
+
+          The agent-native Elementor growth layer.
+
+          - PHP syntax validated
+          - Version sync confirmed
+          - Plugin ZIP built and attached
+
+          ### Installation
+          1. Download the ZIP below
+          2. Upload to WordPress -> Plugins -> Add New -> Upload
+          3. Activate
+
+          Canonical source: [git.langevc.com/elementeer/elementeer](https://git.langevc.com/elementeer/elementeer)
+          EOBODY
+          )
           curl -s -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Content-Type: application/json" \
-            -d "{
-              \"tag_name\": \"$TAG\",
-              \"name\": \"Elementeer v$VERSION\",
-              \"body\": \"## Elementeer v$VERSION\n\n**The agent-native Elementor growth layer.**\n\n* PHP syntax validated\n* Version sync confirmed\n* Plugin ZIP built and attached\n\n### Installation\n1. Download the ZIP below\n2. Upload to WordPress \u2192 Plugins \u2192 Add New \u2192 Upload\n3. Activate\n\n---\n\nCanonical source: [git.langevc.com/elementeer/elementeer](https://git.langevc.com/elementeer/elementeer)\"
-            }" > /tmp/release-response.json
+            -d "$(jq -n --arg tag "$TAG" --arg name "Elementeer v$VERSION" --arg body "$BODY" '{tag_name: $tag, name: $name, body: $body}')" \
+            > /tmp/release-response.json
+          cat /tmp/release-response.json
           RELEASE_ID=$(jq -r '.id' /tmp/release-response.json)
           echo "Release created: id=$RELEASE_ID"
           echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
       - name: Upload Release Asset
         run: |
           ZIPNAME=$(basename "$ZIP")
-          curl -s -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets" \
+          curl -s -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?name=$ZIPNAME" \
             -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
             -H "Content-Type: application/zip" \
-            --data-binary "@$ZIP" \
-            -H "name=$ZIPNAME"
+            --data-binary "@$ZIP"
           echo "Asset uploaded: $ZIPNAME"
       - name: Mirror Release to GitHub
         env:
