@@ -8,6 +8,10 @@ jobs:
     runs-on: ubuntu-latest
     container: php:8.2-cli-alpine
     steps:
+      # php:8.2-cli-alpine ships no node, so actions/checkout cannot run until it is
+      # installed. Same pre-step the working release.yml has used since 2026-07-18.
+      - name: Install checkout deps
+        run: apk add --no-cache git nodejs npm bash coreutils zip findutils curl jq
       - uses: actions/checkout@v4
       - name: Install system deps
         run: |
