@@ -10,11 +10,13 @@ on:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    container: php:8.2-cli-alpine
     steps:
-      - name: Install checkout deps
-        run: apk add --no-cache git nodejs npm bash coreutils zip findutils curl jq
       - uses: actions/checkout@v4
+      - name: Install PHP and release tooling
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq php-cli zip unzip gh
+          php -v | head -1
       - name: PHP syntax check
         run: |
           errors=0

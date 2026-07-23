@@ -5,20 +5,30 @@ on:
 
 jobs:
   validate:
+    # Deliberately no `container: php:8.2-cli-alpine`. actions/checkout@v4 fails
+    # inside that image even with nodejs installed: it completes every git
+    # operation and then exits 1 without a message, which kept this gate red for
+    # 31 consecutive runs. On ubuntu-latest checkout is reliable (every mirror
+    # workflow proves it), so PHP is installed here instead — 8.3 rather than 8.2,
+    # which is backwards compatible for a syntax gate.
     runs-on: ubuntu-latest
-    container: php:8.2-cli-alpine
     steps:
-      # php:8.2-cli-alpine ships no node, so actions/checkout cannot run until it is
-      # installed. Same pre-step the working release.yml has used since 2026-07-18.
-      - name: Install checkout deps
-        run: apk add --no-cache git nodejs npm bash coreutils zip findutils curl jq
       - uses: actions/checkout@v4
-      - name: Install system deps
+      - name: Install PHP
         run: |
-          apk add --no-cache bash coreutils zip findutils
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq php-cli zip unzip
+          php -v | head -1
       - name: PHP syntax check
         run: |
-          find includes -name '*.php' -exec php -l {} \; | grep -v "No syntax errors"
+          # `grep -v` exits 1 when every line matches, i.e. when all files are
+          # clean — so it must not be the step's last command.
+          errors=$(find includes -name '*.php' -exec php -l {} \; | grep -v "No syntax errors" || true)
+          if [ -n "$errors" ]; then
+            echo "$errors"
+            echo "PHP syntax errors found"
+            exit 1
+          fi
           echo "All PHP files pass syntax check"
       - name: Version Sync Gate
         run: |
