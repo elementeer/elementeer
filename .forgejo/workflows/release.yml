@@ -48,7 +48,15 @@ jobs:
           echo "ZIP=$ZIP" >> $GITHUB_ENV
       - name: Verify ZIP structure
         run: |
-          unzip -l "$ZIP" | grep -q "elementeer/" || (echo "ZIP structure INVALID" && exit 1)
+          # Capture the listing first: piping straight into `grep -q` makes grep
+          # close the pipe on the first match, unzip dies of SIGPIPE, and under
+          # pipefail (which the runner enables) that fails the step even though
+          # the ZIP is correct.
+          listing=$(unzip -l "$ZIP")
+          if ! printf '%s\n' "$listing" | grep -q "elementeer/"; then
+            echo "ZIP structure INVALID"
+            exit 1
+          fi
           echo "ZIP structure OK: $(unzip -l "$ZIP" | tail -1)"
       - name: Create Forgejo Release
         run: |

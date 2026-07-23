@@ -48,4 +48,14 @@ jobs:
           ls -la /tmp/elementeer-build-final/*/
       - name: Verify ZIP structure
         run: |
-          unzip -l /tmp/elementeer-build-final/*/elementeer.*.zip | grep -q "elementeer/" && echo "ZIP structure OK" || (echo "ZIP structure INVALID" && exit 1)
+          # Capture the listing first: piping straight into `grep -q` makes grep
+          # close the pipe on the first match, unzip dies of SIGPIPE, and under
+          # pipefail (which the runner enables) that fails the step even though
+          # the ZIP is correct.
+          listing=$(unzip -l /tmp/elementeer-build-final/*/elementeer.*.zip)
+          if printf '%s\n' "$listing" | grep -q "elementeer/"; then
+            echo "ZIP structure OK"
+          else
+            echo "ZIP structure INVALID"
+            exit 1
+          fi
