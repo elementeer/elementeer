@@ -3,7 +3,7 @@ Contributors: elementeer
 Tags: elementor, mcp, ai, rest-api, template-management
 Requires at least: 6.0
 Tested up to: 6.5
-Stable tag: 2.0.1
+Stable tag: 2.3.0
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -72,6 +72,25 @@ Use the dedicated `/wp-json/elementeer/v1/library/import` endpoint with a `libra
 Yes. When Vamerli Studio is active alongside this plugin, the activation mode switches to `vamerli-embedded` or `vamerli-agency`, unlocking additional governance features.
 
 == Changelog ==
+
+= 2.3.0 =
+* Granular mutation: `PATCH /pages/{id}/widgets/{widget_id}` and the template
+  equivalent change a single field without replacing `_elementor_data`.
+  A text edit costs 91 bytes instead of ~6 KB.
+* `ElementorDocument`: one write-capable traversal path for the whole plugin.
+  Ally consumes it too, so there is no second traversal to keep in sync.
+* Conflict safety: a write without the `contentHash` of the state you read is
+  rejected; a stale hash ends in `TARGET_CHANGED`. No silent merge.
+* Dry run on every mutating route: resolved target IDs, before and after values,
+  unmatched IDs and the expected new hash, without writing.
+* Snapshots: every mutating write in the enforced profile takes one first.
+  Change sessions roll back across all touched objects.
+* `Ally::apply_single_fix()` is a real implementation instead of a placeholder.
+* Distribution: the plugin ZIP is now built from an allowlist. Earlier builds
+  could ship the PHPUnit tree, tests and build scripts into the package.
+
+= 2.2.4 =
+* See repository history.
 
 = 2.0.1 =
 * Complete parallel development of five advanced feature domains
