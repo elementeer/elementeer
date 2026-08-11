@@ -991,6 +991,8 @@ final class Ally {
 
         $path_out = '';
         $doc->updateById( $element_id, [ 'settings' => $settings_patch ], $path_out );
+
+        Snapshots::capture( $page_id );
         $doc->save();
 
         return [
