@@ -41,7 +41,12 @@ jobs:
             echo "Fix: bump both to the same version before release"
             exit 1
           fi
-          echo "Version sync OK: $HEADER_VER"
+          README_VER=$(grep -i "^Stable tag:" readme.txt | sed 's/.*: *//' | xargs)
+          if [ "$HEADER_VER" != "$README_VER" ]; then
+            echo "ERROR: Version MISMATCH — header='$HEADER_VER' != readme.txt Stable tag='$README_VER'"
+            exit 1
+          fi
+          echo "Version sync OK: $HEADER_VER (header, constant, readme)"
       - name: Build Plugin ZIP
         run: |
           bash scripts/create-plugin-zip.sh
