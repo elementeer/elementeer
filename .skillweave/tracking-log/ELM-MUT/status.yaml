@@ -1,0 +1,19 @@
+sequence_id: ELM-MUT
+state: IN_PROGRESS
+completed_tasks:
+  - MUT-001
+  - MUT-002
+  - MUT-003
+  - MUT-004
+  - MUT-005
+  - MUT-006
+  - MUT-007
+  - MUT-008
+candidate_sha: TBD
+base_sha: b7d63f1423490a495c454c2a3026743f0d5be50d
+self_approved: false
+test_results:
+  total: 27
+  passed: 27
+  assertions: 48
+last_update: "2026-08-11T00:00:00Z"
