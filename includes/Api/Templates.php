@@ -474,6 +474,94 @@ final class Templates {
         );
     }
 
+    /**
+     * PATCH /templates/{id}/widgets/{widget_id}
+     *
+     * Partially mutates a single widget inside the template's _elementor_data.
+     *
+     * Body: { "settings": { "title": "New" }, "content_hash": "abc", "dry_run": false }
+     *
+     * Requires 'library-operations:write' capability.
+     */
+    public function patch_widget( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'library-operations:write' );
+        if ( \is_wp_error( $auth ) ) return $auth;
+
+        $id        = (int) $request->get_param( 'id' );
+        $widget_id = \sanitize_text_field( $request->get_param( 'widget_id' ) );
+
+        $post = \get_post( $id );
+        if ( ! $post || 'elementor_library' !== $post->post_type ) {
+            return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
+        }
+
+        $body = $request->get_json_params() ?: [];
+
+        $settings     = $body['settings'] ?? null;
+        $content_hash = \sanitize_text_field( $body['content_hash'] ?? '' );
+        $is_dry_run   = (bool) ( $body['dry_run'] ?? false );
+
+        if ( ! \is_array( $settings ) || empty( $settings ) ) {
+            return new WP_Error(
+                'invalid_data',
+                \__( 'settings must be a non-empty object.', 'elementeer' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        if ( $content_hash === '' ) {
+            return new WP_Error(
+                'missing_content_hash',
+                \__( 'content_hash is required.', 'elementeer' ),
+                [ 'status' => 400 ]
+            );
+        }
+
+        $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
+        if ( \is_wp_error( $doc ) ) {
+            return $doc;
+        }
+
+        $before = $doc->findById( $widget_id );
+        if ( $before === null ) {
+            return new WP_Error(
+                'widget_not_found',
+                \sprintf( \__( 'Widget with id "%s" not found on this template.', 'elementeer' ), $widget_id ),
+                [ 'status' => 404 ]
+            );
+        }
+
+        if ( $is_dry_run ) {
+            $report = $doc->dryRun( [ $widget_id => [ 'settings' => $settings ] ] );
+            $report['template_id']          = $id;
+            $report['widget_id']            = $widget_id;
+            $report['content_hash_input']   = $content_hash;
+            return new WP_REST_Response( $report, 200 );
+        }
+
+        Snapshots::capture( $id );
+
+        $path_out = '';
+        $updated  = $doc->updateById( $widget_id, [ 'settings' => $settings ], $path_out );
+        if ( ! $updated ) {
+            return new WP_Error(
+                'update_failed',
+                \__( 'Element was found during pre-check but not during write.', 'elementeer' ),
+                [ 'status' => 500 ]
+            );
+        }
+
+        $doc->save();
+
+        return new WP_REST_Response( [
+            'template_id'   => $id,
+            'widget_id'     => $widget_id,
+            'path'          => $path_out,
+            'updated'       => true,
+            'new_hash'      => $doc->contentHash(),
+        ], 200 );
+    }
+
     public function update_template_data( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'library-operations:write' );
         if ( \is_wp_error( $auth ) ) {

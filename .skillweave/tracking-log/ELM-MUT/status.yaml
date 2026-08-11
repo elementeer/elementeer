@@ -1,0 +1,36 @@
+sequence_id: ELM-MUT
+state: REVIEW_REQUIRED
+completed_tasks:
+  - MUT-001
+  - MUT-002
+  - MUT-003
+  - MUT-004
+  - MUT-005
+  - MUT-006
+  - MUT-007
+  - MUT-008
+  - MUT-AMEND-REPRO (AllyAutoFix + measure-payload + snapshot in apply_single_fix)
+candidate_sha: 4251228f7bea191c7e0546ee68cf00f3b421cbbb
+base_sha: b7d63f1423490a495c454c2a3026743f0d5be50d
+self_approved: false
+test_results:
+  total: 33
+  passed: 33
+  assertions: 65
+payload_measurement:
+  fixture: tests/measure-payload.php
+  fixture_sections: 8
+  fixture_widgets: ~30
+  patch_bytes: 91
+  full_replace_bytes: 5980
+  ratio: 65.7x
+  threshold_2kb: passed
+  prior_numbers:
+    - "19.4% and ~200x were napkin math — superseded by this fixture"
+    - "the ratio scales linearly with page size; a 50 KB production page projects to ~550x"
+ally_autofix_tests:
+  file: tests/AllyAutoFixTest.php
+  tests: 5
+  assertions: 15
+  status: all passing
+last_update: "2026-08-11T21:37:00Z"
