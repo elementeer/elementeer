@@ -22,6 +22,105 @@ final class Pages {
     }
 
     /**
+     * PATCH /pages/{id}/widgets/{widget_id}
+     *
+     * Partially mutates a single widget inside the page's _elementor_data.
+     * Only the specified settings keys are changed — the rest of the page
+     * stays byte-identical.
+     *
+     * Body: { "settings": { "title": "New" }, "content_hash": "abc", "dry_run": false }
+     *
+     * Requires 'content-structure:write' capability.
+     */
+    public function patch_widget( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'content-structure:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $id        = (int) $request->get_param( 'id' );
+        $widget_id = sanitize_text_field( $request->get_param( 'widget_id' ) );
+
+        $post = get_post( $id );
+        if ( ! $post || $post->post_status === 'trash' ) {
+            return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
+        }
+
+        $edit_mode = get_post_meta( $id, '_elementor_edit_mode', true );
+        if ( $edit_mode !== 'builder' ) {
+            return new WP_Error(
+                'not_elementor',
+                'This post was not built with Elementor.',
+                [ 'status' => 422 ]
+            );
+        }
+
+        $body = $request->get_json_params() ?: [];
+
+        $settings      = $body['settings'] ?? null;
+        $content_hash  = sanitize_text_field( $body['content_hash'] ?? '' );
+        $is_dry_run    = (bool) ( $body['dry_run'] ?? false );
+
+        if ( ! is_array( $settings ) || empty( $settings ) ) {
+            return new WP_Error(
+                'invalid_data',
+                'settings must be a non-empty object.',
+                [ 'status' => 400 ]
+            );
+        }
+
+        if ( $content_hash === '' ) {
+            return new WP_Error(
+                'missing_content_hash',
+                'content_hash is required.',
+                [ 'status' => 400 ]
+            );
+        }
+
+        $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
+        if ( is_wp_error( $doc ) ) {
+            return $doc;
+        }
+
+        $before = $doc->findById( $widget_id );
+        if ( $before === null ) {
+            return new WP_Error(
+                'widget_not_found',
+                sprintf( 'Widget with id "%s" not found on this page.', $widget_id ),
+                [ 'status' => 404 ]
+            );
+        }
+
+        if ( $is_dry_run ) {
+            $report = $doc->dryRun( [ $widget_id => [ 'settings' => $settings ] ] );
+            $report['post_id']     = $id;
+            $report['widget_id']   = $widget_id;
+            $report['content_hash_input'] = $content_hash;
+            return new WP_REST_Response( $report, 200 );
+        }
+
+        Snapshots::capture( $id );
+
+        $path_out = '';
+        $updated  = $doc->updateById( $widget_id, [ 'settings' => $settings ], $path_out );
+        if ( ! $updated ) {
+            return new WP_Error(
+                'update_failed',
+                'Element was found during pre-check but not during write.',
+                [ 'status' => 500 ]
+            );
+        }
+
+        $doc->save();
+
+        return new WP_REST_Response( [
+            'post_id'       => $id,
+            'widget_id'     => $widget_id,
+            'path'          => $path_out,
+            'updated'       => true,
+            'new_hash'      => $doc->contentHash(),
+        ], 200 );
+    }
+
+    /**
      * GET /pages/{id}/data
      *
      * Returns the raw _elementor_data from any post/page.
