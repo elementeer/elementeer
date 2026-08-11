@@ -9,11 +9,16 @@ completed_tasks:
   - MUT-006
   - MUT-007
   - MUT-008
-candidate_sha: 6188ce50ef7bbd24d49a1d2fd95ab82fe9676c78
+candidate_sha: ab12d08938b4d27e22657a3d3f2e3787a4def9f0
 base_sha: b7d63f1423490a495c454c2a3026743f0d5be50d
 self_approved: false
 test_results:
-  total: 27
-  passed: 27
-  assertions: 48
-last_update: "2026-08-11T20:04:15Z"
+  total: 28
+  passed: 28
+  assertions: 50
+payload_measurement:
+  patch_bytes: 91
+  full_replace_bytes: 5980
+  ratio: 65.7x
+  threshold_2kb: passed
+last_update: "2026-08-11T21:24:44Z"
