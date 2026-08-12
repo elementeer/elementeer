@@ -30,6 +30,11 @@ class Snapshots {
 	 * Returns the snapshot UUID. Safe to call on empty posts.
 	 */
 	public static function capture( int $post_id, string $session_id = '' ): string {
+		// Auto-attach to the most-recently-begun active session
+		if ( $session_id === '' ) {
+			$session_id = self::findActiveSession();
+		}
+
 		$doc  = ElementorDocument::load( $post_id );
 		$uuid = self::uuid();
 
@@ -223,6 +228,22 @@ class Snapshots {
 		}
 		$sessions[ $session_id ]['snapshot_uuids'][] = $uuid;
 		self::saveSessions( $sessions );
+	}
+
+	private static function findActiveSession(): string {
+		$sessions = self::loadSessions();
+		$latest = '';
+		$latest_time = '';
+		foreach ( $sessions as $id => $s ) {
+			if ( ( $s['status'] ?? '' ) === 'active' ) {
+				$t = $s['created_at'] ?? '';
+				if ( $latest === '' || $t > $latest_time ) {
+					$latest = $id;
+					$latest_time = $t;
+				}
+			}
+		}
+		return $latest;
 	}
 
 	private static function uuid(): string {
