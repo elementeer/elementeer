@@ -329,6 +329,9 @@ final class Templates {
             return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
 
+        $protect = SiteMemory::refuseIfProtected( $id );
+        if ( \is_wp_error( $protect ) ) return $protect;
+
         $body    = $request->get_json_params() ?: [];
         $to_save = [ 'ID' => $id ];
 
@@ -373,6 +376,9 @@ final class Templates {
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
             return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
+
+        $protect = SiteMemory::refuseIfProtected( $id );
+        if ( \is_wp_error( $protect ) ) return $protect;
 
         $deleted = wp_delete_post( $id, true ); // force delete, skip trash
         if ( ! $deleted ) {
@@ -498,6 +504,9 @@ final class Templates {
             return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
 
+        $protect = SiteMemory::refuseIfProtected( $id );
+        if ( \is_wp_error( $protect ) ) return $protect;
+
         $body = $request->get_json_params() ?: [];
 
         $settings     = $body['settings'] ?? null;
@@ -577,6 +586,9 @@ final class Templates {
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
             return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
+
+        $protect = SiteMemory::refuseIfProtected( $id );
+        if ( \is_wp_error( $protect ) ) return $protect;
 
         $body = $request->get_json_params() ?: [];
 

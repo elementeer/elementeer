@@ -135,6 +135,9 @@ final class ThemeBuilder {
             return new WP_Error('not_found', 'Template not found', ['status' => 404]);
         }
 
+        $protect = SiteMemory::refuseIfProtected($id);
+        if (is_wp_error($protect)) return $protect;
+
         $body = $request->get_json_params() ?: [];
 
         if (isset($body['title'])) {
