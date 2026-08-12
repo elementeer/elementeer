@@ -67,6 +67,7 @@ final class SiteMemory {
             if ( isset( $body['rule']['protect'] ) && is_array( $body['rule']['protect'] ) ) {
                 $rule['protect'] = [
                     'post_ids' => array_map( 'absint', $body['rule']['protect']['post_ids'] ?? [] ),
+                    'slugs'    => array_values( array_filter( array_map( 'sanitize_title', $body['rule']['protect']['slugs'] ?? [] ) ) ),
                 ];
             }
             $entry['rule'] = $rule;
@@ -110,24 +111,42 @@ final class SiteMemory {
         $memory = self::load();
         foreach ( $memory as $entry ) {
             if ( ( $entry['type'] ?? '' ) !== 'rule' ) continue;
-            $protect = $entry['rule']['protect']['post_ids'] ?? [];
-            if ( in_array( $post_id, $protect, true ) ) {
-                return new WP_Error(
-                    'protected_resource',
-                    sprintf(
-                        'Post %d is protected by rule "%s". Write operations are blocked.',
-                        $post_id,
-                        $entry['key'] ?? 'unknown'
-                    ),
-                    [
-                        'status'        => 423,
-                        'rule_key'      => $entry['key'] ?? '',
-                        'post_id'       => $post_id,
-                    ]
-                );
+            $protect = $entry['rule']['protect'] ?? [];
+            $post_ids = $protect['post_ids'] ?? [];
+            if ( in_array( $post_id, $post_ids, true ) ) {
+                return self::build_blocked_error( $post_id, $entry );
+            }
+
+            // Resolve slug-based protection to the concrete post.
+            $slugs = $protect['slugs'] ?? [];
+            if ( ! empty( $slugs ) ) {
+                $post = \get_post( $post_id );
+                $actual_slug = $post ? $post->post_name : '';
+                if ( $actual_slug !== '' && in_array( $actual_slug, $slugs, true ) ) {
+                    return self::build_blocked_error( $post_id, $entry );
+                }
             }
         }
         return null;
+    }
+
+    /**
+     * @param array $entry
+     */
+    private static function build_blocked_error( int $post_id, array $entry ): WP_Error {
+        return new WP_Error(
+            'protected_resource',
+            sprintf(
+                'Post %d is protected by rule "%s". Write operations are blocked.',
+                $post_id,
+                $entry['key'] ?? 'unknown'
+            ),
+            [
+                'status'        => 423,
+                'rule_key'      => $entry['key'] ?? '',
+                'post_id'       => $post_id,
+            ]
+        );
     }
 
     // ------------------------------------------------------------------ //

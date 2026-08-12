@@ -155,7 +155,7 @@ class Snapshots {
 		self::saveSessions( $sessions );
 
 		return [
-			'success'  => true,
+			'success'  => $restored === \count( $uuids ),
 			'restored' => $restored,
 			'total'    => \count( $uuids ),
 		];

@@ -372,6 +372,8 @@ final class Pages {
         return new WP_REST_Response( [
             'post_id'    => $id,
             'updated'    => count( $results ),
+            'updated_ids' => array_column( $results, 'widget_id' ),
+            'results'    => $results,
             'not_found'  => $not_found,
             'partial'    => $is_partial,
             'new_hash'   => $doc->contentHash(),
