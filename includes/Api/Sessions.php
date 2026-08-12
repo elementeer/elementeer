@@ -17,9 +17,31 @@ use Elementeer\MCP\Auth\Manager as Auth;
 final class Sessions {
 
     private Auth $auth;
+    private const SESSION_HEADER = 'X-Elementeer-Session';
 
     public function __construct() {
         $this->auth = Auth::get_instance();
+    }
+
+    /**
+     * Resolve the active session id from the request Header, if present.
+     *
+     * Returns '' when no session header is set or the referenced session
+     * does not exist / is not active, meaning the write is a standalone
+     * mutation outside any rollback group.
+     */
+    public static function resolveFromRequest( WP_REST_Request $request ): string {
+        $session_id = \sanitize_text_field(
+            $request->get_header( self::SESSION_HEADER ) ?: ''
+        );
+        if ( $session_id === '' ) {
+            return '';
+        }
+        $session = Snapshots::getSession( $session_id );
+        if ( $session === null || ( $session['status'] ?? '' ) !== 'active' ) {
+            return '';
+        }
+        return $session_id;
     }
 
     /**

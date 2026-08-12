@@ -551,7 +551,7 @@ final class Templates {
             return new WP_REST_Response( $report, 200 );
         }
 
-        Snapshots::capture( $id );
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
 
         $path_out = '';
         $updated  = $doc->updateById( $widget_id, [ 'settings' => $settings ], $path_out );
