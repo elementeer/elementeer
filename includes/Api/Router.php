@@ -345,11 +345,53 @@ final class Router {
                     'widget_id'  => [ 'type' => 'string', 'required' => true ],
                 ],
             ],
+            [
+                'methods'             => \WP_REST_Server::DELETABLE,
+                'callback'            => [ $pages, 'remove_widget' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id'         => [ 'type' => 'integer', 'required' => true ],
+                    'widget_id'  => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
         ] );
         register_rest_route( self::NAMESPACE, '/pages/(?P<id>\d+)/widgets/batch', [
             [
                 'methods'             => 'POST',
                 'callback'            => [ $pages, 'patch_widgets_batch' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
+
+        // DELTA-003 — structural widget operations
+        register_rest_route( self::NAMESPACE, '/pages/(?P<id>\d+)/widgets', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $pages, 'insert_widget' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/pages/(?P<id>\d+)/widgets/(?P<widget_id>[a-zA-Z0-9]+)/move', [
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $pages, 'move_widget' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                    'widget_id' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/pages/(?P<id>\d+)/widgets/clone', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $pages, 'clone_widget' ],
                 'permission_callback' => '__return_true',
                 'args'                => [
                     'id' => [ 'type' => 'integer', 'required' => true ],

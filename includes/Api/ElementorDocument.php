@@ -291,4 +291,188 @@ class ElementorDocument {
 
 		return $doc;
 	}
+
+	/**
+	 * Find the container element at the given dot-separated path and return a
+	 * reference to its 'elements' array so the caller can mutate it directly.
+	 *
+	 * NOT declared by-reference: returning `null` from a `function &()` is
+	 * illegal in PHP and triggers "Only variable references should be returned
+	 * by reference", intermittently corrupting reference navigation. Instead
+	 * the reference is passed inside the result array (PHP preserves array
+	 * element references regardless of the function's return type).
+	 *
+	 * Returns ['elements' => &$elements, 'parent' => &$parent_element] on
+	 * success, or null if the path does not resolve to a container element.
+	 *
+	 * @return ?array{ elements: array, parent: array }
+	 */
+	public function resolveContainer( string $path ): ?array {
+		if ( $path === '' || $path === 'root' ) {
+			return [ 'elements' => &$this->data, 'parent' => &$this->data ];
+		}
+
+		$segments = \explode( '.', $path );
+		$cursor   = &$this->data;
+
+		foreach ( $segments as $i => $seg ) {
+			$index = (int) $seg;
+			if ( ! isset( $cursor[ $index ] ) || ! \is_array( $cursor[ $index ] ) ) {
+				return null;
+			}
+			if ( $i === \count( $segments ) - 1 ) {
+				$parent = &$cursor[ $index ];
+				if ( ! isset( $parent['elements'] ) || ! \is_array( $parent['elements'] ) ) {
+					$parent['elements'] = [];
+				}
+				return [ 'elements' => &$parent['elements'], 'parent' => &$parent ];
+			}
+			if ( ! isset( $cursor[ $index ]['elements'] ) || ! \is_array( $cursor[ $index ]['elements'] ) ) {
+				return null;
+			}
+			$cursor = &$cursor[ $index ]['elements'];
+		}
+		return null;
+	}
+
+	/**
+	 * Remove an element by its id. Returns the removed element array, or null
+	 * if not found.
+	 */
+	public function removeById( string $element_id ): ?array {
+		return $this->removeByIdIn( $this->data, $element_id );
+	}
+
+	private function removeByIdIn( array &$elements, string $element_id ): ?array {
+		foreach ( $elements as $i => $element ) {
+			if ( ! \is_array( $element ) ) {
+				continue;
+			}
+			if ( ( $element['id'] ?? '' ) === $element_id ) {
+				$removed = $element;
+				\array_splice( $elements, $i, 1 );
+				return $removed;
+			}
+			if ( ! empty( $element['elements'] ) && \is_array( $element['elements'] ) ) {
+				$found = $this->removeByIdIn( $element['elements'], $element_id );
+				if ( $found !== null ) {
+					return $found;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Insert a widget element into a container at a given position.
+	 *
+	 * @param string $container_path Dot-separated path to the container (e.g. "0.1")
+	 * @param array  $widget         The full widget array (id, widgetType, elType, settings, ...)
+	 * @param int    $position       Insertion index (0-based). -1 means append.
+	 * @return int The actual index where the widget was inserted, or -1 on failure.
+	 */
+	public function insertAt( string $container_path, array $widget, int $position = -1 ): int {
+		$resolved = $this->resolveContainer( $container_path );
+		if ( $resolved === null ) {
+			return -1;
+		}
+		$target = &$resolved['elements'];
+		$count  = \count( $target );
+		if ( $position < 0 || $position > $count ) {
+			$position = $count;
+		}
+		\array_splice( $target, $position, 0, [ $widget ] );
+		return $position;
+	}
+
+	/**
+	 * Move an element from one container to another. Returns true on success.
+	 *
+	 * @param string $element_id          Element to move
+	 * @param string $target_container_path Destination container path (dot notation)
+	 * @param int    $position            Target index inside the destination (-1 = append)
+	 * @return ?array The moved element with its new path info, or null on failure.
+	 */
+	public function moveToPath( string $element_id, string $target_container_path, int $position = -1 ): ?array {
+		$source_path = $this->getPath( $element_id );
+		if ( $source_path === null ) {
+			return null;
+		}
+
+		// 1) Remove from source
+		$removed = $this->removeById( $element_id );
+		if ( $removed === null ) {
+			return null;
+		}
+
+		// 2) Insert into target
+		$actual_pos = $this->insertAt( $target_container_path, $removed, $position );
+		if ( $actual_pos < 0 ) {
+			// Restore: re-insert at source (best effort)
+			$source_parent_path = \dirname( (string) $source_path );
+			$source_idx         = (int) \basename( (string) $source_path );
+			$this->insertAt( $source_parent_path, $removed, $source_idx );
+			return null;
+		}
+
+		$new_path = $target_container_path === '' || $target_container_path === 'root'
+			? (string) $actual_pos
+			: $target_container_path . '.' . $actual_pos;
+
+		return [
+			'element_id'     => $element_id,
+			'source_path'    => $source_path,
+			'target_path'    => $new_path,
+			'widget'         => $removed,
+		];
+	}
+
+	/**
+	 * Deep-clone a widget array for cross-page insertion.
+	 *
+	 * This is a structural clone: __globals__, __dynamic__, and
+	 * typography-typography references are preserved verbatim. If a
+	 * referenced global color or typography does not exist on the
+	 * target page, the reference is kept but may render differently.
+	 * The caller receives a warnings list for missing references.
+	 *
+	 * @param array $source_widget The full widget array from the source document
+	 * @return array The clone, ready for insertion into this document
+	 */
+	public function cloneWidgetForInsert( array $source_widget ): array {
+		$clone = \json_decode( \wp_json_encode( $source_widget ), true );
+
+		$clone['id'] = \bin2hex( \random_bytes( 4 ) );
+
+		return $clone;
+	}
+
+	/**
+	 * Lists global elements referenced by a widget's __globals__ and
+	 * typography settings. Used for cross-page validation.
+	 *
+	 * @return string[] Array of referenced global IDs
+	 */
+	public static function collectGlobalReferences( array $widget ): array {
+		$refs = [];
+		$globals = $widget['settings']['__globals__'] ?? [];
+		if ( \is_array( $globals ) ) {
+			foreach ( $globals as $_ => $global_ref ) {
+				if ( \is_string( $global_ref ) ) {
+					$refs[] = $global_ref;
+				}
+			}
+		}
+
+		// Typography references: settings key like 'typography_typography' = 'custom'
+		// and individual font settings with global references
+		$typography_fields = [ 'title_typography_typography', 'content_typography_typography' ];
+		foreach ( $typography_fields as $field ) {
+			if ( ( $widget['settings'][ $field ] ?? '' ) === 'custom' ) {
+				$refs[] = $widget['settings'][ $field ] ?? '';
+			}
+		}
+
+		return $refs;
+	}
 }
