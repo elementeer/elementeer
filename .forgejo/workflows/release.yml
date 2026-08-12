@@ -37,7 +37,15 @@ jobs:
             echo "ERROR: ELEMENTEER_VERSION ($PHP_VER) != tag ($VERSION)"
             exit 1
           fi
-          echo "Version sync OK: $VERSION"
+          README_VER=$(grep -i "^Stable tag:" readme.txt | sed 's/.*: *//' | xargs)
+          echo "Readme:  $README_VER"
+          if [ "$README_VER" != "$VERSION" ]; then
+            echo "ERROR: readme.txt Stable tag ($README_VER) != tag ($VERSION)"
+            echo "WordPress serves the version named by Stable tag. A drifted"
+            echo "value ships the wrong release to every site."
+            exit 1
+          fi
+          echo "Version sync OK: $VERSION (header, constant, readme)"
       - name: Build Plugin ZIP
         run: |
           bash scripts/create-plugin-zip.sh

@@ -189,47 +189,34 @@ final class Ally {
 		return $query->posts ?? [];
 	}
 
-	/**
-	 * Scan a single Elementor page for accessibility violations.
-	 */
-	private function scan_elementor_page( int $page_id ): array {
-		$raw = \get_post_meta( $page_id, '_elementor_data', true );
-		$data = \is_array( $raw ) ? $raw : \json_decode( $raw ?: '[]', true );
-		$data = \is_array( $data ) ? $data : [];
+    /**
+     * Scan a single Elementor page for accessibility violations.
+     */
+    private function scan_elementor_page( int $page_id ): array {
+        $doc = ElementorDocument::load( $page_id );
 
-		$violations = [];
-		$context = [ 'headings' => [] ];
-		$this->traverse_elementor_data( $data, $violations, $page_id, $context );
-		$this->analyze_headings( $context['headings'], $violations, $page_id );
-		return $violations;
-	}
+        if ( $doc->isEmpty() ) {
+            return [];
+        }
 
-	/**
-	 * Recursively traverse Elementor data to collect violations.
-	 */
-	private function traverse_elementor_data( array $elements, array &$violations, int $page_id, array &$context = [] ): void {
-		foreach ( $elements as $element ) {
-			if ( ! \is_array( $element ) ) {
-				continue;
-			}
+        $violations = [];
+        $context    = [ 'headings' => [] ];
 
-			$elType = $element['elType'] ?? null;
-			$widgetType = $element['widgetType'] ?? null;
-			$settings = $element['settings'] ?? [];
-			$element_id = $element['id'] ?? '';
+        $doc->traverse( function ( array $element ) use ( $page_id, &$violations, &$context ): void {
+            $elType     = $element['elType'] ?? null;
+            $widgetType = $element['widgetType'] ?? null;
+            $settings   = $element['settings'] ?? [];
+            $element_id = $element['id'] ?? '';
 
-			// Check for violations based on element type
-			$this->check_violations( $elType, $widgetType, $settings, $violations, $page_id, $element_id, $context );
+            $this->check_violations( $elType, $widgetType, $settings, $violations, $page_id, $element_id, $context );
+        } );
 
-			// Recursively process children
-			if ( ! empty( $element['elements'] ) && \is_array( $element['elements'] ) ) {
-				$this->traverse_elementor_data( $element['elements'], $violations, $page_id, $context );
-			}
-		}
-	}
+        $this->analyze_headings( $context['headings'], $violations, $page_id );
+        return $violations;
+    }
 
-	/**
-	 * Check for specific accessibility violations.
+    /**
+     * Check for specific accessibility violations.
 	 */
 	private function check_violations( ?string $elType, ?string $widgetType, array $settings, array &$violations, int $page_id, string $element_id, array &$context ): void {
 		// 1. Missing alt text on images
@@ -939,18 +926,82 @@ final class Ally {
     }
 
     private function apply_single_fix( array $violation, int $page_id, array $fix_types ): array {
-        // Placeholder implementation
-        // Actual implementation would:
-        // 1. Load Elementor data for page
-        // 2. Find element by element_id
-        // 3. Update settings (e.g., add alt text)
-        // 4. Save back to post meta
+        $element_id = $violation['location']['element_id'] ?? '';
+        $desc       = $violation['description'] ?? '';
+
+        if ( $element_id === '' ) {
+            return [
+                'success'   => false,
+                'violation' => $desc,
+                'message'   => 'No element_id in violation data.',
+            ];
+        }
+
+        $doc = ElementorDocument::load( $page_id );
+        if ( $doc->isEmpty() ) {
+            return [
+                'success'   => false,
+                'violation' => $desc,
+                'message'   => 'Page has no Elementor data.',
+            ];
+        }
+
+        $element = $doc->findById( $element_id );
+        if ( $element === null ) {
+            return [
+                'success'    => false,
+                'violation'  => $desc,
+                'message'    => 'Element not found in current page data.',
+            ];
+        }
+
+        $settings_patch = [];
+
+        // alt_text: add alt text to image widgets
+        if ( \in_array( 'alt_text', $fix_types, true ) && \strpos( $desc, 'Image missing alt text' ) !== false ) {
+            $image_title = $element['settings']['title'] ?? $element['settings']['caption'] ?? 'Decorative image';
+            $settings_patch['alt'] = $image_title;
+        }
+
+        // color_contrast: suggest higher contrast (cannot auto-fix without knowing intent)
+        if ( \in_array( 'color_contrast', $fix_types, true ) && \strpos( $desc, 'Low color contrast' ) !== false ) {
+            return [
+                'success'    => false,
+                'violation'  => $desc,
+                'message'    => 'Color contrast fixes require manual colour selection.',
+            ];
+        }
+
+        // label: add label to form fields (element-level, not per-field)
+        if ( \in_array( 'label', $fix_types, true ) && \strpos( $desc, 'Missing form label' ) !== false ) {
+            return [
+                'success'    => false,
+                'violation'  => $desc,
+                'message'    => 'Per-field form label fixes require widget-specific handling.',
+            ];
+        }
+
+        if ( empty( $settings_patch ) ) {
+            return [
+                'success'   => false,
+                'violation' => $desc,
+                'message'   => 'No matching fix strategy for this violation type.',
+            ];
+        }
+
+        $path_out = '';
+        $doc->updateById( $element_id, [ 'settings' => $settings_patch ], $path_out );
+
+        Snapshots::capture( $page_id );
+        $doc->save();
 
         return [
-            'success' => false,
-            'violation' => $violation['description'] ?? 'unknown',
-            'message' => 'Auto-fix not implemented yet.',
-            'note' => 'Requires direct Elementor data modification.',
+            'success'      => true,
+            'violation'    => $desc,
+            'message'      => 'Fix applied.',
+            'element_id'   => $element_id,
+            'path'         => $path_out,
+            'patch'        => $settings_patch,
         ];
     }
 }

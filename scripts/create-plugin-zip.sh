@@ -58,15 +58,52 @@ done
 TEMP_DIR=$(mktemp -d)
 echo "Using temporary directory: $TEMP_DIR"
 
-# Copy plugin files with correct folder structure
-echo "Copying plugin files..."
+# Copy plugin files with correct folder structure.
+#
+# ALLOWLIST, not blocklist. A blocklist ships whatever nobody thought of:
+# a `cp -r *` from a developer machine with dev packages installed put 5.8 MB
+# of PHPUnit, Mockery and Sebastian into the distribution, plus tests/,
+# scripts/ and composer.*. Test PHP inside a web-served plugin directory is a
+# hardening problem, not just dead weight.
+#
+# vendor/ is deliberately NOT shipped: the plugin has no runtime dependencies
+# (composer.json `require` is php>=8.0 only), and elementeer.php registers its
+# own PSR-4 autoloader for Elementeer\MCP\ — the Composer autoloader is loaded
+# only `if file_exists`. Shipping vendor/ adds risk and no capability.
+#
+# Adding a new top-level file or directory to the plugin means adding it here.
+DIST_PATHS=(
+    elementeer.php
+    includes
+    assets
+    readme.txt
+    README.md
+    LICENSE
+)
+
+echo "Copying plugin files (allowlist)..."
 mkdir -p "$TEMP_DIR/elementeer"
-cp -r "$PLUGIN_DIR"/* "$TEMP_DIR/elementeer/"
+for path in "${DIST_PATHS[@]}"; do
+    if [ -e "$PLUGIN_DIR/$path" ]; then
+        cp -r "$PLUGIN_DIR/$path" "$TEMP_DIR/elementeer/"
+    else
+        echo "Error: allowlisted path missing from source: $path"
+        exit 1
+    fi
+done
 
 # Remove any unnecessary files
 find "$TEMP_DIR" -name ".git*" -delete
 find "$TEMP_DIR" -name "*.bak" -delete
 find "$TEMP_DIR" -name ".DS_Store" -delete 2>/dev/null || true
+
+# Guard: nothing that is not allowlisted may reach the package
+UNEXPECTED=$(cd "$TEMP_DIR/elementeer" && ls -A | grep -vxF "$(printf '%s\n' "${DIST_PATHS[@]}")" || true)
+if [ -n "$UNEXPECTED" ]; then
+    echo "Error: unexpected entries in package:"
+    printf '  %s\n' $UNEXPECTED
+    exit 1
+fi
 
 # Create release directory
 mkdir -p "$RELEASE_DIR"

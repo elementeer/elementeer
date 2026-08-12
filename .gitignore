@@ -13,3 +13,4 @@ vendor/
 # Generated files
 scripts/endpoint_map.json
 scripts/.env
+.phpunit.cache/

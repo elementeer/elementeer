@@ -229,6 +229,17 @@ final class Router {
                 ],
             ],
         ] );
+        register_rest_route( self::NAMESPACE, '/templates/(?P<id>\d+)/widgets/(?P<widget_id>[a-zA-Z0-9]+)', [
+            [
+                'methods'             => 'PATCH',
+                'callback'            => [ $templates, 'patch_widget' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id'         => [ 'type' => 'integer', 'required' => true ],
+                    'widget_id'  => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
 
         // Theme Builder templates
         register_rest_route( self::NAMESPACE, '/theme-builder/templates', [
@@ -321,6 +332,17 @@ final class Router {
                 'permission_callback' => '__return_true',
                 'args'                => [
                     'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/pages/(?P<id>\d+)/widgets/(?P<widget_id>[a-zA-Z0-9]+)', [
+            [
+                'methods'             => 'PATCH',
+                'callback'            => [ $pages, 'patch_widget' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id'         => [ 'type' => 'integer', 'required' => true ],
+                    'widget_id'  => [ 'type' => 'string', 'required' => true ],
                 ],
             ],
         ] );
