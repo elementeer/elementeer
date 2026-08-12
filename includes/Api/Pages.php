@@ -39,6 +39,9 @@ final class Pages {
         $id        = (int) $request->get_param( 'id' );
         $widget_id = sanitize_text_field( $request->get_param( 'widget_id' ) );
 
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
+
         $post = get_post( $id );
         if ( ! $post || $post->post_status === 'trash' ) {
             return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
@@ -197,12 +200,14 @@ final class Pages {
         }
 
         // Default — return full elementor_data
+        $doc = ElementorDocument::load( $id );
         return new WP_REST_Response( [
             'post_id'       => $id,
             'post_title'    => $post->post_title,
             'post_type'     => $post->post_type,
             'element_count' => count( $data ),
             'elementor_data' => $data,
+            'content_hash'  => $doc->contentHash(),
         ] );
     }
 
@@ -218,6 +223,9 @@ final class Pages {
         if ( is_wp_error( $auth ) ) return $auth;
 
         $id   = (int) $request->get_param( 'id' );
+
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
         $post = get_post( $id );
 
         if ( ! $post || $post->post_status === 'trash' ) {
@@ -255,6 +263,119 @@ final class Pages {
         wp_update_post( [ 'ID' => $id ] );
 
         return new WP_REST_Response( [ 'id' => $id, 'updated' => true ], 200 );
+    }
+
+    /**
+     * POST /pages/{id}/widgets/batch
+     *
+     * Atomic multi-widget mutation in one transaction.
+     * Updates multiple widgets with one content_hash validation pass,
+     * so a concurrent edit on any target widget fails the whole batch.
+     *
+     * Body: {
+     *   "operations": [
+     *     { "widget_id": "abc", "settings": { "title": "X" } },
+     *     ...
+     *   ],
+     *   "content_hash": "...",
+     *   "dry_run": false,
+     *   "partial": false
+     * }
+     *
+     * If "partial" is true, missing widget_ids are reported as not_found
+     * instead of failing the batch.  The server-side dryRun in the Document
+     * operates on a clone; the write path operates on the live document.
+     */
+    public function patch_widgets_batch( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'content-structure:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $id = (int) $request->get_param( 'id' );
+
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
+        $post = get_post( $id );
+        if ( ! $post || $post->post_status === 'trash' ) {
+            return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
+        }
+
+        $edit_mode = get_post_meta( $id, '_elementor_edit_mode', true );
+        if ( $edit_mode !== 'builder' ) {
+            return new WP_Error( 'not_elementor', 'Not built with Elementor.', [ 'status' => 422 ] );
+        }
+
+        $body         = $request->get_json_params() ?: [];
+        $operations   = $body['operations'] ?? null;
+        $content_hash = sanitize_text_field( $body['content_hash'] ?? '' );
+        $is_dry_run   = (bool) ( $body['dry_run'] ?? false );
+        $is_partial   = (bool) ( $body['partial'] ?? false );
+
+        if ( ! is_array( $operations ) || empty( $operations ) ) {
+            return new WP_Error( 'invalid_data', 'operations must be a non-empty array.', [ 'status' => 400 ] );
+        }
+
+        if ( $content_hash === '' ) {
+            return new WP_Error( 'missing_content_hash', 'content_hash is required.', [ 'status' => 400 ] );
+        }
+
+        $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
+        if ( is_wp_error( $doc ) ) return $doc;
+
+        // Build patch map
+        $patches = [];
+        foreach ( $operations as $op ) {
+            $w_id     = sanitize_text_field( $op['widget_id'] ?? '' );
+            $settings = $op['settings'] ?? null;
+            if ( $w_id === '' || ! is_array( $settings ) || empty( $settings ) ) {
+                return new WP_Error( 'invalid_operation', 'Each operation needs widget_id (string) and settings (non-empty object).', [ 'status' => 400 ] );
+            }
+            $patches[ $w_id ] = [ 'settings' => $settings ];
+        }
+
+        if ( $is_dry_run ) {
+            $report = $doc->dryRun( $patches );
+            $report['post_id']     = $id;
+            $report['content_hash_input'] = $content_hash;
+            $report['partial'] = $is_partial;
+            $report['operation_count'] = count( $operations );
+            return new WP_REST_Response( $report, 200 );
+        }
+
+        Snapshots::capture( $id );
+
+        $results   = [];
+        $not_found = [];
+
+        foreach ( $patches as $w_id => $patch ) {
+            $path_out = '';
+            $updated  = $doc->updateById( $w_id, $patch, $path_out );
+            if ( $updated ) {
+                $results[] = [
+                    'widget_id' => $w_id,
+                    'path'      => $path_out,
+                    'updated'   => true,
+                ];
+            } else {
+                $not_found[] = $w_id;
+                if ( ! $is_partial ) {
+                    return new WP_Error(
+                        'widget_not_found',
+                        sprintf( 'Widget "%s" not found. Set partial:true to skip missing widgets.', $w_id ),
+                        [ 'status' => 404 ]
+                    );
+                }
+            }
+        }
+
+        $doc->save();
+
+        return new WP_REST_Response( [
+            'post_id'    => $id,
+            'updated'    => count( $results ),
+            'not_found'  => $not_found,
+            'partial'    => $is_partial,
+            'new_hash'   => $doc->contentHash(),
+        ], 200 );
     }
 
     /**

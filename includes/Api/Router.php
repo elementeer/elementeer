@@ -346,6 +346,16 @@ final class Router {
                 ],
             ],
         ] );
+        register_rest_route( self::NAMESPACE, '/pages/(?P<id>\d+)/widgets/batch', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $pages, 'patch_widgets_batch' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'id' => [ 'type' => 'integer', 'required' => true ],
+                ],
+            ],
+        ] );
 
         // Translation coverage analysis
         register_rest_route( self::NAMESPACE, '/translation/coverage', [
@@ -838,6 +848,34 @@ final class Router {
             ],
         ] );
 
+        // Site Memory — persistent facts, preferences, rules
+        $siteMemory = new \Elementeer\MCP\Api\SiteMemory();
+        register_rest_route( self::NAMESPACE, '/site/memory', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $siteMemory, 'list_memory' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/site/memory/(?P<key>[a-zA-Z0-9_-]+)', [
+            [
+                'methods'             => 'PUT',
+                'callback'            => [ $siteMemory, 'set_entry' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'key' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+            [
+                'methods'             => 'DELETE',
+                'callback'            => [ $siteMemory, 'delete_entry' ],
+                'permission_callback' => '__return_true',
+                'args'                => [
+                    'key' => [ 'type' => 'string', 'required' => true ],
+                ],
+            ],
+        ] );
+
         // Menus
         $menus = new Menus();
         
@@ -1195,6 +1233,39 @@ final class Router {
             [
                 'methods'             => 'GET',
                 'callback'            => [ $pluginStackContext, 'get_context' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+
+        // ------------------------------------------------------------------ //
+        // Change Sessions — cascade rollback across multiple writes
+        // ------------------------------------------------------------------ //
+        $sessions = new Sessions();
+        register_rest_route( self::NAMESPACE, '/changes/sessions/begin', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $sessions, 'begin' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/changes/sessions/(?P<session_id>[a-zA-Z0-9-]+)/end', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $sessions, 'end' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/changes/sessions/(?P<session_id>[a-zA-Z0-9-]+)/restore', [
+            [
+                'methods'             => 'POST',
+                'callback'            => [ $sessions, 'restore' ],
+                'permission_callback' => '__return_true',
+            ],
+        ] );
+        register_rest_route( self::NAMESPACE, '/changes/sessions/(?P<session_id>[a-zA-Z0-9-]+)', [
+            [
+                'methods'             => 'GET',
+                'callback'            => [ $sessions, 'get_session' ],
                 'permission_callback' => '__return_true',
             ],
         ] );

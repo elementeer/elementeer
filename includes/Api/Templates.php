@@ -465,10 +465,13 @@ final class Templates {
         $raw  = get_post_meta( $id, '_elementor_data', true );
         $data = ! empty( $raw ) ? json_decode( $raw, true ) : [];
 
+        $doc = ElementorDocument::load( $id );
+
         return new WP_REST_Response(
             [
                 'id'            => $id,
                 'elementor_data' => $data ?? [],
+                'content_hash'   => $doc->contentHash(),
             ],
             200
         );
