@@ -1,41 +1,37 @@
 name: Mirror to GitHub
+
+# Forgejo ist kanonisch; GitHub (elementeer/elementeer) ist der oeffentliche
+# read-only Mirror. Force-Push genau der Ref, die den Lauf ausgeloest hat.
+#
+# Muster: exact-ref, festgelegt am 2026-07-28 unter LVC-MIR-G0.
+#
+# Der frueher hier erzeugte Marker-Commit (_MIRROR_IS_READONLY.md, Entfernen
+# von .github) ist entfallen. Er gab dem Mirror dauerhaft einen Commit, den
+# origin nie hatte — damit war der Push nie ein Fast-Forward und --force nicht
+# Vorsicht, sondern Notwendigkeit. Ein Mirror, dessen Historie sich bei jedem
+# Release rueckwirkend aendert, taugt nicht als Backup.
+#
+# Der Hinweis "read only, Source of Truth ist git.langevc.com" gehoert in die
+# Repo-Beschreibung auf GitHub. Sollen dort keine Actions laufen, schaltet man
+# sie in den Repo-Einstellungen ab — dafuer muss man die Historie nicht anfassen.
 on:
   push:
-    branches: [main]
+    branches: ["**"]
+    tags: ["v*"]
 
 jobs:
   mirror:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: https://github.com/actions/checkout@v4
         with:
           fetch-depth: 0
-
-      - name: Inject mirror marker (read-only notice)
-        run: |
-          target="elementeer"
-          cat > _MIRROR_IS_READONLY.md << EOF
-          # This is a mirror — read only
-
-          **Source of Truth:** [git.langevc.com](https://git.langevc.com/elementeer/${target})
-
-          This repository is automatically mirrored from the official Elementeer Forgejo instance.
-          Pull requests, issues, and contributions are **not accepted here**.
-
-          → [Open an issue](https://git.langevc.com/elementeer/${target}/issues)
-          → [Read the docs](https://docs.elementeer.xyz)
-          EOF
-
-      - name: Remove GitHub-specific config
-        run: rm -rf .github 2>/dev/null || true
-
-      - name: Push to GitHub (public mirror)
+      - name: Push to GitHub mirror
         env:
-          GH_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
+          GH_MIRROR_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
         run: |
-          target="elementeer"
-          git add -f _MIRROR_IS_READONLY.md
-          git add -u .github 2>/dev/null || true
-          git -c user.name="Elementeer Mirror" -c user.email="mirror@elementeer.langevc.com" commit -m "mirror: mark as read-only, remove .github (auto-generated)" --allow-empty || true
-          git remote add github-mirror https://x-access-token:${GH_TOKEN}@github.com/elementeer/${target}.git
-          git push github-mirror main --tags --force
+          remote="https://x-access-token:${GH_MIRROR_TOKEN}@github.com/elementeer/elementeer.git"
+          # Nur die ausloesende Ref. Kein --prune, kein Wildcard: Der
+          # CI-Checkout hat lokal nur diese Ref, ein prunender Wildcard-Push
+          # wuerde jeden anderen Branch auf dem Mirror loeschen wollen.
+          git push --force "$remote" "+${GITHUB_REF}:${GITHUB_REF}"
