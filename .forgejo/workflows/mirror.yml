@@ -26,6 +26,17 @@ jobs:
       - uses: https://github.com/actions/checkout@v4
         with:
           fetch-depth: 0
+      - name: Diagnose — was kommt im Job an (temporaer)
+        env:
+          GH_MIRROR_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
+        run: |
+          echo "len=${#GH_MIRROR_TOKEN}"
+          echo "prefix=${GH_MIRROR_TOKEN:0:4}"
+          printf 'trailing_ws=%s\n' "$(printf '%s' "$GH_MIRROR_TOKEN" | tail -c 1 | od -c | head -1)"
+          curl -s -o /dev/null -w "api=%{http_code}\n" \
+            -H "Authorization: Bearer ${GH_MIRROR_TOKEN}" \
+            https://api.github.com/repos/elementeer/elementeer
+
       - name: Push to GitHub mirror
         env:
           GH_MIRROR_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
