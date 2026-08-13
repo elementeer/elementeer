@@ -115,7 +115,7 @@ jobs:
 
       - name: Wait for WordPress
         run: |
-          for i in $(seq 1 30); do
+          for _ in $(seq 1 30); do
             if curl -sf http://localhost:8080 > /dev/null 2>&1; then break; fi
             sleep 3
           done
@@ -158,7 +158,7 @@ jobs:
             echo "::error::REST endpoint /wp-json/elementeer/v1/site returned failure"
             exit 1
           fi
-          echo "✅ REST endpoint responds: $(echo $RESPONSE | head -c 100)"
+          echo "✅ REST endpoint responds: $(echo "$RESPONSE" | head -c 100)"
 
   release:
     name: Create GitHub Release
