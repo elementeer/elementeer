@@ -682,7 +682,7 @@ final class Pages {
      * POST /pages/{id}/widgets/clone
      *
      * Clone a widget from a source page into this page at a specific position.
-     * Supports cross-page cloning with __globals__-aware warnings.
+     * Supports cross-page cloning; global references are listed, not validated.
      *
      * Body: {
      *   "source_page_id": 123,
@@ -739,7 +739,7 @@ final class Pages {
             );
         }
 
-        // Collect global references for warnings
+        // Collect global references (enumeration only, not validated here)
         $global_refs = ElementorDocument::collectGlobalReferences( $source_widget );
 
         // Clone the widget for the target page

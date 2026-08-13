@@ -20,6 +20,7 @@ class Snapshots {
 	private const OPTION_SNAPSHOTS = 'elementeer_snapshots';
 	private const OPTION_SESSIONS  = 'elementeer_sessions';
 	private const MAX_SNAPSHOTS    = 500;
+	private const MAX_SESSIONS     = 100;
 
 	// ------------------------------------------------------------------ //
 	// Single snapshot
@@ -109,6 +110,7 @@ class Snapshots {
 		];
 
 		self::saveSessions( $sessions );
+		self::enforceSessionLimit();
 
 		return $session_id;
 	}
@@ -138,7 +140,7 @@ class Snapshots {
 		$session  = $sessions[ $session_id ] ?? null;
 
 		if ( $session === null ) {
-			return [ 'success' => false, 'restored' => 0 ];
+			return [ 'success' => false, 'restored' => 0, 'total' => 0 ];
 		}
 
 		$uuids    = \array_reverse( $session['snapshot_uuids'] );
@@ -186,6 +188,34 @@ class Snapshots {
 		\uasort( $snapshots, fn( $a, $b ) => \strcmp( $a['created_at'], $b['created_at'] ) );
 		$to_keep   = \array_slice( $snapshots, -self::MAX_SNAPSHOTS, self::MAX_SNAPSHOTS, true );
 		self::saveSnapshots( $to_keep );
+	}
+
+	/**
+	 * Cap the number of stored sessions, dropping the oldest (and any
+	 * already-ended/rolled-back sessions) first. Sessions otherwise grow
+	 * unbounded — every beginSession/reload loads the whole map, which under
+	 * load turns into host-level latency.
+	 */
+	public static function enforceSessionLimit(): void {
+		$sessions = self::loadSessions();
+
+		if ( \count( $sessions ) <= self::MAX_SESSIONS ) {
+			return;
+		}
+
+		// Eviction order: non-active (ended/rolled_back) first, then oldest.
+		// Active sessions sort to the end and are therefore kept.
+		\uasort( $sessions, function ( array $a, array $b ): int {
+			$a_active = ( $a['status'] ?? '' ) === 'active' ? 1 : 0;
+			$b_active = ( $b['status'] ?? '' ) === 'active' ? 1 : 0;
+			if ( $a_active !== $b_active ) {
+				return $a_active <=> $b_active;
+			}
+			return \strcmp( $a['created_at'] ?? '', $b['created_at'] ?? '' );
+		} );
+
+		$to_keep = \array_slice( $sessions, -self::MAX_SESSIONS, self::MAX_SESSIONS, true );
+		self::saveSessions( $to_keep );
 	}
 
 	// ------------------------------------------------------------------ //

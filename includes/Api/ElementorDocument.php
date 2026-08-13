@@ -431,10 +431,14 @@ class ElementorDocument {
 	 * Deep-clone a widget array for cross-page insertion.
 	 *
 	 * This is a structural clone: __globals__, __dynamic__, and
-	 * typography-typography references are preserved verbatim. If a
-	 * referenced global color or typography does not exist on the
-	 * target page, the reference is kept but may render differently.
-	 * The caller receives a warnings list for missing references.
+	 * typography-typography references are preserved verbatim. The clone is
+	 * assigned a fresh random element id; every other field is retained
+	 * byte-for-byte.
+	 *
+	 * NOTE: references are carried over, NOT validated. Whether a referenced
+	 * global color / typography actually exists on the target page is the
+	 * caller's responsibility — see collectGlobalReferences(), which only
+	 * lists the referenced ids and performs no existence check.
 	 *
 	 * @param array $source_widget The full widget array from the source document
 	 * @return array The clone, ready for insertion into this document
@@ -448,8 +452,12 @@ class ElementorDocument {
 	}
 
 	/**
-	 * Lists global elements referenced by a widget's __globals__ and
-	 * typography settings. Used for cross-page validation.
+	 * Lists global elements referenced by a widget's __globals__ settings.
+	 * Used for cross-page awareness.
+	 *
+	 * This function only enumerates referenced ids. It does NOT verify that
+	 * those references exist on any target page — that check is not part of
+	 * this function (and is currently unimplemented end to end).
 	 *
 	 * @return string[] Array of referenced global IDs
 	 */
@@ -461,15 +469,6 @@ class ElementorDocument {
 				if ( \is_string( $global_ref ) ) {
 					$refs[] = $global_ref;
 				}
-			}
-		}
-
-		// Typography references: settings key like 'typography_typography' = 'custom'
-		// and individual font settings with global references
-		$typography_fields = [ 'title_typography_typography', 'content_typography_typography' ];
-		foreach ( $typography_fields as $field ) {
-			if ( ( $widget['settings'][ $field ] ?? '' ) === 'custom' ) {
-				$refs[] = $widget['settings'][ $field ] ?? '';
 			}
 		}
 

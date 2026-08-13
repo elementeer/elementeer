@@ -14,6 +14,12 @@ use Elementeer\MCP\Auth\Manager as Auth;
  * Entries are stored in the `elementeer_site_memory`
  * option.  Rules of type 'rule' with a `protect.post_ids`
  * array cause writes to those post IDs to be refused.
+ *
+ * Every entry carries version, owner and expires_at:
+ *   - version     int schema version of this entry (currently 1)
+ *   - owner       who set the entry ('agent' | 'user'); default 'agent'
+ *   - expires_at  optional ISO-8601 timestamp; past expiry disables
+ *                 enforcement (the rule is retained but no longer blocks).
  */
 final class SiteMemory {
 
@@ -31,18 +37,22 @@ final class SiteMemory {
 
     /**
      * GET /site/memory — list all entries
+     *
+     * Returns a flat ARRAY of entries (not the key→entry map), so the
+     * response is always a JSON array regardless of how many entries exist.
      */
     public function list_memory( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'site-foundation:read' );
         if ( is_wp_error( $auth ) ) return $auth;
 
-        return new WP_REST_Response( self::load(), 200 );
+        return new WP_REST_Response( \array_values( self::load() ), 200 );
     }
 
     /**
      * PUT /site/memory/{key} — upsert an entry
      *
-     * Body: { "type": "rule", "content": "...", "rule": { "protect": { "post_ids": [2618] } } }
+     * Body: { "type": "rule", "content": "...", "rule": { "protect": { "post_ids": [2618] } },
+     *         "owner": "agent", "expires_at": "2026-08-20T00:00:00+00:00" }
      */
     public function set_entry( WP_REST_Request $request ): WP_REST_Response|WP_Error {
         $auth = $this->auth->authorize( $request, 'site-foundation:write' );
@@ -55,11 +65,22 @@ final class SiteMemory {
             return new WP_Error( 'invalid_key', 'key is required.', [ 'status' => 400 ] );
         }
 
+        $owner = sanitize_text_field( $body['owner'] ?? 'agent' );
+        if ( ! in_array( $owner, [ 'agent', 'user' ], true ) ) {
+            return new WP_Error( 'invalid_owner', 'owner must be "agent" or "user".', [ 'status' => 400 ] );
+        }
+
+        $version    = isset( $body['version'] ) ? \absint( $body['version'] ) : 1;
+        $expires_at = isset( $body['expires_at'] ) ? sanitize_text_field( $body['expires_at'] ) : null;
+
         $entry = [
-            'key'      => $key,
-            'type'     => sanitize_text_field( $body['type'] ?? 'fact' ),
-            'content'  => sanitize_textarea_field( $body['content'] ?? '' ),
-            'set_at'   => \gmdate( 'c' ),
+            'key'        => $key,
+            'type'       => sanitize_text_field( $body['type'] ?? 'fact' ),
+            'content'    => sanitize_textarea_field( $body['content'] ?? '' ),
+            'version'    => $version,
+            'owner'      => $owner,
+            'expires_at' => $expires_at,
+            'set_at'     => \gmdate( 'c' ),
         ];
 
         if ( ( $body['type'] ?? '' ) === 'rule' && isset( $body['rule'] ) && is_array( $body['rule'] ) ) {
@@ -106,11 +127,15 @@ final class SiteMemory {
 
     /**
      * Check whether a post ID is protected.  Returns a WP_Error if it is.
+     *
+     * Expired rules are skipped: a rule whose expires_at is in the past no
+     * longer blocks writes.
      */
     public static function refuseIfProtected( int $post_id ): ?WP_Error {
         $memory = self::load();
         foreach ( $memory as $entry ) {
             if ( ( $entry['type'] ?? '' ) !== 'rule' ) continue;
+            if ( self::isExpired( $entry ) ) continue;
             $protect = $entry['rule']['protect'] ?? [];
             $post_ids = $protect['post_ids'] ?? [];
             if ( in_array( $post_id, $post_ids, true ) ) {
@@ -128,6 +153,19 @@ final class SiteMemory {
             }
         }
         return null;
+    }
+
+    /**
+     * Whether a rule has expired (expires_at in the past). A missing
+     * expires_at means the rule never expires.
+     */
+    private static function isExpired( array $entry ): bool {
+        $expires_at = $entry['expires_at'] ?? null;
+        if ( $expires_at === null || $expires_at === '' ) {
+            return false;
+        }
+        $ts = \strtotime( $expires_at );
+        return $ts !== false && $ts <= \time();
     }
 
     /**
