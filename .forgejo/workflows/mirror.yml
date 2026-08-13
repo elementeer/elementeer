@@ -33,6 +33,7 @@ jobs:
           echo "len=${#GH_MIRROR_TOKEN}"
           echo "prefix=${GH_MIRROR_TOKEN:0:4}"
           printf 'trailing_ws=%s\n' "$(printf '%s' "$GH_MIRROR_TOKEN" | tail -c 1 | od -c | head -1)"
+          echo "sha256_16=$(printf '%s' "$GH_MIRROR_TOKEN" | sha256sum | cut -c1-16)"
           curl -s -o /dev/null -w "api=%{http_code}\n" \
             -H "Authorization: Bearer ${GH_MIRROR_TOKEN}" \
             https://api.github.com/repos/elementeer/elementeer
