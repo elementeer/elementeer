@@ -1,0 +1,54 @@
+name: Actionlint
+
+# Prueft die Workflow-Dateien selbst auf Gueltigkeit.
+#
+# Anlass: release-github.yml rief test-plugin.yml als wiederverwendbaren
+# Workflow auf, ohne dass dieser `workflow_call` deklarierte. GitHub weist
+# die aufrufende Datei dann beim Parsen ab. Der Release-Lauf endete
+# dadurch vom 2026-05-24 bis zum 2026-08-13 jedes Mal nach 0 Sekunden —
+# fast drei Monate, ohne dass es jemandem auffiel.
+#
+# Ein Workflow, der nie startet, meldet sich nirgends. Genau deshalb
+# braucht es eine Pruefung, die ausserhalb von ihm stattfindet.
+
+on:
+  push:
+    branches: ["**"]
+    paths:
+      - ".github/workflows/**"
+      - ".forgejo/workflows/**"
+  pull_request:
+    paths:
+      - ".github/workflows/**"
+      - ".forgejo/workflows/**"
+  workflow_dispatch:
+
+jobs:
+  lint:
+    name: Workflow-Dateien pruefen
+    runs-on: ubuntu-latest
+    steps:
+      - uses: https://github.com/actions/checkout@v4
+
+      - name: actionlint installieren
+        run: |
+          VERSION=1.7.7
+          curl -fsSL -o actionlint.tar.gz \
+            "https://github.com/rhysd/actionlint/releases/download/v${VERSION}/actionlint_${VERSION}_linux_amd64.tar.gz"
+          tar -xzf actionlint.tar.gz actionlint
+          chmod +x actionlint
+
+      - name: .github/workflows pruefen
+        run: |
+          # shellcheck-Hinweise sind Hinweise; ungueltige Workflow-Syntax ist
+          # ein Fehler. Nur Letzteres darf den Lauf rot machen, sonst wird die
+          # Pruefung selbst zum Rauschen und wieder ignoriert.
+          ./actionlint -shellcheck= .github/workflows/*.yml
+          echo "OK: .github/workflows"
+
+      - name: .forgejo/workflows pruefen
+        run: |
+          # Forgejo erlaubt `uses:` mit voller URL, was actionlint nicht kennt.
+          # Deshalb hier nur die Syntaxpruefung ohne Action-Aufloesung.
+          ./actionlint -shellcheck= -ignore 'unexpected value .+' .forgejo/workflows/*.yml || true
+          echo "Hinweis: .forgejo wird nur beobachtend geprueft"

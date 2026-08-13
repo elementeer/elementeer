@@ -9,6 +9,13 @@ on:
       - 'vendor/**'
   workflow_dispatch:
 
+  # Wird von release-github.yml als wiederverwendbarer Workflow aufgerufen.
+  # Ohne diesen Trigger weist GitHub die AUFRUFENDE Datei beim Parsen ab. Der
+  # Release-Lauf endete dadurch seit 2026-05-24 nach 0 Sekunden, ohne dass je
+  # ein Job startete — sichtbar nur daran, dass in der Lauf-Liste der Dateipfad
+  # statt des Workflow-Namens steht.
+  workflow_call:
+
 jobs:
   test:
     name: PHP Syntax + Activation Test
