@@ -238,19 +238,16 @@ class ElementorDocument {
 
 		$clone = self::fromArray( $this->postId, $this->data );
 
-		foreach ( $patches as $key => $entry ) {
-			// Accept both shapes: a LIST of {widget_id, settings} entries, or
-			// a legacy MAP of widget_id => {settings}. Normalise each to a
-			// (element_id, settings) pair, keeping element_id a string.
-			if ( isset( $entry['widget_id'] ) ) {
-				$element_id = (string) $entry['widget_id'];
-				$patch      = [ 'settings' => ( $entry['settings'] ?? [] ) ];
-			} elseif ( \is_array( $entry ) && isset( $entry['settings'] ) && \is_string( $key ) ) {
-				$element_id = (string) $key;
-				$patch      = [ 'settings' => $entry['settings'] ];
-			} else {
+		foreach ( $patches as $entry ) {
+			// Strictly a LIST of {widget_id, settings} entries. There is no
+			// legacy map form: both callers (pages + templates) send the list
+			// format. Keeping a dead map shim here would be an unexecuted
+			// contract — the same class of drift as a schema without a reader.
+			if ( ! \is_array( $entry ) || empty( $entry['widget_id'] ) || ! isset( $entry['settings'] ) ) {
 				continue;
 			}
+			$element_id = (string) $entry['widget_id'];
+			$patch      = [ 'settings' => $entry['settings'] ];
 
 			$before   = $clone->findById( $element_id );
 			$path_out = '';
