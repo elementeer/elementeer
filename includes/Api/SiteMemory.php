@@ -118,7 +118,7 @@ final class SiteMemory {
         unset( $memory[ $key ] );
         self::save( $memory );
 
-        return new WP_REST_Response( [ 'deleted' => $key ], 200 );
+        return new WP_REST_Response( [ 'key' => $key, 'deleted' => true ], 200 );
     }
 
     // ------------------------------------------------------------------ //

@@ -225,7 +225,7 @@ class ElementorDocument {
 	 * Preview a mutation without writing. Returns a structured response
 	 * with before/after values, affected paths, and the expected new contentHash.
 	 *
-	 * @param array<string, array<string, mixed>> $patches  Map of element_id => patch array
+	 * @param array $patches  List of [ 'widget_id' => string, 'settings' => array ] entries
 	 * @return array{ dry_run: true, patches: array, new_content_hash: string, affected_paths: array }
 	 */
 	public function dryRun( array $patches ): array {
@@ -238,12 +238,25 @@ class ElementorDocument {
 
 		$clone = self::fromArray( $this->postId, $this->data );
 
-		foreach ( $patches as $element_id => $patch ) {
+		foreach ( $patches as $key => $entry ) {
+			// Accept both shapes: a LIST of {widget_id, settings} entries, or
+			// a legacy MAP of widget_id => {settings}. Normalise each to a
+			// (element_id, settings) pair, keeping element_id a string.
+			if ( isset( $entry['widget_id'] ) ) {
+				$element_id = (string) $entry['widget_id'];
+				$patch      = [ 'settings' => ( $entry['settings'] ?? [] ) ];
+			} elseif ( \is_array( $entry ) && isset( $entry['settings'] ) && \is_string( $key ) ) {
+				$element_id = (string) $key;
+				$patch      = [ 'settings' => $entry['settings'] ];
+			} else {
+				continue;
+			}
+
 			$before   = $clone->findById( $element_id );
 			$path_out = '';
 			$found    = $clone->updateById( $element_id, $patch, $path_out );
 
-			$entry = [
+			$item = [
 				'element_id' => $element_id,
 				'found'      => $found,
 				'path'       => $path_out,
@@ -251,7 +264,7 @@ class ElementorDocument {
 				'after'      => $found ? $clone->findById( $element_id ) : null,
 			];
 
-			$report['patches'][] = $entry;
+			$report['patches'][] = $item;
 
 			if ( $found ) {
 				$report['affected_paths'][] = $path_out;
@@ -439,6 +452,11 @@ class ElementorDocument {
 	 * global color / typography actually exists on the target page is the
 	 * caller's responsibility — see collectGlobalReferences(), which only
 	 * lists the referenced ids and performs no existence check.
+	 *
+	 * NOTE (idempotency): this operation is not idempotent — cloning twice
+	 * yields two widgets. There is no idempotency key or retry. See
+	 * ELM-IDEMP-001 before adding a second mechanism; content_hash may already
+	 * cover the retry-after-lost-response case.
 	 *
 	 * @param array $source_widget The full widget array from the source document
 	 * @return array The clone, ready for insertion into this document

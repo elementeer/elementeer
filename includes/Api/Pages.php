@@ -93,7 +93,7 @@ final class Pages {
         }
 
         if ( $is_dry_run ) {
-            $report = $doc->dryRun( [ $widget_id => [ 'settings' => $settings ] ] );
+            $report = $doc->dryRun( [ [ 'widget_id' => $widget_id, 'settings' => $settings ] ] );
             $report['post_id']     = $id;
             $report['widget_id']   = $widget_id;
             $report['content_hash_input'] = $content_hash;
@@ -321,7 +321,11 @@ final class Pages {
         $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
         if ( is_wp_error( $doc ) ) return $doc;
 
-        // Build patch map
+        // Build patch list. We keep widget_id as a STRING throughout and do
+        // NOT key the array by it: PHP coerces numeric-string array keys to
+        // int (e.g. a hex id that happens to be all digits), which would turn
+        // updateById's string type-hint into a fatal TypeError on the next
+        // foreach. A list of [widget_id, settings] pairs keeps the type.
         $patches = [];
         foreach ( $operations as $op ) {
             $w_id     = sanitize_text_field( $op['widget_id'] ?? '' );
@@ -329,7 +333,7 @@ final class Pages {
             if ( $w_id === '' || ! is_array( $settings ) || empty( $settings ) ) {
                 return new WP_Error( 'invalid_operation', 'Each operation needs widget_id (string) and settings (non-empty object).', [ 'status' => 400 ] );
             }
-            $patches[ $w_id ] = [ 'settings' => $settings ];
+            $patches[] = [ 'widget_id' => $w_id, 'settings' => $settings ];
         }
 
         if ( $is_dry_run ) {
@@ -346,9 +350,10 @@ final class Pages {
         $results   = [];
         $not_found = [];
 
-        foreach ( $patches as $w_id => $patch ) {
+        foreach ( $patches as $entry ) {
+            $w_id   = $entry['widget_id'];
             $path_out = '';
-            $updated  = $doc->updateById( $w_id, $patch, $path_out );
+            $updated  = $doc->updateById( $w_id, [ 'settings' => $entry['settings'] ], $path_out );
             if ( $updated ) {
                 $results[] = [
                     'widget_id' => $w_id,

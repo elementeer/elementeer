@@ -544,7 +544,7 @@ final class Templates {
         }
 
         if ( $is_dry_run ) {
-            $report = $doc->dryRun( [ $widget_id => [ 'settings' => $settings ] ] );
+            $report = $doc->dryRun( [ [ 'widget_id' => $widget_id, 'settings' => $settings ] ] );
             $report['template_id']          = $id;
             $report['widget_id']            = $widget_id;
             $report['content_hash_input']   = $content_hash;
