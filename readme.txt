@@ -3,7 +3,7 @@ Contributors: elementeer
 Tags: elementor, mcp, ai, rest-api, template-management
 Requires at least: 6.0
 Tested up to: 6.5
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -72,6 +72,16 @@ Use the dedicated `/wp-json/elementeer/v1/library/import` endpoint with a `libra
 Yes. When Vamerli Studio is active alongside this plugin, the activation mode switches to `vamerli-embedded` or `vamerli-agency`, unlocking additional governance features.
 
 == Changelog ==
+
+= 2.3.1 =
+* No functional change to the plugin. This release exists because the GitHub
+  release workflow was invalid and never ran: `release-github.yml` called
+  `test-plugin.yml` as a reusable workflow without that file declaring
+  `workflow_call`, so GitHub rejected the calling file while parsing it.
+  Every release run since 2026-05-24 ended after 0 seconds with no job ever
+  starting. The tag for 2.3.0 reached GitHub; the release object never did.
+* `actionlint` now runs over the workflow files themselves. A workflow that
+  never starts reports nowhere, so the check has to live outside it.
 
 = 2.3.0 =
 * Granular mutation: `PATCH /pages/{id}/widgets/{widget_id}` and the template
