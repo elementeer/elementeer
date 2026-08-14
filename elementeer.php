@@ -28,7 +28,7 @@ if ( file_exists( __DIR__ . '/vendor/autoload.php' ) ) {
 }
 
 // Plugin constants - using WordPress functions when available, fallback otherwise
-define( 'ELEMENTEER_VERSION', '2.3.1' );
+define( 'ELEMENTEER_VERSION', '2.4.0' );
 define( 'ELEMENTEER_FILE', __FILE__ );
 
 // Define ELEMENTEER_DIR safely
