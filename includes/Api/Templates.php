@@ -329,6 +329,9 @@ final class Templates {
             return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
 
+        $protect = SiteMemory::refuseIfProtected( $id );
+        if ( \is_wp_error( $protect ) ) return $protect;
+
         $body    = $request->get_json_params() ?: [];
         $to_save = [ 'ID' => $id ];
 
@@ -373,6 +376,9 @@ final class Templates {
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
             return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
+
+        $protect = SiteMemory::refuseIfProtected( $id );
+        if ( \is_wp_error( $protect ) ) return $protect;
 
         $deleted = wp_delete_post( $id, true ); // force delete, skip trash
         if ( ! $deleted ) {
@@ -465,10 +471,13 @@ final class Templates {
         $raw  = get_post_meta( $id, '_elementor_data', true );
         $data = ! empty( $raw ) ? json_decode( $raw, true ) : [];
 
+        $doc = ElementorDocument::load( $id );
+
         return new WP_REST_Response(
             [
                 'id'            => $id,
                 'elementor_data' => $data ?? [],
+                'content_hash'   => $doc->contentHash(),
             ],
             200
         );
@@ -494,6 +503,9 @@ final class Templates {
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
             return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
+
+        $protect = SiteMemory::refuseIfProtected( $id );
+        if ( \is_wp_error( $protect ) ) return $protect;
 
         $body = $request->get_json_params() ?: [];
 
@@ -532,14 +544,14 @@ final class Templates {
         }
 
         if ( $is_dry_run ) {
-            $report = $doc->dryRun( [ $widget_id => [ 'settings' => $settings ] ] );
+            $report = $doc->dryRun( [ [ 'widget_id' => $widget_id, 'settings' => $settings ] ] );
             $report['template_id']          = $id;
             $report['widget_id']            = $widget_id;
             $report['content_hash_input']   = $content_hash;
             return new WP_REST_Response( $report, 200 );
         }
 
-        Snapshots::capture( $id );
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
 
         $path_out = '';
         $updated  = $doc->updateById( $widget_id, [ 'settings' => $settings ], $path_out );
@@ -574,6 +586,9 @@ final class Templates {
         if ( ! $post || 'elementor_library' !== $post->post_type ) {
             return new WP_Error( 'not_found', \__( 'Template not found.', 'elementeer' ), [ 'status' => 404 ] );
         }
+
+        $protect = SiteMemory::refuseIfProtected( $id );
+        if ( \is_wp_error( $protect ) ) return $protect;
 
         $body = $request->get_json_params() ?: [];
 

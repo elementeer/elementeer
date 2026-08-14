@@ -225,7 +225,7 @@ class ElementorDocument {
 	 * Preview a mutation without writing. Returns a structured response
 	 * with before/after values, affected paths, and the expected new contentHash.
 	 *
-	 * @param array<string, array<string, mixed>> $patches  Map of element_id => patch array
+	 * @param array $patches  List of [ 'widget_id' => string, 'settings' => array ] entries
 	 * @return array{ dry_run: true, patches: array, new_content_hash: string, affected_paths: array }
 	 */
 	public function dryRun( array $patches ): array {
@@ -238,12 +238,22 @@ class ElementorDocument {
 
 		$clone = self::fromArray( $this->postId, $this->data );
 
-		foreach ( $patches as $element_id => $patch ) {
+		foreach ( $patches as $entry ) {
+			// Strictly a LIST of {widget_id, settings} entries. There is no
+			// legacy map form: both callers (pages + templates) send the list
+			// format. Keeping a dead map shim here would be an unexecuted
+			// contract — the same class of drift as a schema without a reader.
+			if ( ! \is_array( $entry ) || empty( $entry['widget_id'] ) || ! isset( $entry['settings'] ) ) {
+				continue;
+			}
+			$element_id = (string) $entry['widget_id'];
+			$patch      = [ 'settings' => $entry['settings'] ];
+
 			$before   = $clone->findById( $element_id );
 			$path_out = '';
 			$found    = $clone->updateById( $element_id, $patch, $path_out );
 
-			$entry = [
+			$item = [
 				'element_id' => $element_id,
 				'found'      => $found,
 				'path'       => $path_out,
@@ -251,7 +261,7 @@ class ElementorDocument {
 				'after'      => $found ? $clone->findById( $element_id ) : null,
 			];
 
-			$report['patches'][] = $entry;
+			$report['patches'][] = $item;
 
 			if ( $found ) {
 				$report['affected_paths'][] = $path_out;
@@ -290,5 +300,193 @@ class ElementorDocument {
 		}
 
 		return $doc;
+	}
+
+	/**
+	 * Find the container element at the given dot-separated path and return a
+	 * reference to its 'elements' array so the caller can mutate it directly.
+	 *
+	 * NOT declared by-reference: returning `null` from a `function &()` is
+	 * illegal in PHP and triggers "Only variable references should be returned
+	 * by reference", intermittently corrupting reference navigation. Instead
+	 * the reference is passed inside the result array (PHP preserves array
+	 * element references regardless of the function's return type).
+	 *
+	 * Returns ['elements' => &$elements, 'parent' => &$parent_element] on
+	 * success, or null if the path does not resolve to a container element.
+	 *
+	 * @return ?array{ elements: array, parent: array }
+	 */
+	public function resolveContainer( string $path ): ?array {
+		if ( $path === '' || $path === 'root' ) {
+			return [ 'elements' => &$this->data, 'parent' => &$this->data ];
+		}
+
+		$segments = \explode( '.', $path );
+		$cursor   = &$this->data;
+
+		foreach ( $segments as $i => $seg ) {
+			$index = (int) $seg;
+			if ( ! isset( $cursor[ $index ] ) || ! \is_array( $cursor[ $index ] ) ) {
+				return null;
+			}
+			if ( $i === \count( $segments ) - 1 ) {
+				$parent = &$cursor[ $index ];
+				if ( ! isset( $parent['elements'] ) || ! \is_array( $parent['elements'] ) ) {
+					$parent['elements'] = [];
+				}
+				return [ 'elements' => &$parent['elements'], 'parent' => &$parent ];
+			}
+			if ( ! isset( $cursor[ $index ]['elements'] ) || ! \is_array( $cursor[ $index ]['elements'] ) ) {
+				return null;
+			}
+			$cursor = &$cursor[ $index ]['elements'];
+		}
+		return null;
+	}
+
+	/**
+	 * Remove an element by its id. Returns the removed element array, or null
+	 * if not found.
+	 */
+	public function removeById( string $element_id ): ?array {
+		return $this->removeByIdIn( $this->data, $element_id );
+	}
+
+	private function removeByIdIn( array &$elements, string $element_id ): ?array {
+		foreach ( $elements as $i => $element ) {
+			if ( ! \is_array( $element ) ) {
+				continue;
+			}
+			if ( ( $element['id'] ?? '' ) === $element_id ) {
+				$removed = $element;
+				\array_splice( $elements, $i, 1 );
+				return $removed;
+			}
+			if ( ! empty( $element['elements'] ) && \is_array( $element['elements'] ) ) {
+				$found = $this->removeByIdIn( $element['elements'], $element_id );
+				if ( $found !== null ) {
+					return $found;
+				}
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Insert a widget element into a container at a given position.
+	 *
+	 * @param string $container_path Dot-separated path to the container (e.g. "0.1")
+	 * @param array  $widget         The full widget array (id, widgetType, elType, settings, ...)
+	 * @param int    $position       Insertion index (0-based). -1 means append.
+	 * @return int The actual index where the widget was inserted, or -1 on failure.
+	 */
+	public function insertAt( string $container_path, array $widget, int $position = -1 ): int {
+		$resolved = $this->resolveContainer( $container_path );
+		if ( $resolved === null ) {
+			return -1;
+		}
+		$target = &$resolved['elements'];
+		$count  = \count( $target );
+		if ( $position < 0 || $position > $count ) {
+			$position = $count;
+		}
+		\array_splice( $target, $position, 0, [ $widget ] );
+		return $position;
+	}
+
+	/**
+	 * Move an element from one container to another. Returns true on success.
+	 *
+	 * @param string $element_id          Element to move
+	 * @param string $target_container_path Destination container path (dot notation)
+	 * @param int    $position            Target index inside the destination (-1 = append)
+	 * @return ?array The moved element with its new path info, or null on failure.
+	 */
+	public function moveToPath( string $element_id, string $target_container_path, int $position = -1 ): ?array {
+		$source_path = $this->getPath( $element_id );
+		if ( $source_path === null ) {
+			return null;
+		}
+
+		// 1) Remove from source
+		$removed = $this->removeById( $element_id );
+		if ( $removed === null ) {
+			return null;
+		}
+
+		// 2) Insert into target
+		$actual_pos = $this->insertAt( $target_container_path, $removed, $position );
+		if ( $actual_pos < 0 ) {
+			// Restore: re-insert at source (best effort)
+			$source_parent_path = \dirname( (string) $source_path );
+			$source_idx         = (int) \basename( (string) $source_path );
+			$this->insertAt( $source_parent_path, $removed, $source_idx );
+			return null;
+		}
+
+		$new_path = $target_container_path === '' || $target_container_path === 'root'
+			? (string) $actual_pos
+			: $target_container_path . '.' . $actual_pos;
+
+		return [
+			'element_id'     => $element_id,
+			'source_path'    => $source_path,
+			'target_path'    => $new_path,
+			'widget'         => $removed,
+		];
+	}
+
+	/**
+	 * Deep-clone a widget array for cross-page insertion.
+	 *
+	 * This is a structural clone: __globals__, __dynamic__, and
+	 * typography-typography references are preserved verbatim. The clone is
+	 * assigned a fresh random element id; every other field is retained
+	 * byte-for-byte.
+	 *
+	 * NOTE: references are carried over, NOT validated. Whether a referenced
+	 * global color / typography actually exists on the target page is the
+	 * caller's responsibility — see collectGlobalReferences(), which only
+	 * lists the referenced ids and performs no existence check.
+	 *
+	 * NOTE (idempotency): this operation is not idempotent — cloning twice
+	 * yields two widgets. There is no idempotency key or retry. See
+	 * ELM-IDEMP-001 before adding a second mechanism; content_hash may already
+	 * cover the retry-after-lost-response case.
+	 *
+	 * @param array $source_widget The full widget array from the source document
+	 * @return array The clone, ready for insertion into this document
+	 */
+	public function cloneWidgetForInsert( array $source_widget ): array {
+		$clone = \json_decode( \wp_json_encode( $source_widget ), true );
+
+		$clone['id'] = \bin2hex( \random_bytes( 4 ) );
+
+		return $clone;
+	}
+
+	/**
+	 * Lists global elements referenced by a widget's __globals__ settings.
+	 * Used for cross-page awareness.
+	 *
+	 * This function only enumerates referenced ids. It does NOT verify that
+	 * those references exist on any target page — that check is not part of
+	 * this function (and is currently unimplemented end to end).
+	 *
+	 * @return string[] Array of referenced global IDs
+	 */
+	public static function collectGlobalReferences( array $widget ): array {
+		$refs = [];
+		$globals = $widget['settings']['__globals__'] ?? [];
+		if ( \is_array( $globals ) ) {
+			foreach ( $globals as $_ => $global_ref ) {
+				if ( \is_string( $global_ref ) ) {
+					$refs[] = $global_ref;
+				}
+			}
+		}
+
+		return $refs;
 	}
 }

@@ -39,6 +39,9 @@ final class Pages {
         $id        = (int) $request->get_param( 'id' );
         $widget_id = sanitize_text_field( $request->get_param( 'widget_id' ) );
 
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
+
         $post = get_post( $id );
         if ( ! $post || $post->post_status === 'trash' ) {
             return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
@@ -90,14 +93,14 @@ final class Pages {
         }
 
         if ( $is_dry_run ) {
-            $report = $doc->dryRun( [ $widget_id => [ 'settings' => $settings ] ] );
+            $report = $doc->dryRun( [ [ 'widget_id' => $widget_id, 'settings' => $settings ] ] );
             $report['post_id']     = $id;
             $report['widget_id']   = $widget_id;
             $report['content_hash_input'] = $content_hash;
             return new WP_REST_Response( $report, 200 );
         }
 
-        Snapshots::capture( $id );
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
 
         $path_out = '';
         $updated  = $doc->updateById( $widget_id, [ 'settings' => $settings ], $path_out );
@@ -197,12 +200,14 @@ final class Pages {
         }
 
         // Default — return full elementor_data
+        $doc = ElementorDocument::load( $id );
         return new WP_REST_Response( [
             'post_id'       => $id,
             'post_title'    => $post->post_title,
             'post_type'     => $post->post_type,
             'element_count' => count( $data ),
             'elementor_data' => $data,
+            'content_hash'  => $doc->contentHash(),
         ] );
     }
 
@@ -218,6 +223,9 @@ final class Pages {
         if ( is_wp_error( $auth ) ) return $auth;
 
         $id   = (int) $request->get_param( 'id' );
+
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
         $post = get_post( $id );
 
         if ( ! $post || $post->post_status === 'trash' ) {
@@ -255,6 +263,126 @@ final class Pages {
         wp_update_post( [ 'ID' => $id ] );
 
         return new WP_REST_Response( [ 'id' => $id, 'updated' => true ], 200 );
+    }
+
+    /**
+     * POST /pages/{id}/widgets/batch
+     *
+     * Atomic multi-widget mutation in one transaction.
+     * Updates multiple widgets with one content_hash validation pass,
+     * so a concurrent edit on any target widget fails the whole batch.
+     *
+     * Body: {
+     *   "operations": [
+     *     { "widget_id": "abc", "settings": { "title": "X" } },
+     *     ...
+     *   ],
+     *   "content_hash": "...",
+     *   "dry_run": false,
+     *   "partial": false
+     * }
+     *
+     * If "partial" is true, missing widget_ids are reported as not_found
+     * instead of failing the batch.  The server-side dryRun in the Document
+     * operates on a clone; the write path operates on the live document.
+     */
+    public function patch_widgets_batch( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'content-structure:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $id = (int) $request->get_param( 'id' );
+
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
+        $post = get_post( $id );
+        if ( ! $post || $post->post_status === 'trash' ) {
+            return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
+        }
+
+        $edit_mode = get_post_meta( $id, '_elementor_edit_mode', true );
+        if ( $edit_mode !== 'builder' ) {
+            return new WP_Error( 'not_elementor', 'Not built with Elementor.', [ 'status' => 422 ] );
+        }
+
+        $body         = $request->get_json_params() ?: [];
+        $operations   = $body['operations'] ?? null;
+        $content_hash = sanitize_text_field( $body['content_hash'] ?? '' );
+        $is_dry_run   = (bool) ( $body['dry_run'] ?? false );
+        $is_partial   = (bool) ( $body['partial'] ?? false );
+
+        if ( ! is_array( $operations ) || empty( $operations ) ) {
+            return new WP_Error( 'invalid_data', 'operations must be a non-empty array.', [ 'status' => 400 ] );
+        }
+
+        if ( $content_hash === '' ) {
+            return new WP_Error( 'missing_content_hash', 'content_hash is required.', [ 'status' => 400 ] );
+        }
+
+        $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
+        if ( is_wp_error( $doc ) ) return $doc;
+
+        // Build patch list. We keep widget_id as a STRING throughout and do
+        // NOT key the array by it: PHP coerces numeric-string array keys to
+        // int (e.g. a hex id that happens to be all digits), which would turn
+        // updateById's string type-hint into a fatal TypeError on the next
+        // foreach. A list of [widget_id, settings] pairs keeps the type.
+        $patches = [];
+        foreach ( $operations as $op ) {
+            $w_id     = sanitize_text_field( $op['widget_id'] ?? '' );
+            $settings = $op['settings'] ?? null;
+            if ( $w_id === '' || ! is_array( $settings ) || empty( $settings ) ) {
+                return new WP_Error( 'invalid_operation', 'Each operation needs widget_id (string) and settings (non-empty object).', [ 'status' => 400 ] );
+            }
+            $patches[] = [ 'widget_id' => $w_id, 'settings' => $settings ];
+        }
+
+        if ( $is_dry_run ) {
+            $report = $doc->dryRun( $patches );
+            $report['post_id']     = $id;
+            $report['content_hash_input'] = $content_hash;
+            $report['partial'] = $is_partial;
+            $report['operation_count'] = count( $operations );
+            return new WP_REST_Response( $report, 200 );
+        }
+
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
+
+        $results   = [];
+        $not_found = [];
+
+        foreach ( $patches as $entry ) {
+            $w_id   = $entry['widget_id'];
+            $path_out = '';
+            $updated  = $doc->updateById( $w_id, [ 'settings' => $entry['settings'] ], $path_out );
+            if ( $updated ) {
+                $results[] = [
+                    'widget_id' => $w_id,
+                    'path'      => $path_out,
+                    'updated'   => true,
+                ];
+            } else {
+                $not_found[] = $w_id;
+                if ( ! $is_partial ) {
+                    return new WP_Error(
+                        'widget_not_found',
+                        sprintf( 'Widget "%s" not found. Set partial:true to skip missing widgets.', $w_id ),
+                        [ 'status' => 404 ]
+                    );
+                }
+            }
+        }
+
+        $doc->save();
+
+        return new WP_REST_Response( [
+            'post_id'    => $id,
+            'updated'    => count( $results ),
+            'updated_ids' => array_column( $results, 'widget_id' ),
+            'results'    => $results,
+            'not_found'  => $not_found,
+            'partial'    => $is_partial,
+            'new_hash'   => $doc->contentHash(),
+        ], 200 );
     }
 
     /**
@@ -304,5 +432,365 @@ final class Pages {
             'total'       => $query->found_posts,
             'total_pages' => $query->max_num_pages,
         ] );
+    }
+
+    /**
+     * POST /pages/{id}/widgets
+     *
+     * Insert a widget into a container at a specific position.
+     *
+     * Body: {
+     *   "widget": { ... full widget array ... },
+     *   "container_path": "0.1",
+     *   "position": 2,
+     *   "content_hash": "...",
+     *   "dry_run": false
+     * }
+     */
+    public function insert_widget( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'content-structure:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $id = (int) $request->get_param( 'id' );
+
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
+
+        $post = get_post( $id );
+        if ( ! $post || $post->post_status === 'trash' ) {
+            return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
+        }
+
+        $edit_mode = get_post_meta( $id, '_elementor_edit_mode', true );
+        if ( $edit_mode !== 'builder' ) {
+            return new WP_Error( 'not_elementor', 'This post was not built with Elementor.', [ 'status' => 422 ] );
+        }
+
+        $body = $request->get_json_params() ?: [];
+        $widget         = $body['widget'] ?? null;
+        $container_path = sanitize_text_field( $body['container_path'] ?? 'root' );
+        $position       = (int) ( $body['position'] ?? -1 );
+        $content_hash   = sanitize_text_field( $body['content_hash'] ?? '' );
+        $is_dry_run     = (bool) ( $body['dry_run'] ?? false );
+
+        if ( ! is_array( $widget ) || empty( $widget ) ) {
+            return new WP_Error( 'invalid_data', 'widget must be a non-empty object.', [ 'status' => 400 ] );
+        }
+
+        if ( $content_hash === '' ) {
+            return new WP_Error( 'missing_content_hash', 'content_hash is required.', [ 'status' => 400 ] );
+        }
+
+        $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
+        if ( is_wp_error( $doc ) ) return $doc;
+
+        if ( $is_dry_run ) {
+            $clone = ElementorDocument::fromArray( $id, $doc->toArray() );
+            $actual_pos = $clone->insertAt( $container_path, $widget, $position );
+            if ( $actual_pos < 0 ) {
+                return new WP_Error( 'container_not_found', 'Container path not found.', [ 'status' => 404 ] );
+            }
+            return new WP_REST_Response( [
+                'dry_run'          => true,
+                'post_id'          => $id,
+                'position'         => $actual_pos,
+                'container_path'   => $container_path,
+                'new_content_hash' => $clone->contentHash(),
+            ], 200 );
+        }
+
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
+
+        $actual_pos = $doc->insertAt( $container_path, $widget, $position );
+        if ( $actual_pos < 0 ) {
+            return new WP_Error( 'container_not_found', 'Container path not found.', [ 'status' => 404 ] );
+        }
+
+        $doc->save();
+
+        return new WP_REST_Response( [
+            'post_id'        => $id,
+            'position'       => $actual_pos,
+            'container_path' => $container_path,
+            'new_hash'       => $doc->contentHash(),
+        ], 200 );
+    }
+
+    /**
+     * DELETE /pages/{id}/widgets/{widget_id}
+     *
+     * Remove a widget by its element id.
+     *
+     * Body: { "content_hash": "...", "dry_run": false }
+     */
+    public function remove_widget( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'content-structure:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $id        = (int) $request->get_param( 'id' );
+        $widget_id = sanitize_text_field( $request->get_param( 'widget_id' ) );
+
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
+
+        $post = get_post( $id );
+        if ( ! $post || $post->post_status === 'trash' ) {
+            return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
+        }
+
+        $edit_mode = get_post_meta( $id, '_elementor_edit_mode', true );
+        if ( $edit_mode !== 'builder' ) {
+            return new WP_Error( 'not_elementor', 'This post was not built with Elementor.', [ 'status' => 422 ] );
+        }
+
+        $body         = $request->get_json_params() ?: [];
+        $content_hash = sanitize_text_field( $body['content_hash'] ?? '' );
+        $is_dry_run   = (bool) ( $body['dry_run'] ?? false );
+
+        if ( $content_hash === '' ) {
+            return new WP_Error( 'missing_content_hash', 'content_hash is required.', [ 'status' => 400 ] );
+        }
+
+        $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
+        if ( is_wp_error( $doc ) ) return $doc;
+
+        $path_before = $doc->getPath( $widget_id );
+        if ( $path_before === null ) {
+            return new WP_Error(
+                'widget_not_found',
+                sprintf( 'Widget "%s" not found.', $widget_id ),
+                [ 'status' => 404 ]
+            );
+        }
+
+        if ( $is_dry_run ) {
+            $clone = ElementorDocument::fromArray( $id, $doc->toArray() );
+            $removed = $clone->removeById( $widget_id );
+            return new WP_REST_Response( [
+                'dry_run'          => true,
+                'post_id'          => $id,
+                'widget_id'        => $widget_id,
+                'path'             => $path_before,
+                'removed'          => $removed,
+                'new_content_hash' => $clone->contentHash(),
+            ], 200 );
+        }
+
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
+
+        $removed = $doc->removeById( $widget_id );
+        if ( $removed === null ) {
+            return new WP_Error(
+                'widget_not_found',
+                sprintf( 'Widget "%s" disappeared between validation and write.', $widget_id ),
+                [ 'status' => 500 ]
+            );
+        }
+
+        $doc->save();
+
+        return new WP_REST_Response( [
+            'post_id'   => $id,
+            'widget_id' => $widget_id,
+            'path'      => $path_before,
+            'removed'   => true,
+            'new_hash'  => $doc->contentHash(),
+        ], 200 );
+    }
+
+    /**
+     * PUT /pages/{id}/widgets/{widget_id}/move
+     *
+     * Move a widget from its current location to a different container
+     * and position within the same page.
+     *
+     * Body: {
+     *   "target_container_path": "0.2",
+     *   "position": 0,
+     *   "content_hash": "...",
+     *   "dry_run": false
+     * }
+     */
+    public function move_widget( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'content-structure:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $id        = (int) $request->get_param( 'id' );
+        $widget_id = sanitize_text_field( $request->get_param( 'widget_id' ) );
+
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
+
+        $post = get_post( $id );
+        if ( ! $post || $post->post_status === 'trash' ) {
+            return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
+        }
+
+        $edit_mode = get_post_meta( $id, '_elementor_edit_mode', true );
+        if ( $edit_mode !== 'builder' ) {
+            return new WP_Error( 'not_elementor', 'This post was not built with Elementor.', [ 'status' => 422 ] );
+        }
+
+        $body = $request->get_json_params() ?: [];
+        $target_container_path = sanitize_text_field( $body['target_container_path'] ?? 'root' );
+        $position              = (int) ( $body['position'] ?? -1 );
+        $content_hash          = sanitize_text_field( $body['content_hash'] ?? '' );
+        $is_dry_run            = (bool) ( $body['dry_run'] ?? false );
+
+        if ( $content_hash === '' ) {
+            return new WP_Error( 'missing_content_hash', 'content_hash is required.', [ 'status' => 400 ] );
+        }
+
+        $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
+        if ( is_wp_error( $doc ) ) return $doc;
+
+        $source_path = $doc->getPath( $widget_id );
+        if ( $source_path === null ) {
+            return new WP_Error( 'widget_not_found', sprintf( 'Widget "%s" not found.', $widget_id ), [ 'status' => 404 ] );
+        }
+
+        if ( $is_dry_run ) {
+            $clone = ElementorDocument::fromArray( $id, $doc->toArray() );
+            $result = $clone->moveToPath( $widget_id, $target_container_path, $position );
+            if ( $result === null ) {
+                return new WP_Error( 'move_failed', 'Target container not found.', [ 'status' => 404 ] );
+            }
+            return new WP_REST_Response( [
+                'dry_run'          => true,
+                'post_id'          => $id,
+                'widget_id'        => $widget_id,
+                'source_path'      => $source_path,
+                'new_path'         => $result['target_path'],
+                'new_content_hash' => $clone->contentHash(),
+            ], 200 );
+        }
+
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
+
+        $result = $doc->moveToPath( $widget_id, $target_container_path, $position );
+        if ( $result === null ) {
+            return new WP_Error( 'move_failed', 'Target container not found.', [ 'status' => 404 ] );
+        }
+
+        $doc->save();
+
+        return new WP_REST_Response( [
+            'post_id'     => $id,
+            'widget_id'   => $widget_id,
+            'source_path' => $source_path,
+            'new_path'    => $result['target_path'],
+            'new_hash'    => $doc->contentHash(),
+        ], 200 );
+    }
+
+    /**
+     * POST /pages/{id}/widgets/clone
+     *
+     * Clone a widget from a source page into this page at a specific position.
+     * Supports cross-page cloning; global references are listed, not validated.
+     *
+     * Body: {
+     *   "source_page_id": 123,
+     *   "widget_id": "a85a3a7",
+     *   "container_path": "0.0",
+     *   "position": 1,
+     *   "content_hash": "...",
+     *   "dry_run": false
+     * }
+     */
+    public function clone_widget( WP_REST_Request $request ): WP_REST_Response|WP_Error {
+        $auth = $this->auth->authorize( $request, 'content-structure:write' );
+        if ( is_wp_error( $auth ) ) return $auth;
+
+        $id = (int) $request->get_param( 'id' );
+
+        $protected = SiteMemory::refuseIfProtected( $id );
+        if ( $protected !== null ) return $protected;
+
+        $post = get_post( $id );
+        if ( ! $post || $post->post_status === 'trash' ) {
+            return new WP_Error( 'not_found', 'Post not found.', [ 'status' => 404 ] );
+        }
+
+        $edit_mode = get_post_meta( $id, '_elementor_edit_mode', true );
+        if ( $edit_mode !== 'builder' ) {
+            return new WP_Error( 'not_elementor', 'This post was not built with Elementor.', [ 'status' => 422 ] );
+        }
+
+        $body = $request->get_json_params() ?: [];
+        $source_page_id = (int) ( $body['source_page_id'] ?? 0 );
+        $widget_id      = sanitize_text_field( $body['widget_id'] ?? '' );
+        $container_path = sanitize_text_field( $body['container_path'] ?? 'root' );
+        $position       = (int) ( $body['position'] ?? -1 );
+        $content_hash   = sanitize_text_field( $body['content_hash'] ?? '' );
+        $is_dry_run     = (bool) ( $body['dry_run'] ?? false );
+
+        if ( $source_page_id <= 0 || $widget_id === '' ) {
+            return new WP_Error( 'invalid_data', 'source_page_id (int > 0) and widget_id (string) are required.', [ 'status' => 400 ] );
+        }
+
+        if ( $content_hash === '' ) {
+            return new WP_Error( 'missing_content_hash', 'content_hash is required.', [ 'status' => 400 ] );
+        }
+
+        // Load source widget from the other page
+        $source_doc = ElementorDocument::load( $source_page_id );
+        $source_widget = $source_doc->findById( $widget_id );
+        if ( $source_widget === null ) {
+            return new WP_Error(
+                'source_widget_not_found',
+                sprintf( 'Widget "%s" not found on source page %d.', $widget_id, $source_page_id ),
+                [ 'status' => 404 ]
+            );
+        }
+
+        // Collect global references (enumeration only, not validated here)
+        $global_refs = ElementorDocument::collectGlobalReferences( $source_widget );
+
+        // Clone the widget for the target page
+        $clone_widget = $source_doc->cloneWidgetForInsert( $source_widget );
+
+        // Load target document with hash guard
+        $doc = ElementorDocument::loadWithHashGuard( $id, $content_hash );
+        if ( is_wp_error( $doc ) ) return $doc;
+
+        if ( $is_dry_run ) {
+            $dry_clone = ElementorDocument::fromArray( $id, $doc->toArray() );
+            $actual_pos = $dry_clone->insertAt( $container_path, $clone_widget, $position );
+            if ( $actual_pos < 0 ) {
+                return new WP_Error( 'container_not_found', 'Target container path not found.', [ 'status' => 404 ] );
+            }
+            return new WP_REST_Response( [
+                'dry_run'             => true,
+                'post_id'             => $id,
+                'source_page_id'      => $source_page_id,
+                'source_widget_id'    => $widget_id,
+                'new_widget_id'       => $clone_widget['id'],
+                'position'            => $actual_pos,
+                'container_path'      => $container_path,
+                'global_references'   => $global_refs,
+                'new_content_hash'    => $dry_clone->contentHash(),
+            ], 200 );
+        }
+
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
+
+        $actual_pos = $doc->insertAt( $container_path, $clone_widget, $position );
+        if ( $actual_pos < 0 ) {
+            return new WP_Error( 'container_not_found', 'Target container path not found after guard.', [ 'status' => 500 ] );
+        }
+
+        $doc->save();
+
+        return new WP_REST_Response( [
+            'post_id'           => $id,
+            'source_page_id'    => $source_page_id,
+            'source_widget_id'  => $widget_id,
+            'new_widget_id'     => $clone_widget['id'],
+            'position'          => $actual_pos,
+            'container_path'    => $container_path,
+            'global_references' => $global_refs,
+            'new_hash'          => $doc->contentHash(),
+        ], 200 );
     }
 }
