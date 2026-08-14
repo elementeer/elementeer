@@ -1,0 +1,16 @@
+# Elementeer (WordPress-Plugin) — Versionsorte.
+schema: 1
+source_of_truth: elementeer.php
+# Der WordPress-Header ist die kanonische Quelle (composer.json traegt keine
+# Version; WordPress liest den Header). readme.txt Stable tag ist verbindlich,
+# weil WordPress genau die dort genannte Version ausliefert.
+locations:
+  - path: elementeer.php
+    pattern: '\* Version:\s*([^#\s]+)'
+    required: true
+  - path: elementeer.php
+    pattern: "define\( 'ELEMENTEER_VERSION', '([^']+)' \)"
+    required: true
+  - path: readme.txt
+    pattern: '^Stable tag:\s*([^#\s]+)'
+    required: true
