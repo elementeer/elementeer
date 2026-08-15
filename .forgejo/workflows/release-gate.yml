@@ -32,21 +32,12 @@ jobs:
           echo "All PHP files pass syntax check"
       - name: Version Sync Gate
         run: |
-          HEADER_VER=$(grep "Version:" elementeer.php | head -1 | sed 's/.*Version: *//' | xargs)
-          PHP_CONST_VER=$(grep "ELEMENTEER_VERSION" elementeer.php | head -1 | sed "s/.*'\(.*\)'.*/\1/" | xargs)
-          echo "Header version:    $HEADER_VER"
-          echo "PHP constant:      $PHP_CONST_VER"
-          if [ "$HEADER_VER" != "$PHP_CONST_VER" ]; then
-            echo "ERROR: Version MISMATCH — header='$HEADER_VER' != ELEMENTEER_VERSION='$PHP_CONST_VER'"
-            echo "Fix: bump both to the same version before release"
-            exit 1
-          fi
-          README_VER=$(grep -i "^Stable tag:" readme.txt | sed 's/.*: *//' | xargs)
-          if [ "$HEADER_VER" != "$README_VER" ]; then
-            echo "ERROR: Version MISMATCH — header='$HEADER_VER' != readme.txt Stable tag='$README_VER'"
-            exit 1
-          fi
-          echo "Version sync OK: $HEADER_VER (header, constant, readme)"
+          # LVC-209: single source of truth. The version locations are declared
+          # in .version.yaml; this gate and the bump tool read the SAME file via
+          # version-sync.py. The inline header/const/readme grep is gone on
+          # purpose — it drifted from the bump tool and is exactly the failure
+          # mode this ticket exists to remove.
+          python3 scripts/version-sync.py check
       - name: Build Plugin ZIP
         run: |
           bash scripts/create-plugin-zip.sh

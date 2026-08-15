@@ -1,0 +1,21 @@
+# Elementeer (WordPress-Plugin) — Versionsorte.
+schema: 1
+source_of_truth: elementeer.php
+# Der WordPress-Header ist die kanonische Quelle (composer.json traegt keine
+# Version; WordPress liest den Header). readme.txt Stable tag ist verbindlich,
+# weil WordPress genau die dort genannte Version ausliefert.
+# Befund LVC-209 (offenes Ticket, nicht hier begraben): composer.json hat kein
+# version-Feld. Solange kein Composer-Publish/Require stattfindet, ist das
+# ungefaehrlich; sobald das Plugin per Composer installierbar sein soll,
+# muss composer.json entweder eine Version tragen oder eine package-Version
+# fuers git-Repository gepflegt werden.
+locations:
+  - path: elementeer.php
+    pattern: '\* Version:\s*([^#\s]+)'
+    required: true
+  - path: elementeer.php
+    pattern: "define\( 'ELEMENTEER_VERSION', '([^']+)' \)"
+    required: true
+  - path: readme.txt
+    pattern: '^Stable tag:\s*([^#\s]+)'
+    required: true
