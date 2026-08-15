@@ -23,29 +23,15 @@ jobs:
         run: |
           TAG="${GITHUB_REF##*/}"
           VERSION="${TAG#v}"
-          HEADER_VER=$(grep "Version:" elementeer.php | head -1 | sed 's/.*Version: *//' | xargs)
-          PHP_VER=$(grep "ELEMENTEER_VERSION" elementeer.php | head -1 | sed "s/.*'\(.*\)'.*/\1/" | xargs)
           echo "Tag:     $TAG"
           echo "Version: $VERSION"
-          echo "Header:  $HEADER_VER"
-          echo "Const:   $PHP_VER"
-          if [ "$HEADER_VER" != "$VERSION" ]; then
-            echo "ERROR: Header Version ($HEADER_VER) != tag ($VERSION)"
-            exit 1
-          fi
-          if [ "$PHP_VER" != "$VERSION" ]; then
-            echo "ERROR: ELEMENTEER_VERSION ($PHP_VER) != tag ($VERSION)"
-            exit 1
-          fi
-          README_VER=$(grep -i "^Stable tag:" readme.txt | sed 's/.*: *//' | xargs)
-          echo "Readme:  $README_VER"
-          if [ "$README_VER" != "$VERSION" ]; then
-            echo "ERROR: readme.txt Stable tag ($README_VER) != tag ($VERSION)"
-            echo "WordPress serves the version named by Stable tag. A drifted"
-            echo "value ships the wrong release to every site."
-            exit 1
-          fi
-          echo "Version sync OK: $VERSION (header, constant, readme)"
+          # LVC-209: versions live in .version.yaml. Both the release gate and
+          # the bump tool read the SAME declaration via version-sync.py. This
+          # replaces the old hand-written header/const/readme grep, which would
+          # not follow a new version location (e.g. a future composer.json).
+          # check-tag additionally compares source_of_truth against the TAG
+          # (the CAP-CI-001 case: a vX tag pointing at an older commit).
+          python3 scripts/version-sync.py check-tag "${VERSION}"
       - name: Build Plugin ZIP
         run: |
           bash scripts/create-plugin-zip.sh

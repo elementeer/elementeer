@@ -10,6 +10,7 @@ Stdlib only, no external deps, so it runs on an empty `ubuntu-latest` runner.
 
 Usage:
     version-sync.py check [--warnings-as-errors] [--repo PATH]
+    version-sync.py check-tag TAG [--warnings-as-errors] [--repo PATH]
     version-sync.py bump NEW_VERSION [--include-informational] [--repo PATH]
 """
 
@@ -213,12 +214,41 @@ def bump(repo: Path, new_version: str, include_informational: bool) -> int:
     return check(repo, warnings_as_errors=False)
 
 
+def check_tag(repo: Path, tag: str, warnings_as_errors: bool) -> int:
+    """Gate: run `check`, then verify source_of_truth == TAG (v-prefix stripped).
+
+    The tag compare is the CAP-CI-001 case: a `v0.17.0` tag pointing at a
+    commit whose source_of_truth still said 0.16.0. `check` only compares
+    locations against each other, so a tag-vs-location drift passes it. This
+    mode closes that gap.
+    """
+    rc = check(repo, warnings_as_errors)
+    if rc != 0:
+        return rc
+    decl, _ = load(repo)
+    sot = decl["source_of_truth"]
+    val = read_version(repo / sot, _pattern_for(decl["locations"], sot))
+    if val != tag:
+        print(
+            f"version-sync: FAIL — tag {tag!r} != source_of_truth {sot} {val!r}"
+        )
+        return 1
+    print(f"version-sync: OK — tag {tag!r} == {sot} {val!r}")
+    return 0
+
+
 def main() -> int:
     p = argparse.ArgumentParser(prog="version-sync")
     sub = p.add_subparsers(dest="cmd", required=True)
     c = sub.add_parser("check", help="gate: verify required locations agree")
     c.add_argument("--warnings-as-errors", action="store_true")
     c.add_argument("--repo", type=Path, default=Path("."))
+    ct = sub.add_parser(
+        "check-tag", help="gate: check locations AND source_of_truth == TAG"
+    )
+    ct.add_argument("tag")
+    ct.add_argument("--warnings-as-errors", action="store_true")
+    ct.add_argument("--repo", type=Path, default=Path("."))
     b = sub.add_parser("bump", help="bump: write new version then self-check")
     b.add_argument("new_version")
     b.add_argument("--include-informational", action="store_true")
@@ -227,6 +257,8 @@ def main() -> int:
 
     if args.cmd == "check":
         return check(args.repo, args.warnings_as_errors)
+    if args.cmd == "check-tag":
+        return check_tag(args.repo, args.tag, args.warnings_as_errors)
     return bump(args.repo, args.new_version, args.include_informational)
 
 
