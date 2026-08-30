@@ -162,8 +162,6 @@ Elementeer detects its environment and adjusts behavior:
 |------|-----------|
 | `standalone-free` | Elementeer running alone with Elementor Free |
 | `standalone-pro` | Elementeer running alone with Elementor Pro |
-| `vamerli-embedded` | Running inside Vamerli Studio |
-| `vamerli-agency` | Running inside Vamerli Studio with agency features |
 
 ---
 

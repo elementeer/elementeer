@@ -21,7 +21,7 @@ Elementeer MCP Plugin exposes your Elementor template library through a secure, 
 * Authentication via `X-Elementeer-Key` header (Bearer fallback)
 * Capability-scoped API keys (`site-audit:read`, `library-operations:read`, `library-operations:write`, etc.)
 * Governance controls — enable/disable capabilities site-wide, set key limits, require approval
-* Activation mode detection: standalone-free, standalone-pro, vamerli-embedded, vamerli-agency
+* Activation mode detection: standalone-free, standalone-pro
 * Admin UI to generate and revoke keys
 
 **Why not use the default WP REST API?**
@@ -66,10 +66,6 @@ Yes. Elementor Pro is detected and reported but not required.
 = How does library import work? =
 
 Use the dedicated `/wp-json/elementeer/v1/library/import` endpoint with a `library-operations:import` key capability. The route creates or stages a local `elementor_library` template on the current site and stores source metadata for curated library workflows. It does not add cloud sync behavior.
-
-= Can I use this with Vamerli Studio? =
-
-Yes. When Vamerli Studio is active alongside this plugin, the activation mode switches to `vamerli-embedded` or `vamerli-agency`, unlocking additional governance features.
 
 == Changelog ==
 

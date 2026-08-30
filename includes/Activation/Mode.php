@@ -8,9 +8,7 @@ namespace Elementeer\MCP\Activation;
  * Detects and persists the plugin activation mode.
  *
  * Modes:
- *   vamerli-agency    — Vamerli Agency license detected (highest tier)
- *   vamerli-embedded  — Running inside Vamerli Studio (non-agency)
- *   standalone-pro    — Elementeer Pro license present, no Vamerli
+ *   standalone-pro    — Elementeer Pro license present
  *   standalone-free   — Free tier, no special licenses
  */
 final class Mode {
@@ -39,7 +37,7 @@ final class Mode {
     /**
      * Get the currently stored mode (or recompute if not set).
      *
-     * @return 'standalone-free'|'standalone-pro'|'vamerli-embedded'|'vamerli-agency'
+     * @return 'standalone-free'|'standalone-pro'
      */
     public function get_mode(): string {
         $stored = \get_option( ELEMENTEER_OPTION_ACTIVATION_MODE, '' );
@@ -54,34 +52,12 @@ final class Mode {
      * Compute the activation mode based on what's present in the environment.
      */
     private function compute_mode(): string {
-        // Vamerli Agency: plugin class + agency license constant/option
-        if ( $this->is_vamerli_active() ) {
-            if ( $this->is_vamerli_agency() ) {
-                return 'vamerli-agency';
-            }
-            return 'vamerli-embedded';
-        }
-
         // Standalone Pro: Elementeer Pro license key in options
         if ( $this->has_elementeer_pro_license() ) {
             return 'standalone-pro';
         }
 
         return 'standalone-free';
-    }
-
-    private function is_vamerli_active(): bool {
-        // Check for Vamerli Studio plugin class or constant
-        return defined( 'VAMERLI_STUDIO_VERSION' )
-            || class_exists( 'Vamerli\\Studio\\Plugin' );
-    }
-
-    private function is_vamerli_agency(): bool {
-        if ( defined( 'VAMERLI_LICENSE_TIER' ) && VAMERLI_LICENSE_TIER === 'agency' ) {
-            return true;
-        }
-        $tier = \get_option( 'vamerli_license_tier', '' );
-        return 'agency' === $tier;
     }
 
     private function has_elementeer_pro_license(): bool {
