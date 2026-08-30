@@ -159,8 +159,8 @@ class ElementorDocumentTest extends TestCase {
         $doc = ElementorDocument::fromArray( 1, $this->sampleData() );
 
         $report = $doc->dryRun( [
-            'widget1' => [ 'settings' => [ 'title' => 'X' ] ],
-            'nope'    => [ 'settings' => [] ],
+            [ 'widget_id' => 'widget1', 'settings' => [ 'title' => 'X' ] ],
+            [ 'widget_id' => 'nope', 'settings' => [] ],
         ] );
 
         $this->assertCount( 2, $report['patches'] );
@@ -171,7 +171,7 @@ class ElementorDocumentTest extends TestCase {
     public function testDryRunShowsBeforeAfter(): void {
         $doc = ElementorDocument::fromArray( 1, $this->sampleData() );
 
-        $report = $doc->dryRun( [ 'widget1' => [ 'settings' => [ 'title' => 'New' ] ] ] );
+        $report = $doc->dryRun( [ [ 'widget_id' => 'widget1', 'settings' => [ 'title' => 'New' ] ] ] );
 
         $this->assertEquals( 'Hello World', $report['patches'][0]['before']['settings']['title'] );
         $this->assertEquals( 'New', $report['patches'][0]['after']['settings']['title'] );
