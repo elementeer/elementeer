@@ -23,6 +23,8 @@
   },
   "scripts": {
     "test": "phpunit",
-    "test:coverage": "phpunit --coverage-html coverage/"
+    "test:integration": "phpunit --testsuite ElementorGroundTruth,ElementorDocument,Snapshots,AllyAutoFix,ProviderRegistration",
+    "test:coverage": "phpunit --coverage-html coverage/",
+    "benchmark:payload": "php tests/measure-payload.php"
   }
 }

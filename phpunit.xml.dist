@@ -5,6 +5,9 @@
          colors="true"
          stopOnFailure="false">
     <testsuites>
+        <testsuite name="ElementorGroundTruth">
+            <file>tests/ElementorGroundTruthIntegrationTest.php</file>
+        </testsuite>
         <testsuite name="ElementorDocument">
             <file>tests/ElementorDocumentTest.php</file>
         </testsuite>
@@ -13,6 +16,9 @@
         </testsuite>
         <testsuite name="AllyAutoFix">
             <file>tests/AllyAutoFixTest.php</file>
+        </testsuite>
+        <testsuite name="ProviderRegistration">
+            <file>tests/ProviderRegistrationTest.php</file>
         </testsuite>
     </testsuites>
     <source>

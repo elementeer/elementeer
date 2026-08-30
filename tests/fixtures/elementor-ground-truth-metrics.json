@@ -1,0 +1,27 @@
+{
+  "name": "elementor-ground-truth",
+  "version": "1.0.0",
+  "purpose": "CI Ground Truth fixture for Elementor page reconstruction, fidelity calibration, and mutation benchmarking",
+  "metrics": {
+    "sections_count": 10,
+    "columns_count": 18,
+    "widgets_count": 20,
+    "total_elements_count": 48,
+    "widget_types": [
+      "heading",
+      "text-editor",
+      "icon-box",
+      "image",
+      "testimonial",
+      "button"
+    ],
+    "max_depth": 4,
+    "content_hash_algorithm": "md5"
+  },
+  "fidelity_thresholds": {
+    "element_match_min_percent": 100.0,
+    "style_delta_max_tolerance": 0.0,
+    "content_preservation_min_percent": 100.0,
+    "confidence_calibration_level": "high"
+  }
+}

@@ -187,73 +187,14 @@ class AllyAutoFixTest extends TestCase {
     }
 
     private function defaultPageJson(): string {
-        return json_encode( $this->defaultPageData() );
+        return FixtureHelper::loadJson( 'elementor-ally-sample.json' );
     }
 
     /**
-     * Minimal page matching the AllyViolation format.
-     *
-     * section1
-     *   col1
-     *     widget1 (heading, "Hello World")  — no alt issue
-     *     widget2 (text)                     — no alt issue
-     *   col2
-     *     widget3 (image, no alt text)       — the target
+     * Minimal page matching the AllyViolation format from pure CI fixture.
      */
     private function defaultPageData(): array {
-        return [
-            [
-                'id'       => 'section1',
-                'elType'   => 'section',
-                'settings' => [],
-                'elements' => [
-                    [
-                        'id'       => 'col1',
-                        'elType'   => 'column',
-                        'settings' => [],
-                        'elements' => [
-                            [
-                                'id'         => 'widget1',
-                                'elType'     => 'widget',
-                                'widgetType' => 'heading',
-                                'settings'   => [
-                                    'title'       => 'Hello World',
-                                    'header_size' => 'h1',
-                                    'title_color' => '#333333',
-                                ],
-                            ],
-                            [
-                                'id'         => 'widget2',
-                                'elType'     => 'widget',
-                                'widgetType' => 'text',
-                                'settings'   => [
-                                    'editor'           => '<p>Lorem ipsum dolor sit amet.</p>',
-                                    'text_color'       => '#555555',
-                                    'typography_typography' => 'custom',
-                                ],
-                            ],
-                        ],
-                    ],
-                    [
-                        'id'       => 'col2',
-                        'elType'   => 'column',
-                        'settings' => [],
-                        'elements' => [
-                            [
-                                'id'         => 'widget3',
-                                'elType'     => 'widget',
-                                'widgetType' => 'image',
-                                'settings'   => [
-                                    'src'      => 'https://example.com/photo.jpg',
-                                    'caption'  => 'Team photo',
-                                    'image_size' => 'full',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
+        return FixtureHelper::load( 'elementor-ally-sample.json' );
     }
 
     /**

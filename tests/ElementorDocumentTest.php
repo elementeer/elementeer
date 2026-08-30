@@ -148,7 +148,7 @@ class ElementorDocumentTest extends TestCase {
         $doc    = ElementorDocument::fromArray( 1, $this->sampleData() );
         $before = $doc->toArray();
 
-        $report = $doc->dryRun( [ 'widget1' => [ 'settings' => [ 'title' => 'Temp' ] ] ] );
+        $report = $doc->dryRun( [ [ 'widget_id' => 'widget1', 'settings' => [ 'title' => 'Temp' ] ] ] );
         $after  = $doc->toArray();
 
         $this->assertTrue( $report['dry_run'] );
@@ -159,8 +159,8 @@ class ElementorDocumentTest extends TestCase {
         $doc = ElementorDocument::fromArray( 1, $this->sampleData() );
 
         $report = $doc->dryRun( [
-            'widget1' => [ 'settings' => [ 'title' => 'X' ] ],
-            'nope'    => [ 'settings' => [] ],
+            [ 'widget_id' => 'widget1', 'settings' => [ 'title' => 'X' ] ],
+            [ 'widget_id' => 'nope',    'settings' => [] ],
         ] );
 
         $this->assertCount( 2, $report['patches'] );
@@ -171,7 +171,7 @@ class ElementorDocumentTest extends TestCase {
     public function testDryRunShowsBeforeAfter(): void {
         $doc = ElementorDocument::fromArray( 1, $this->sampleData() );
 
-        $report = $doc->dryRun( [ 'widget1' => [ 'settings' => [ 'title' => 'New' ] ] ] );
+        $report = $doc->dryRun( [ [ 'widget_id' => 'widget1', 'settings' => [ 'title' => 'New' ] ] ] );
 
         $this->assertEquals( 'Hello World', $report['patches'][0]['before']['settings']['title'] );
         $this->assertEquals( 'New', $report['patches'][0]['after']['settings']['title'] );
@@ -269,261 +269,21 @@ class ElementorDocumentTest extends TestCase {
             ) );
     }
 
-        /**
-         * Realistic mid-size Elementor page: hero heading, 4 feature
-         * sections with icon boxes and images, a CTA, testimonials,
-         * and a text block. ~8 sections, ~30+ widgets. When serialised
-         * this produces ~20-30 KB of JSON.
-         */
+    /**
+     * Realistic mid-size Elementor page: hero heading, 4 feature
+     * sections with icon boxes and images, a CTA, testimonials,
+     * and a text block. ~8 sections, ~30+ widgets.
+     * Consumed from the pure CI ground truth fixture.
+     */
     private function realisticPage(): array {
-        $hero = [
-            'id'       => 's1',
-            'elType'   => 'section',
-            'settings' => [
-                'background_overlay_background' => 'classic',
-                'background_overlay_color'      => '#1a1a2e',
-                'padding'                       => [ 'unit' => 'px', 'top' => 80, 'bottom' => 80 ],
-            ],
-            'elements' => [
-                [
-                    'id'       => 'c1',
-                    'elType'   => 'column',
-                    'settings' => [ '_column_size' => 100 ],
-                    'elements' => [
-                        [
-                            'id'         => 'h1',
-                            'elType'     => 'widget',
-                            'widgetType' => 'heading',
-                            'settings'   => [
-                                'title'             => 'Build Faster with Elementor',
-                                'header_size'       => 'h1',
-                                'align'             => 'center',
-                                'title_color'       => '#ffffff',
-                                'typography_typography' => 'custom',
-                                'typography_font_size'  => [ 'unit' => 'px', 'size' => 48 ],
-                            ],
-                        ],
-                        [
-                            'id'         => 'h2',
-                            'elType'     => 'widget',
-                            'widgetType' => 'text-editor',
-                            'settings'   => [
-                                'editor' => '<p style="text-align:center;color:#e0e0e0;">The fastest way to build WordPress sites</p>',
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        $features = [];
-        for ( $i = 1; $i <= 4; $i++ ) {
-            $features[] = $this->featureSection( $i );
-        }
-
-        $testimonials = [];
-        for ( $j = 1; $j <= 3; $j++ ) {
-            $testimonials[] = $this->testimonialWidget( $j );
-        }
-
-        $cta = [
-            'id'       => 's5',
-            'elType'   => 'section',
-            'settings' => [ 'background_background' => 'classic', 'background_color' => '#f5f5f5' ],
-            'elements' => [
-                [
-                    'id'       => 'c5',
-                    'elType'   => 'column',
-                    'settings' => [ '_column_size' => 100 ],
-                    'elements' => [
-                        [
-                            'id'         => 'h3',
-                            'elType'     => 'widget',
-                            'widgetType' => 'heading',
-                            'settings'   => [ 'title' => 'Ready to start?', 'header_size' => 'h2', 'align' => 'center' ],
-                        ],
-                        [
-                            'id'         => 'b1',
-                            'elType'     => 'widget',
-                            'widgetType' => 'button',
-                            'settings'   => [
-                                'text'     => 'Get Started',
-                                'align'    => 'center',
-                                'button_text_color' => '#ffffff',
-                                'background_color'  => '#6c63ff',
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        $testimonialsSection = [
-            'id'       => 's6',
-            'elType'   => 'section',
-            'settings' => [ 'background_background' => 'classic', 'background_color' => '#ffffff' ],
-            'elements' => [
-                [
-                    'id'       => 'c6',
-                    'elType'   => 'column',
-                    'settings' => [ '_column_size' => 100 ],
-                    'elements' => [
-                        [
-                            'id'         => 'h6',
-                            'elType'     => 'widget',
-                            'widgetType' => 'heading',
-                            'settings'   => [ 'title' => 'What our customers say', 'header_size' => 'h2', 'align' => 'center' ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
-
-        return [ $hero, ...$features, $testimonialsSection, ...$testimonials, $cta ];
+        return FixtureHelper::getGroundTruth();
     }
 
-    private function featureSection( int $n ): array {
-        $icons   = [ '', 'rocket', 'shield', 'code', 'clock' ];
-        $titles  = [ '', 'Lightning Fast', 'Enterprise Security', 'Clean Code', 'High Performance' ];
-        $descs   = [ '',
-            'Pages load in under 200ms with our optimized rendering pipeline.',
-            'SOC 2 compliant with end-to-end encryption for all your data.',
-            'Developer-friendly APIs with comprehensive documentation.',
-            'Blazing fast CDN delivery with edge caching worldwide.',
-        ];
-
-        $col1 = [
-            'id'       => "c{$n}1",
-            'elType'   => 'column',
-            'settings' => [ '_column_size' => 33 ],
-            'elements' => [
-                [
-                    'id'         => "ib{$n}1",
-                    'elType'     => 'widget',
-                    'widgetType' => 'icon-box',
-                    'settings'   => [
-                        'icon'            => "fa fa-{$icons[$n]}",
-                        'title_text'      => $titles[$n],
-                        'description_text' => $descs[$n],
-                        'title_color'     => '#1a1a2e',
-                    ],
-                ],
-            ],
-        ];
-
-        $col2 = [
-            'id'       => "c{$n}2",
-            'elType'   => 'column',
-            'settings' => [ '_column_size' => 33 ],
-            'elements' => [
-                [
-                    'id'         => "ib{$n}2",
-                    'elType'     => 'widget',
-                    'widgetType' => 'image',
-                    'settings'   => [
-                        'src'  => "https://example.com/feature-{$n}-1.jpg",
-                        'alt'  => "Feature {$n} illustration A",
-                    ],
-                ],
-            ],
-        ];
-
-        $col3 = [
-            'id'       => "c{$n}3",
-            'elType'   => 'column',
-            'settings' => [ '_column_size' => 33 ],
-            'elements' => [
-                [
-                    'id'         => "ib{$n}3",
-                    'elType'     => 'widget',
-                    'widgetType' => 'image',
-                    'settings'   => [
-                        'src'  => "https://example.com/feature-{$n}-2.jpg",
-                        'alt'  => "Feature {$n} illustration B",
-                    ],
-                ],
-            ],
-        ];
-
-        return [
-            'id'       => "s{$n}",
-            'elType'   => 'section',
-            'settings' => [ 'padding' => [ 'unit' => 'px', 'top' => 60, 'bottom' => 60 ] ],
-            'elements' => [ $col1, $col2, $col3 ],
-        ];
-    }
-
-    private function testimonialWidget( int $n ): array {
-        $names     = [ '', 'Sarah Chen', 'Marcus Rivera', 'Aiko Tanaka' ];
-        $roles     = [ '', 'CTO at DataFlow', 'VP Engineering at CloudScale', 'Director at NexusLabs' ];
-        $quotes    = [ '',
-            'We migrated 200 pages in under a week. The partial mutation engine was the difference between a rewrite and an incremental rollout.',
-            'Our team cut page update time from 4 hours to 15 minutes. The snapshot system saved us twice when we made mistakes.',
-            'Cannot imagine going back to exporting elementor_data by hand. This is what Elementor should have shipped out of the box.',
-        ];
-
-        return [
-            'id'         => "test{$n}",
-            'elType'     => 'widget',
-            'widgetType' => 'testimonial',
-            'settings'   => [
-                'testimonial_content'     => $quotes[$n],
-                'testimonial_name'        => $names[$n],
-                'testimonial_job'         => $roles[$n],
-                'testimonial_alignment'   => 'center',
-                'testimonial_text_color'  => '#444444',
-            ],
-        ];
-    }
-
+    /**
+     * Minimal Elementor data tree for baseline unit testing.
+     * Consumed from the pure CI sample fixture.
+     */
     private function sampleData(): array {
-        return [
-            [
-                'id'       => 'section1',
-                'elType'   => 'section',
-                'settings' => [],
-                'elements' => [
-                    [
-                        'id'       => 'col1',
-                        'elType'   => 'column',
-                        'settings' => [],
-                        'elements' => [
-                            [
-                                'id'         => 'widget1',
-                                'elType'     => 'widget',
-                                'widgetType' => 'heading',
-                                'settings'   => [
-                                    'title'       => 'Hello World',
-                                    'header_size' => 'h1',
-                                ],
-                            ],
-                            [
-                                'id'         => 'widget2',
-                                'elType'     => 'widget',
-                                'widgetType' => 'text',
-                                'settings'   => [
-                                    'editor' => '<p>Lorem ipsum</p>',
-                                ],
-                            ],
-                        ],
-                    ],
-                    [
-                        'id'       => 'col2',
-                        'elType'   => 'column',
-                        'settings' => [],
-                        'elements' => [
-                            [
-                                'id'         => 'widget3',
-                                'elType'     => 'widget',
-                                'widgetType' => 'image',
-                                'settings'   => [
-                                    'src' => 'https://example.com/photo.jpg',
-                                ],
-                            ],
-                        ],
-                    ],
-                ],
-            ],
-        ];
+        return FixtureHelper::getSampleData();
     }
 }
