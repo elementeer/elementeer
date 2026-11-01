@@ -6,9 +6,8 @@ vendor/
 .claude/
 .understand-anything/
 
-# SkillWeave: only agents.md is durable; everything else is runtime and ignored
-.skillweave/*
-!.skillweave/agents.md
+# SkillWeave planning state belongs in the private planning repo
+.skillweave/
 
 # Generated files
 scripts/endpoint_map.json
