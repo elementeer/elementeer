@@ -9,10 +9,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install PHP and release tooling
+      - name: Install PHP and archive tooling
         run: |
           apt-get update -qq
-          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq php-cli zip unzip gh
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq php-cli zip unzip
           php -v | head -1
       - name: PHP syntax check
         run: |
@@ -63,69 +63,9 @@ jobs:
             exit 1
           fi
           echo "ZIP structure OK: $(unzip -l "$ZIP" | tail -1)"
-      - name: Create Forgejo Release
-        run: |
-          TAG="${GITHUB_REF##*/}"
-          VERSION="${TAG#v}"
-          BODY=$(cat <<EOBODY
-          ## Elementeer $VERSION
-
-          The agent-native Elementor growth layer.
-
-          - PHP syntax validated
-          - Version sync confirmed
-          - Plugin ZIP built and attached
-
-          ### Installation
-          1. Download the ZIP below
-          2. Upload to WordPress -> Plugins -> Add New -> Upload
-          3. Activate
-
-          Canonical source: [git.langevc.com/elementeer/elementeer](https://git.langevc.com/elementeer/elementeer)
-          EOBODY
-          )
-          curl -s -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/json" \
-            -d "$(jq -n --arg tag "$TAG" --arg name "Elementeer v$VERSION" --arg body "$BODY" '{tag_name: $tag, name: $name, body: $body}')" \
-            > /tmp/release-response.json
-          cat /tmp/release-response.json
-          RELEASE_ID=$(jq -r '.id' /tmp/release-response.json)
-          echo "Release created: id=$RELEASE_ID"
-          echo "RELEASE_ID=$RELEASE_ID" >> $GITHUB_ENV
-      - name: Upload Release Asset
-        run: |
-          ZIPNAME=$(basename "$ZIP")
-          curl -s -X POST "https://git.langevc.com/api/v1/repos/$GITHUB_REPOSITORY/releases/$RELEASE_ID/assets?name=$ZIPNAME" \
-            -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-            -H "Content-Type: application/zip" \
-            --data-binary "@$ZIP"
-          echo "Asset uploaded: $ZIPNAME"
-      - name: Mirror Release to GitHub
-        env:
-          GH_TOKEN: ${{ secrets.GH_MIRROR_TOKEN }}
-        run: |
-          TAG="${GITHUB_REF##*/}"
-          VERSION="${TAG#v}"
-          NOTES=$(cat <<'EONOTES'
-          ## Elementeer {TAG}
-
-          The agent-native Elementor growth layer.
-
-          - PHP syntax validated
-          - Version sync confirmed
-          - Plugin ZIP built and attached
-
-          ### Installation
-          1. Download the ZIP below
-          2. Upload to WordPress - Plugins - Add New - Upload
-          3. Activate
-          EONOTES
-          )
-          NOTES=$(echo "$NOTES" | sed "s/{TAG}/$TAG/")
-          gh release create "$TAG" \
-            --repo elementeer/elementeer \
-            --title "Elementeer $TAG" \
-            --notes "$NOTES" \
-            "$ZIP#Elementeer v$VERSION - installable WordPress plugin" \
-            || echo "Mirror release skipped (token may lack permissions)"
+      # The release object is not created here. The ops-engine ReleaseHandler
+      # publishes it on tag_push from .ops.yaml (destinations forgejo and
+      # github) and attaches the artifact it collects with the changelog body.
+      # Until elementeer has a CHANGELOG.md the engine refuses with
+      # MissingChangelogEntryError before any release exists (RFL-004), and this
+      # workflow stays a gate: syntax, version sync, ZIP build and structure.
