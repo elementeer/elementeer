@@ -160,42 +160,6 @@ jobs:
           fi
           echo "✅ REST endpoint responds: $(echo "$RESPONSE" | head -c 100)"
 
-  release:
-    name: Create GitHub Release
-    needs: [build, wp-test]
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download ZIP
-        uses: actions/download-artifact@v4
-        with:
-          name: elementeer-plugin-zip
-      - name: Create Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "Elementeer ${{ github.ref_name }}"
-          files: elementeer.*.zip
-          generate_release_notes: true
-          body: |
-            ## Elementeer ${{ github.ref_name }}
-
-            **The agent-native Elementor growth layer.**
-            GPL-2.0-or-later — WordPress Plugin Directory compatible.
-
-            ✅ PHP syntax validated  
-            ✅ WordPress activation tested  
-            ✅ REST API endpoint verified  
-
-            ### Verification
-            | | |
-            |---|---|
-            | SHA256 | `${{ needs.build.outputs.sha256 }}` |
-
-            ### Installation
-            1. Download the ZIP
-            2. Upload to WordPress → Plugins → Add New → Upload
-            3. Activate
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  # No release job. The release object on both forges is created by the
+  # ops-engine ReleaseHandler from .ops.yaml (RFL-002, RFL-004); this workflow
+  # keeps the syntax, build and WordPress-activation gates and the ZIP artifact.
