@@ -3,7 +3,7 @@ Contributors: elementeer
 Tags: elementor, mcp, ai, rest-api, template-management
 Requires at least: 6.0
 Tested up to: 6.5
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 Requires PHP: 8.0
 License: GPL-2.0-or-later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -72,6 +72,9 @@ Use the dedicated `/wp-json/elementeer/v1/library/import` endpoint with a `libra
 Yes. When Vamerli Studio is active alongside this plugin, the activation mode switches to `vamerli-embedded` or `vamerli-agency`, unlocking additional governance features.
 
 == Changelog ==
+
+= 2.4.1 =
+* No functional change to the plugin. The release object is written by the ops-engine; the release workflows no longer create it.
 
 = 2.3.1 =
 * No functional change to the plugin. This release exists because the GitHub
