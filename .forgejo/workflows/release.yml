@@ -63,9 +63,92 @@ jobs:
             exit 1
           fi
           echo "ZIP structure OK: $(unzip -l "$ZIP" | tail -1)"
+      - name: Install Python
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-venv
+
+      - name: Install ops-engine (v3.7.0)
+        run: |
+          # ops-engine v3.7.0 wheel — not yet released at commit time.
+          # The owner merges only after the v3.7.0 tag exists.
+          ENGINE_VENV="$(mktemp -d)/engine-venv"
+          python3 -m venv "$ENGINE_VENV"
+          "$ENGINE_VENV/bin/python" -m pip install --quiet \
+            https://github.com/LangeVC/ops-engine/releases/download/v3.7.0/ops_engine-3.7.0-py3-none-any.whl
+          echo "ENGINE_VENV=$ENGINE_VENV" >> "$GITHUB_ENV"
+
+      - name: Stage ZIP for engine attach
+        run: |
+          cp "$ZIP" .
+          ls -la elementeer.*.zip
+
+      - name: Attach ZIP to release on both forges
+        env:
+          TAG_NAME: "${{ github.ref_name }}"
+          FORGEJO_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GH_MIRROR_TOKEN: "${{ secrets.GH_MIRROR_TOKEN }}"
+        run: |
+          "$ENGINE_VENV/bin/python" - "$TAG_NAME" "${{ github.repository }}" <<'PY'
+          import asyncio, os, sys
+
+          tag_name = sys.argv[1]
+          repo = sys.argv[2]
+          org, _, repo_name = repo.partition("/")
+
+          from ops_engine.adapters.factory import Credential, adapters_for
+          from ops_engine.config_loader import OpsEngineConfig, load_ops_yaml
+          from ops_engine.modules.release import ReleaseHandler
+
+          layer3 = load_ops_yaml(".")
+          if layer3 is None:
+              print("::error::MissingOpsYamlError: no .ops.yaml", file=sys.stderr)
+              sys.exit(2)
+
+          config = OpsEngineConfig.load({
+              "orgs": {
+                  org: {
+                      "repositories": {
+                          repo_name: {
+                              "destinations": [
+                                  {"forge": d.forge, "repo": d.repo,
+                                   "role": d.role, "visibility": d.visibility}
+                                  for d in layer3.destinations
+                              ]
+                          }
+                      }
+                  }
+              }
+          })
+
+          credentials = {
+              "forgejo": Credential(token=os.environ["FORGEJO_TOKEN"]),
+              "github": Credential(token=os.environ["GH_MIRROR_TOKEN"]),
+          }
+          adapters = adapters_for(layer3.destinations, credentials=credentials)
+
+          async def main():
+              report = await ReleaseHandler.publish_release(
+                  config, repo, tag_name, "", ".",
+                  name_template=layer3.release.name_template,
+                  adapters=adapters,
+              )
+              published = ", ".join(report.published) or "(none)"
+              failed = ", ".join(report.failed) or "(none)"
+              print(f"published destinations: {published}")
+              print(f"failed destinations: {failed}")
+              if report.failed:
+                  print(f"::error::PartialPublicationError: {failed}",
+                        file=sys.stderr)
+                  sys.exit(1)
+
+          asyncio.run(main())
+          PY
+
       # The release object is not created here. The ops-engine ReleaseHandler
       # publishes it on tag_push from .ops.yaml (destinations forgejo and
       # github) and attaches the artifact it collects with the changelog body.
-      # Until elementeer has a CHANGELOG.md the engine refuses with
-      # MissingChangelogEntryError before any release exists (RFL-004), and this
-      # workflow stays a gate: syntax, version sync, ZIP build and structure.
+      # This workflow stays a gate: syntax, version sync, ZIP build and
+      # structure, then calls the engine to attach the ZIP on both forges.
+      # The ops-engine install line is untestable until v3.7.0 exists; the
+      # owner merges only after that tag is published.
