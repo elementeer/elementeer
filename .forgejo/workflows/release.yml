@@ -88,87 +88,20 @@ jobs:
           cp "$ZIP" release-assets/
           ls -l release-assets
 
-      # The CLI reads a Layer-2 config, and its credential lookup walks that
-      # config's destinations. The destinations live in this repository's
-      # Layer-3 .ops.yaml, so the config is written at run time from that file:
-      # no forge, repository, host or credential name is restated in the
-      # workflow, and the token variables named here are the ones this job
-      # exports below. The declared title is read from the same file rather
-      # than spelled out, so it is one value in one place.
-      - name: Write the destination config from .ops.yaml
-        run: |
-          set -euo pipefail
-          "$ENGINE_VENV/bin/python" - <<'CONFIG_PY'
-          import os
-          import sys
-          from pathlib import Path
-
-          import yaml
-
-          from ops_engine.config_loader import OpsYamlError, load_ops_yaml
-
-          try:
-              layer3 = load_ops_yaml(".")
-          except OpsYamlError as exc:
-              print(f"::error::OpsYamlError: {exc}", file=sys.stderr)
-              sys.exit(2)
-          if layer3 is None:
-              print(
-                  "::error::MissingOpsYamlError: no .ops.yaml at the "
-                  "repository root.",
-                  file=sys.stderr,
-              )
-              sys.exit(2)
-          dests = layer3.destinations
-          if not dests:
-              print(
-                  "::error::MissingReleaseDestinationsError: .ops.yaml "
-                  "declares no destinations.",
-                  file=sys.stderr,
-              )
-              sys.exit(2)
-
-          org, _, repo_name = os.environ["GITHUB_REPOSITORY"].partition("/")
-
-          # The credential variable each forge's destination reads. Declaring
-          # it here, next to the token the job exports, is what lets the CLI
-          # resolve a per-destination credential without a second config file.
-          CREDENTIAL_VARS = {"forgejo": "FORGEJO_TOKEN", "github": "GH_MIRROR_TOKEN"}
-
-          dest_list = []
-          for d in dests:
-              entry = {
-                  "forge": d.forge,
-                  "repo": d.repo,
-                  "role": d.role,
-                  "visibility": d.visibility,
-              }
-              var = CREDENTIAL_VARS.get(d.forge.strip().lower())
-              if var:
-                  entry["credential_variable"] = var
-              dest_list.append(entry)
-
-          config = {
-              "orgs": {
-                  org: {"repositories": {repo_name: {"destinations": dest_list}}}
-              }
-          }
-          config_path = Path(os.environ["RUNNER_TEMP"]) / "release-config.yml"
-          with open(config_path, "w", encoding="utf-8") as fh:
-              yaml.dump(config, fh, default_flow_style=False)
-          print(f"config written to {config_path}", file=sys.stderr)
-
-          name_template = layer3.release.name_template if layer3.release else ""
-          if name_template:
-              with open(os.environ["GITHUB_ENV"], "a", encoding="utf-8") as fh:
-                  fh.write(f"NAME_TEMPLATE={name_template}\n")
-          CONFIG_PY
-
       # The workflow calls the engine's entry point; it does not reimplement
       # publication and it writes no release object itself. The CLI finds or
       # creates the release, converges it, attaches the staged ZIP, and reads
       # the release back to verify the asset .ops.yaml declares — failing the
       # destination by name when it is absent.
+      #
+      # The command takes no Layer-2 config argument and this job writes no
+      # config copy: run without one, the CLI resolves the destinations, the
+      # release block and release.assets from the .ops.yaml in --repo-dir, so
+      # this repository has one declaration and no second file that can drift
+      # from it. The CLI takes the title as an argument rather than reading
+      # release.name_template itself, so the declared template is read from
+      # that same file in place; without it the CLI's derived default would
+      # retitle the published release.
       - name: Attach ZIP to release on both forges
         env:
           TAG_NAME: "${{ github.ref_name }}"
@@ -176,8 +109,8 @@ jobs:
           GH_MIRROR_TOKEN: "${{ secrets.GH_MIRROR_TOKEN }}"
         run: |
           set -euo pipefail
+          NAME_TEMPLATE=$("$ENGINE_VENV/bin/python" -c 'import yaml; d = yaml.safe_load(open(".ops.yaml", encoding="utf-8")); print(((d.get("release") or {}).get("name_template")) or "")')
           "$ENGINE_VENV/bin/python" -m ops_engine.release_attach \
-            --config "$RUNNER_TEMP/release-config.yml" \
             --repo "${{ github.repository }}" \
             --tag "$TAG_NAME" \
             --artifacts release-assets \
