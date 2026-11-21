@@ -42,6 +42,35 @@ destinations:
 # `forge_hosts:` line.
 forge_hosts: [git.langevc.com]
 
+# The release block (REA-041): the ZIP this repository builds, declared where the
+# engine reads it. A Layer-3 `release:` key REPLACES the layering release block
+# wholesale (config_loader.merge_layer3 copies whole model fields), so the block
+# is declared whole, not just its assets. `release.assets` is the declaration
+# REA-014 verifies: after publishing, the handler reads the release back and
+# records `"<name> sha256:<hex>"` per asset, and fails the destination by name if
+# a declared asset is absent. type github_release_zip is the only type
+# _RELEASE_ASSET_TYPES verifies on read-back.
+#
+# The name form is the file name MEASURED on both forges for v2.4.1
+# (elementeer.2.4.1.zip, 168408 B) on 2026-11-18. `_render_asset_name`
+# substitutes <version> with the tag minus its leading "v" and <tag> with the tag
+# verbatim; scripts/create-plugin-zip.sh names the file with the bare version, so
+# the declaration uses <version>. The .github workflow's differently named
+# elementeer.<tag>.zip stays a CI artifact and is never the release asset,
+# because that workflow does not publish (REA-041 criterion 2).
+#
+# name_template matches the title the engine has already published on both
+# forges ("Elementeer v2.4.1"); the CLI passes it to render_release_name
+# verbatim, so it is the release title and not a gate.
+release:
+  enabled: true
+  trigger: tag_push
+  tag_pattern: "v*"
+  name_template: "Elementeer {tag_name}"
+  assets:
+    - type: github_release_zip
+      name: "elementeer.<version>.zip"
+
 # Deliberately NOT declared here:
 #   - tracker_prefixes: the engine's audience gate refuses nothing when the
 #     list is empty, which is the documented default. This repository's history

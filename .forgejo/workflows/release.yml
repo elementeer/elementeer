@@ -63,9 +63,66 @@ jobs:
             exit 1
           fi
           echo "ZIP structure OK: $(unzip -l "$ZIP" | tail -1)"
-      # The release object is not created here. The ops-engine ReleaseHandler
-      # publishes it on tag_push from .ops.yaml (destinations forgejo and
-      # github) and attaches the artifact it collects with the changelog body.
-      # Until elementeer has a CHANGELOG.md the engine refuses with
-      # MissingChangelogEntryError before any release exists (RFL-004), and this
-      # workflow stays a gate: syntax, version sync, ZIP build and structure.
+      - name: Install Python
+        run: |
+          apt-get update -qq
+          DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-venv
+
+      - name: Install ops-engine (v3.7.0)
+        run: |
+          # ops-engine v3.7.0 wheel — not yet released at commit time.
+          # The owner merges only after the v3.7.0 tag exists.
+          ENGINE_VENV="$(mktemp -d)/engine-venv"
+          python3 -m venv "$ENGINE_VENV"
+          "$ENGINE_VENV/bin/python" -m pip install --quiet \
+            https://github.com/LangeVC/ops-engine/releases/download/v3.7.0/ops_engine-3.7.0-py3-none-any.whl
+          echo "ENGINE_VENV=$ENGINE_VENV" >> "$GITHUB_ENV"
+
+      - name: Stage ZIP for engine attach
+        run: |
+          # The engine attaches every regular file in the directory it is
+          # given, by basename, so the ZIP is staged into a directory of its
+          # own. The ZIP lives in /tmp/elementeer-build-final/*/ after the
+          # build script.
+          mkdir -p release-assets
+          cp "$ZIP" release-assets/
+          ls -l release-assets
+
+      # The workflow calls the engine's entry point; it does not reimplement
+      # publication and it writes no release object itself. The CLI finds or
+      # creates the release, converges it, attaches the staged ZIP, and reads
+      # the release back to verify the asset .ops.yaml declares — failing the
+      # destination by name when it is absent.
+      #
+      # The command takes no Layer-2 config argument and this job writes no
+      # config copy: run without one, the CLI resolves the destinations, the
+      # release block and release.assets from the .ops.yaml in --repo-dir, so
+      # this repository has one declaration and no second file that can drift
+      # from it. The CLI takes the title as an argument rather than reading
+      # release.name_template itself, so the declared template is read from
+      # that same file in place; without it the CLI's derived default would
+      # retitle the published release.
+      - name: Attach ZIP to release on both forges
+        env:
+          TAG_NAME: "${{ github.ref_name }}"
+          FORGEJO_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+          GH_MIRROR_TOKEN: "${{ secrets.GH_MIRROR_TOKEN }}"
+        run: |
+          set -euo pipefail
+          NAME_TEMPLATE=$("$ENGINE_VENV/bin/python" -c 'import yaml; d = yaml.safe_load(open(".ops.yaml", encoding="utf-8")); print(((d.get("release") or {}).get("name_template")) or "")')
+          "$ENGINE_VENV/bin/python" -m ops_engine.release_attach \
+            --repo "${{ github.repository }}" \
+            --tag "$TAG_NAME" \
+            --artifacts release-assets \
+            --repo-dir . \
+            --name-template "$NAME_TEMPLATE"
+
+      # The release object is not created here, and this workflow is now the
+      # only writer on the Forgejo side: .github/workflows/release-github.yml
+      # stopped creating the GitHub release object in RFL-015 and keeps only
+      # the syntax, build and WordPress-activation gates with the ZIP artifact.
+      # So the object on both forges is created by this workflow's single call
+      # to the engine entry point, from .ops.yaml. This workflow stays a gate:
+      # syntax, version sync, ZIP build and structure, then the entry point
+      # call above. The ops-engine install line is untestable until v3.7.0
+      # exists; the owner merges only after that tag is published.

@@ -161,5 +161,6 @@ jobs:
           echo "✅ REST endpoint responds: $(echo "$RESPONSE" | head -c 100)"
 
   # No release job. The release object on both forges is created by the
-  # ops-engine ReleaseHandler from .ops.yaml (RFL-002, RFL-004); this workflow
-  # keeps the syntax, build and WordPress-activation gates and the ZIP artifact.
+  # ops-engine release entry point reading .ops.yaml (RFL-002, RFL-004); this
+  # workflow keeps the syntax, build and WordPress-activation gates and the ZIP
+  # artifact.
