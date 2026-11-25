@@ -251,6 +251,8 @@ final class Pages {
             );
         }
 
+        Snapshots::capture( $id, Sessions::resolveFromRequest( $request ) );
+
         $encoded = wp_json_encode( $body['elementor_data'] );
         update_post_meta( $id, '_elementor_data', wp_slash( $encoded ) );
 
