@@ -68,14 +68,14 @@ jobs:
           apt-get update -qq
           DEBIAN_FRONTEND=noninteractive apt-get install -y -qq python3 python3-venv
 
-      - name: Install ops-engine (v3.7.3)
+      - name: Install ops-engine (v3.7.4)
         run: |
           # ops-engine v3.7.0 wheel — not yet released at commit time.
           # The owner merges only after the v3.7.0 tag exists.
           ENGINE_VENV="$(mktemp -d)/engine-venv"
           python3 -m venv "$ENGINE_VENV"
           "$ENGINE_VENV/bin/python" -m pip install --quiet \
-            https://github.com/LangeVC/ops-engine/releases/download/v3.7.3/ops_engine-3.7.3-py3-none-any.whl
+            https://github.com/LangeVC/ops-engine/releases/download/v3.7.4/ops_engine-3.7.4-py3-none-any.whl
           echo "ENGINE_VENV=$ENGINE_VENV" >> "$GITHUB_ENV"
 
       - name: Stage ZIP for engine attach
